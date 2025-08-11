@@ -1,5 +1,3 @@
-/* ===== Red Bull Login – Premium Look ===== */
-
 :root{
   --rb-blue:#001E36;
   --rb-navy:#000B2B;
@@ -10,7 +8,6 @@
   --glass-border: rgba(255,255,255,0.18);
 }
 
-/* background full + pattern */
 body{
   font-family: "Bebas Neue", Arial, sans-serif;
   margin:0;
@@ -23,7 +20,6 @@ body{
   overflow-x:hidden;
 }
 
-/* stripe diagonale Red Bull */
 body::before{
   content:"";
   position:fixed;
@@ -36,7 +32,6 @@ body::before{
   z-index:0;
 }
 
-/* container centrale */
 .login-wrap{
   position:relative;
   z-index:1;
@@ -46,7 +41,6 @@ body::before{
   padding:80px 20px;
 }
 
-/* card glass */
 .login-card{
   width:min(420px, 92vw);
   backdrop-filter: blur(12px);
@@ -59,7 +53,6 @@ body::before{
   overflow:hidden;
 }
 
-/* bordo gold sottile */
 .login-card::before{
   content:"";
   position:absolute; inset:0;
@@ -74,7 +67,6 @@ body::before{
   pointer-events:none;
 }
 
-/* header card */
 .login-card .brand{
   display:flex; align-items:center; gap:12px; margin-bottom:10px;
 }
@@ -85,7 +77,6 @@ body::before{
   font-size:38px; letter-spacing:1px; margin:0;
 }
 
-/* sottotitolo */
 .login-card .subtitle{
   font-family: Arial, sans-serif;
   font-weight:600;
@@ -94,7 +85,6 @@ body::before{
   margin:4px 0 18px;
 }
 
-/* form */
 .login-form label{
   display:block;
   font-family: Arial, sans-serif;
@@ -102,15 +92,15 @@ body::before{
   font-size:12px;
   letter-spacing: .4px;
   color:#dfe7f1;
-  margin:12px 2px 6px;
+  margin:4px auto 4px auto;
   text-align:left;
+  width:80%;
 }
 
-/* input ridotto */
 .input{
   display:block;
-  width:90%;
-  margin:0 auto;
+  width:80%;
+  margin:0 auto 16px auto;
   background: rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.22);
   border-radius:12px;
@@ -128,7 +118,6 @@ body::before{
 }
 .input:active{ transform: scale(.998); }
 
-/* error message */
 .form-error{
   margin:10px 2px;
   color:#ff6b6b;
@@ -136,9 +125,8 @@ body::before{
   font-size:13px;
 }
 
-/* CTA */
 .btn-primary{
-  width:90%;
+  width:80%;
   margin:16px auto 0 auto;
   display:block;
   padding:12px 16px;
@@ -156,7 +144,6 @@ body::before{
 .btn-primary:hover{ filter: brightness(1.06); }
 .btn-primary:active{ transform: translateY(1px); }
 
-/* link secondari */
 .actions{
   display:flex; justify-content:space-between; align-items:center;
   margin-top:14px;
@@ -167,13 +154,11 @@ body::before{
 }
 .actions a:hover{ text-decoration:underline; }
 
-/* divider */
 .divider{
   margin:16px 0 6px; height:1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
 }
 
-/* Pulsante Home */
 .home-btn {
   position: fixed;
   top: 20px;
@@ -194,7 +179,6 @@ body::before{
   background: #b4040e;
 }
 
-/* responsive */
 @media (max-width:480px){
   .login-card{ padding:22px 18px; }
   .login-card .brand h1{ font-size:30px; }

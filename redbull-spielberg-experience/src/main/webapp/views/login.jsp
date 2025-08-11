@@ -41,7 +41,7 @@
 
       <div class="divider"></div>
       <div class="actions">
-        <a href="${pageContext.request.contextPath}/register.jsp">Registrati qui</a>
+        <a href="register.jsp">Registrati qui</a>
         <a href="#">Password dimenticata?</a>
       </div>
     </div>
