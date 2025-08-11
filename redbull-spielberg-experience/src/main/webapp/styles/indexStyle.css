@@ -33,6 +33,7 @@
     transform: scale(1.05);
     background-color: #002b50;
 }
+
 * {
     margin: 0;
     padding: 0;
@@ -43,7 +44,7 @@ body {
     font-family: 'Arial', sans-serif;
     color: #fff;
     line-height: 1.6;
-    background-color: #000B2B; /* blu piÃ¹ scuro */
+    background-color: #000B2B;
 }
 
 /* Header */
@@ -56,7 +57,6 @@ header {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Logo */
 .logo {
     display: flex;
     align-items: center;
@@ -67,13 +67,11 @@ header {
     width: auto;
 }
 
-/* Navigation */
-/* Navigation */
 nav {
     display: flex;
     gap: 24px;
-    justify-content: flex-end; /* Sposta gli elementi della nav bar a destra */
-    width: 100%; /* Assicurati che prenda tutta la larghezza disponibile */
+    justify-content: flex-end;
+    width: 100%;
 }
 
 nav ul {
@@ -112,9 +110,9 @@ nav ul li a:hover::after {
 }
 
 .login-button {
-    margin-left: 20px; /* Sposta il login leggermente a destra */
+    margin-left: 20px;
     display: flex;
-    justify-content: flex-end; /* Assicurati che il pulsante sia a destra */
+    justify-content: flex-end;
 }
 
 .btn-login {
@@ -136,26 +134,26 @@ nav ul li a:hover::after {
 
 .container.nav-container {
     display: flex;
-    justify-content: space-between; /* Spaziatura tra logo, navbar e login */
+    justify-content: space-between;
     align-items: center;
     width: 100%;
     padding: 0 20px;
 }
 
-/* Style per la loading screen */
+/* Loading screen */
 .loading-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8); /* Sfondo scuro con trasparenza */
+    background-color: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     opacity: 1;
     z-index: 1000;
-    transition: opacity 0.5s ease-out; /* Per la dissolvenza */
+    transition: opacity 0.5s ease-out;
 }
 
 .middle {
@@ -172,66 +170,78 @@ nav ul li a:hover::after {
     transform-origin: bottom center;
     border-top-right-radius: 20px;
     border-top-left-radius: 20px;
-    box-shadow: 5px 10px 20px inset rgba(255, 23, 25.2);
     animation: loader 1.2s linear infinite;
 }
 
-.bar1 {
-    animation-delay: 0.1s;
-}
-.bar2 {
-    animation-delay: 0.2s;
-}
-.bar3 {
-    animation-delay: 0.3s;
-}
-.bar4 {
-    animation-delay: 0.4s;
-}
-.bar5 {
-    animation-delay: 0.5s;
-}
-.bar6 {
-    animation-delay: 0.6s;
-}
-.bar7 {
-    animation-delay: 0.7s;
-}
-.bar8 {
-    animation-delay: 0.8s;
-}
+.bar1 { animation-delay: 0.1s; }
+.bar2 { animation-delay: 0.2s; }
+.bar3 { animation-delay: 0.3s; }
+.bar4 { animation-delay: 0.4s; }
+.bar5 { animation-delay: 0.5s; }
+.bar6 { animation-delay: 0.6s; }
+.bar7 { animation-delay: 0.7s; }
+.bar8 { animation-delay: 0.8s; }
 
 @keyframes loader {
-    0% {
-        transform: scaleY(0.1);
-        background: transparent;
-    }
-    50% {
-        transform: scaleY(1);
-        background: #e74c3c; /* Cambia il colore a un rosso */
-    }
-    100% {
-        transform: scaleY(0.1);
-        background: transparent;
-    }
+    0% { transform: scaleY(0.1); background: transparent; }
+    50% { transform: scaleY(1); background: #e74c3c; }
+    100% { transform: scaleY(0.1); background: transparent; }
 }
 
-/* Video e overlay */
-.main-video {
+/* =======================
+   Hero Section con GIF attaccata alla navbar
+   ======================= */
+.hero-section {
     position: relative;
-    text-align: center;
-    overflow: hidden;
-}
-
-.main-video video {
     width: 100%;
-    height: auto;
-    object-fit: cover;
-    pointer-events: none;
-    display: block;
+    height: 100vh; /* altezza intera finestra */
+    background: url('https://i.pinimg.com/originals/b9/f5/9b/b9f59bc10fc9ece42c7cbe8388961629.gif') center 20% / cover no-repeat;
+    margin-top: 0; /* niente spazio sopra */
+    padding-top: 0; /* niente padding sopra */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    animation: heroZoom 15s ease-in-out infinite alternate;
 }
 
-/* Nuova descrizione del progetto con immagine di Verstappen */
+/* Animazione zoom GIF */
+@keyframes heroZoom {
+    0% { background-size: cover; }
+    100% { background-size: 110%; }
+}
+
+/* Overlay scuro per contrasto testo */
+.hero-overlay {
+    background: linear-gradient(90deg, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0) 100%);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* Testo Hero */
+.hero-text {
+    color: #fff;
+    font-family: 'Impact', 'Bebas Neue', sans-serif;
+    font-size: 7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 1.2;
+    padding-left: 50px; /* distanza dal bordo sinistro */
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    animation: fadeInText 2s ease-in-out;
+}
+
+/* Animazione apparizione testo */
+@keyframes fadeInText {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Colori evidenziati */
+.hero-text .yellow { color: #F5A600; }
+.hero-text .red { color: #E30613; }
+.hero-text .highlight { color: #fff; }
 .project-intro {
     padding: 100px 60px;
     background: linear-gradient(135deg, #0a0a23 0%, #1a0033 100%);
@@ -239,14 +249,12 @@ nav ul li a:hover::after {
     font-family: 'Bebas Neue', 'Segoe UI', sans-serif;
 }
 
-/* Layout per testo a sinistra e immagine a destra */
 .intro-container {
     display: flex;
     flex-wrap: wrap;
     gap: 40px;
     align-items: center;
     justify-content: space-between;
-    flex-direction: row; /* assicura l'ordine: testo a sinistra, immagine a destra */
 }
 
 .intro-text {
@@ -260,10 +268,10 @@ nav ul li a:hover::after {
 
 .intro-text h2 {
     font-size: 2.8rem;
-    color: #F5A600; /* giallo Red Bull */
+    color: #F5A600;
     letter-spacing: 2px;
     text-transform: uppercase;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
 }
 
 .intro-image {
@@ -271,6 +279,7 @@ nav ul li a:hover::after {
     display: flex;
     justify-content: flex-end;
 }
+
 .intro-image img {
     width: 80%;
     height: auto;
@@ -279,57 +288,10 @@ nav ul li a:hover::after {
     box-shadow: 0 8px 30px rgba(255, 0, 79, 0.5);
     transition: transform 0.3s ease-in-out;
 }
-.intro-image img:hover {
-    transform: scale(1.05);
-}
 
-/* Stile per il testo sovrapposto */
-.video-overlay-text {
-    position: absolute;
-    bottom: 100px;
-    left: 0;
-    padding-left: 30px;
-    text-align: left;
-    color: #fff;
-    font-family: 'Impact', 'Arial Black', 'Bebas Neue', sans-serif;
-    font-size: 7rem;
-    font-weight: 900;
-    line-height: 1.2;
-    text-transform: uppercase;
-    letter-spacing: 0px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    max-width: 90%;
-    white-space: pre-line;
-}
+.intro-image img:hover { transform: scale(1.05); }
 
-/* Colori per il testo evidenziato */
-.yellow {
-    color: #F5A600;
-}
-
-.red {
-    color: #E30613;
-}
-
-.highlight {
-    color: #fff;
-}
-
-/* Animazione di entrata del testo */
-@keyframes slideIn {
-    0% {
-        opacity: 0;
-        transform: translateX(-50px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateX(0);
-    }
-
-}
-/* =======================
-   Track Section Styling
-   ======================= */
+/* Track Section */
 .track-section {
     padding: 60px 60px;
     background: linear-gradient(135deg, #001e36 0%, #000b2b 100%);
@@ -343,7 +305,7 @@ nav ul li a:hover::after {
     color: #F5A600;
     text-transform: uppercase;
     margin-bottom: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
 .track-section p {
@@ -353,7 +315,6 @@ nav ul li a:hover::after {
     margin: 0 auto;
 }
 
-/* Styles for the slideshow container and slides within the track section */
 .slideshow-container {
     margin-top: 40px;
     display: flex;
@@ -365,11 +326,11 @@ nav ul li a:hover::after {
     max-width: 320px;
     width: 100%;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     object-fit: cover;
 }
 
-/* Nuova sezione Impariamo la pista */
+/* Learn Track Section */
 .learn-track-section {
     padding: 60px 60px;
     background: linear-gradient(135deg, #0a0a23 0%, #1a0033 100%);
@@ -383,7 +344,7 @@ nav ul li a:hover::after {
     color: #F5A600;
     text-transform: uppercase;
     margin-bottom: 5px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
 
 .learn-track-section p {
@@ -400,13 +361,13 @@ nav ul li a:hover::after {
     width: 100%;
     height: 480px;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
 }
 
-/* Sezione Acquisto */
+/* Purchase Section */
 .purchase-section {
     padding: 80px 40px;
-    background: linear-gradient(rgba(10, 10, 35, 0.85), rgba(10, 10, 35, 0.85)),
+    background: linear-gradient(rgba(10,10,35,0.85), rgba(10,10,35,0.85)),
                 url('https://motorsportmagazine.b-cdn.net/database/wp-content/uploads/sites/2/2021/01/Red-Bull-Database-1600x900.jpg') center center / cover no-repeat;
     text-align: center;
     color: #f0f0f0;
@@ -439,21 +400,21 @@ nav ul li a:hover::after {
 }
 
 .purchase-card {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255,255,255,0.08);
     padding: 40px 30px;
     border-radius: 20px;
-    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.5);
     width: 300px;
     text-align: center;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
 .purchase-card:hover {
     transform: translateY(-12px) scale(1.05);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 42, 75, 0.8);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+    background-color: rgba(0,42,75,0.8);
 }
 
 .purchase-card h3 {
@@ -470,8 +431,8 @@ nav ul li a:hover::after {
 
 .purchase-card.premium {
     border: 2px solid #F5A600;
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 40px rgba(245, 166, 0, 0.4);
+    background: rgba(255,255,255,0.12);
+    box-shadow: 0 12px 40px rgba(245,166,0,0.4);
     position: relative;
 }
 
@@ -487,7 +448,7 @@ nav ul li a:hover::after {
     border-radius: 5px;
     font-weight: bold;
     text-transform: uppercase;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
 .card-link {

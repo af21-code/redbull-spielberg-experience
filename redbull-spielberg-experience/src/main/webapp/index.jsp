@@ -1,3 +1,4 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -48,16 +49,15 @@
     </div>
 </header>
 
-<!-- Video visivo non interattivo con testo sovrapposto -->
-<section class="main-video">
-    <video autoplay muted loop playsinline>
-        <source src="videos/output.mp4" type="video/mp4">
-    </video>
-    <div class="video-overlay-text">
-        <span class="line"><span class="highlight">VIVI</span></span>
-        <span class="line"><span class="highlight">LA</span> <span class="yellow">VELOCITÀ</span></span>
-        <span class="line"><span class="highlight">DOMINA</span></span>
-        <span class="line"><span class="highlight">LA</span> <span class="red">PISTA</span></span>
+<!-- Hero Section con GIF di sfondo -->
+<section class="hero-section">
+    <div class="hero-overlay">
+        <div class="hero-text">
+            <span class="highlight">VIVI</span><br>
+            <span class="highlight">LA</span> <span class="yellow">VELOCITÀ</span><br>
+            <span class="highlight">DOMINA</span><br>
+            <span class="highlight">LA</span> <span class="red">PISTA</span>
+        </div>
     </div>
 </section>
 
@@ -66,7 +66,7 @@
     <div class="intro-container">
         <div class="intro-text">
             <h2>Passione <span class="red">Velocità</span> Vittoria</h2>
-            <p>Un viaggio unico nel cuore del Red Bull Ring, dove l&#39;adrenalina incontra la precisione, e ogni curva racconta una storia di coraggio e innovazione. Vivi l&#39;esperienza attraverso gli occhi dei campioni.</p>
+            <p>Un viaggio unico nel cuore del Red Bull Ring, dove l'adrenalina incontra la precisione, e ogni curva racconta una storia di coraggio e innovazione. Vivi l'esperienza attraverso gli occhi dei campioni.</p>
         </div>
         <div class="intro-image">
             <img src="https://dimages2.corriereobjects.it/uploads/2024/11/24/6742d933bc3f7.jpeg" alt="Max Verstappen vittorioso">
@@ -100,7 +100,7 @@
 <section id="track" class="track-section">
     <div class="container">
         <h2>Scopri la Pista</h2>
-        <p>Entra nel cuore del <span class="red">Red Bull Ring</span> e lasciati travolgere dalla sua storia, le sue curve leggendarie e l&#39;adrenalina pura che solo un circuito di Formula 1 può offrire.</p>
+        <p>Entra nel cuore del <span class="red">Red Bull Ring</span> e lasciati travolgere dalla sua storia, le sue curve leggendarie e l'adrenalina pura che solo un circuito di Formula 1 può offrire.</p>
         <div class="slideshow-container">
             <img src="https://www.redbullring.com/en/wp-content/uploads/sites/1/2021/07/Red-Bull-Ring-Luftaufnahme-Styrian-GP-2021-e1649946807938-scaled.jpg" class="slide" alt="Red Bull Ring 1">
             <img src="https://www.tauroa.at/wp-content/uploads/2024/03/red-bull-ringcarmin-walcher-red-bull-ring-4-scaled.jpg" class="slide" alt="Red Bull Ring 2">
