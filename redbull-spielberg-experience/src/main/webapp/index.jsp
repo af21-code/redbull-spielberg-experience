@@ -44,7 +44,7 @@
             </ul>
         </nav>
         <div class="login-button">
-            <a href="pages/login.html" class="btn-login">Login</a>
+            <a href="views/login.jsp" class="btn-login">Login</a>
         </div>
     </div>
 </header>

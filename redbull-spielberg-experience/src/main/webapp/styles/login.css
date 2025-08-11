@@ -1,0 +1,201 @@
+/* ===== Red Bull Login – Premium Look ===== */
+
+:root{
+  --rb-blue:#001E36;
+  --rb-navy:#000B2B;
+  --rb-red:#E30613;
+  --rb-gold:#F5A600;
+  --rb-white:#ffffff;
+  --glass: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.18);
+}
+
+/* background full + pattern */
+body{
+  font-family: "Bebas Neue", Arial, sans-serif;
+  margin:0;
+  color:var(--rb-white);
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #0d1b2a 0%, transparent 60%),
+    radial-gradient(1200px 600px at 110% 110%, #1a0033 0%, transparent 60%),
+    linear-gradient(135deg, var(--rb-navy), var(--rb-blue));
+  overflow-x:hidden;
+}
+
+/* stripe diagonale Red Bull */
+body::before{
+  content:"";
+  position:fixed;
+  inset:-20% -10% auto -10%;
+  height:45vh;
+  transform:skewY(-8deg);
+  background: linear-gradient(90deg, rgba(227,6,19,0.25), rgba(245,166,0,0.18));
+  filter: blur(6px);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* container centrale */
+.login-wrap{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:80px 20px;
+}
+
+/* card glass */
+.login-card{
+  width:min(420px, 92vw);
+  backdrop-filter: blur(12px);
+  background: var(--glass);
+  border:1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  padding:28px 26px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* bordo gold sottile */
+.login-card::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:20px;
+  padding:1px;
+  background: linear-gradient(135deg, rgba(245,166,0,0.8), rgba(227,6,19,0.6));
+  -webkit-mask: 
+     linear-gradient(#000 0 0) content-box, 
+     linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events:none;
+}
+
+/* header card */
+.login-card .brand{
+  display:flex; align-items:center; gap:12px; margin-bottom:10px;
+}
+.login-card .brand img{
+  width:44px; height:auto; border-radius:6px; flex-shrink:0;
+}
+.login-card .brand h1{
+  font-size:38px; letter-spacing:1px; margin:0;
+}
+
+/* sottotitolo */
+.login-card .subtitle{
+  font-family: Arial, sans-serif;
+  font-weight:600;
+  color:#cfd6e1;
+  font-size:14px;
+  margin:4px 0 18px;
+}
+
+/* form */
+.login-form label{
+  display:block;
+  font-family: Arial, sans-serif;
+  font-weight:700;
+  font-size:12px;
+  letter-spacing: .4px;
+  color:#dfe7f1;
+  margin:12px 2px 6px;
+  text-align:left;
+}
+
+/* input ridotto */
+.input{
+  display:block;
+  width:90%;
+  margin:0 auto;
+  background: rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.22);
+  border-radius:12px;
+  padding:12px 14px;
+  color:var(--rb-white);
+  outline:none;
+  transition: border .2s, box-shadow .2s, background .2s, transform .05s;
+  font-family: Arial, sans-serif;
+}
+.input::placeholder{ color:#9fb3c8; }
+.input:focus{
+  border-color: var(--rb-gold);
+  box-shadow: 0 0 0 3px rgba(245,166,0,.18);
+  background: rgba(255,255,255,0.09);
+}
+.input:active{ transform: scale(.998); }
+
+/* error message */
+.form-error{
+  margin:10px 2px;
+  color:#ff6b6b;
+  font-family: Arial, sans-serif;
+  font-size:13px;
+}
+
+/* CTA */
+.btn-primary{
+  width:90%;
+  margin:16px auto 0 auto;
+  display:block;
+  padding:12px 16px;
+  border:none;
+  border-radius:12px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.8px;
+  cursor:pointer;
+  background: linear-gradient(135deg, var(--rb-red), #b4040e);
+  color:var(--rb-white);
+  box-shadow: 0 10px 24px rgba(227,6,19,.35);
+  transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
+}
+.btn-primary:hover{ filter: brightness(1.06); }
+.btn-primary:active{ transform: translateY(1px); }
+
+/* link secondari */
+.actions{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:14px;
+  font-family: Arial, sans-serif; font-size:13px;
+}
+.actions a{
+  color: var(--rb-gold); text-decoration:none; font-weight:700;
+}
+.actions a:hover{ text-decoration:underline; }
+
+/* divider */
+.divider{
+  margin:16px 0 6px; height:1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+}
+
+/* Pulsante Home */
+.home-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 5;
+}
+.home-btn a {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--rb-red);
+  color: var(--rb-white);
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.home-btn a:hover {
+  background: #b4040e;
+}
+
+/* responsive */
+@media (max-width:480px){
+  .login-card{ padding:22px 18px; }
+  .login-card .brand h1{ font-size:30px; }
+}
