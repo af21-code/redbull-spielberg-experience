@@ -1,35 +1,61 @@
 package control;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import java.io.IOException;
 import model.User;
 import model.dao.UserDAO;
 import model.dao.impl.UserDAOImpl;
+import utils.PasswordUtil;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+import java.io.IOException;
+
+@WebServlet("/login")
 public class LoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private UserDAO userDAO;
+    private final UserDAO userDAO = new UserDAOImpl();
 
     @Override
-    public void init() {
-        userDAO = new UserDAOImpl();
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        req.setCharacterEncoding("UTF-8");
+        String email    = req.getParameter("email");
+        String password = req.getParameter("password");
+
+        if (email == null || password == null || email.isBlank() || password.isBlank()) {
+            req.setAttribute("errorMessage", "Inserisci email e password.");
+            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            return;
+        }
+
+        try {
+            User u = userDAO.findByEmail(email);
+            if (u == null || !u.isActive() || !PasswordUtil.matches(password, u.getPassword())) {
+                req.setAttribute("errorMessage", "Credenziali non valide.");
+                req.getRequestDispatcher("/login.jsp").forward(req, resp);
+                return;
+            }
+
+            HttpSession session = req.getSession(true);
+            session.setAttribute("authUser", u);
+            session.setAttribute("accessToken", "OK");
+
+            resp.sendRedirect(req.getContextPath() + "/index.jsp");
+        } catch (Exception e) {
+            e.printStackTrace();
+            req.setAttribute("errorMessage", "Errore durante il login. Riprova.");
+            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+        }
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String email = request.getParameter("email");
-        String password = request.getParameter("password");
-
-        User user = userDAO.validateLogin(email, password);
-        if (user != null) {
-            HttpSession session = request.getSession();
-            session.setAttribute("user", user);
-            response.sendRedirect("index.jsp");
-        } else {
-            request.setAttribute("errorMessage", "Invalid email or password");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
-        }
+        req.getRequestDispatcher("/login.jsp").forward(req, resp);
     }
 }

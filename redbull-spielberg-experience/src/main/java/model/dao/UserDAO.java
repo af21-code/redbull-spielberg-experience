@@ -3,7 +3,7 @@ package model.dao;
 import model.User;
 
 public interface UserDAO {
-    User validateLogin(String email, String password);
-    boolean emailExists(String email);
-    boolean save(User user);
+    boolean existsByEmail(String email) throws Exception;
+    User findByEmail(String email) throws Exception;
+    User save(User user) throws Exception; // ritorna user con id
 }

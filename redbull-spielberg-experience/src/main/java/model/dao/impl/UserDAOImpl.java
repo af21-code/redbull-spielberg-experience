@@ -1,63 +1,63 @@
 package model.dao.impl;
 
-import java.sql.*;
 import model.User;
 import model.dao.UserDAO;
 import utils.DatabaseConnection;
 
+import java.sql.*;
+
 public class UserDAOImpl implements UserDAO {
 
     @Override
-    public User validateLogin(String email, String password) {
-        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            String sql = "SELECT * FROM users WHERE email=? AND password=?";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    public boolean existsByEmail(String email) throws Exception {
+        String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, email);
-            ps.setString(2, password);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                User user = new User();
-                user.setUserId(rs.getInt("user_id"));
-                user.setEmail(rs.getString("email"));
-                user.setFirstName(rs.getString("first_name"));
-                user.setLastName(rs.getString("last_name"));
-                user.setPhoneNumber(rs.getString("phone_number"));
-                return user;
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        }
+    }
+
+    @Override
+    public User findByEmail(String email) throws Exception {
+        String sql = "SELECT user_id, email, password, first_name, last_name, phone_number, user_type, registration_date, is_active " +
+                     "FROM users WHERE email = ? LIMIT 1";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                User u = new User();
+                u.setUserId(rs.getInt("user_id"));
+                u.setEmail(rs.getString("email"));
+                u.setPassword(rs.getString("password"));
+                u.setFirstName(rs.getString("first_name"));
+                u.setLastName(rs.getString("last_name"));
+                u.setPhoneNumber(rs.getString("phone_number"));
+                u.setUserType(User.UserType.valueOf(rs.getString("user_type")));
+                u.setActive(rs.getBoolean("is_active"));
+                return u;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
     }
 
     @Override
-    public boolean emailExists(String email) {
-        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            String sql = "SELECT COUNT(*) FROM users WHERE email=?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setString(1, email);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1) > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    @Override
-    public boolean save(User user) {
-        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            String sql = "INSERT INTO users (email, password, first_name, last_name, phone_number) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement ps = conn.prepareStatement(sql);
+    public User save(User user) throws Exception {
+        String sql = "INSERT INTO users (email, password, first_name, last_name, phone_number, user_type) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getEmail());
-            ps.setString(2, user.getPassword()); // 🔴 In futuro usare hash
+            ps.setString(2, user.getPassword()); // già hashed
             ps.setString(3, user.getFirstName());
             ps.setString(4, user.getLastName());
             ps.setString(5, user.getPhoneNumber());
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
+            ps.setString(6, user.getUserType().name());
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) user.setUserId(keys.getInt(1));
+            }
+            return user;
         }
-        return false;
     }
 }
