@@ -34,19 +34,19 @@ public class RegisterServlet extends HttpServlet {
         if (firstName == null || lastName == null || email == null || password == null || confirm == null ||
             firstName.isBlank() || lastName.isBlank() || email.isBlank() || password.isBlank() || confirm.isBlank()) {
             req.setAttribute("errorMessage", "Compila tutti i campi obbligatori.");
-            req.getRequestDispatcher("/register.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/register.jsp").forward(req, resp);
             return;
         }
         if (!password.equals(confirm)) {
             req.setAttribute("errorMessage", "Le password non coincidono.");
-            req.getRequestDispatcher("/register.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/register.jsp").forward(req, resp);
             return;
         }
 
         try {
             if (userDAO.existsByEmail(email)) {
                 req.setAttribute("errorMessage", "Email già registrata.");
-                req.getRequestDispatcher("/register.jsp").forward(req, resp);
+                req.getRequestDispatcher("/views/register.jsp").forward(req, resp);
                 return;
             }
 
@@ -67,13 +67,13 @@ public class RegisterServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             req.setAttribute("errorMessage", "Errore durante la registrazione. Riprova.");
-            req.getRequestDispatcher("/register.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/register.jsp").forward(req, resp);
         }
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.getRequestDispatcher("/register.jsp").forward(req, resp);
+        req.getRequestDispatcher("/views/register.jsp").forward(req, resp);
     }
 }

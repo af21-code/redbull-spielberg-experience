@@ -28,7 +28,7 @@ public class LoginServlet extends HttpServlet {
 
         if (email == null || password == null || email.isBlank() || password.isBlank()) {
             req.setAttribute("errorMessage", "Inserisci email e password.");
-            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
             return;
         }
 
@@ -36,25 +36,25 @@ public class LoginServlet extends HttpServlet {
             User u = userDAO.findByEmail(email);
             if (u == null || !u.isActive() || !PasswordUtil.matches(password, u.getPassword())) {
                 req.setAttribute("errorMessage", "Credenziali non valide.");
-                req.getRequestDispatcher("/login.jsp").forward(req, resp);
+                req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
                 return;
             }
 
             HttpSession session = req.getSession(true);
             session.setAttribute("authUser", u);
-            session.setAttribute("accessToken", "OK"); // token accesso per controlli in JSP/Servlet
+            session.setAttribute("accessToken", "OK");
 
             resp.sendRedirect(req.getContextPath() + "/index.jsp");
         } catch (Exception e) {
             e.printStackTrace();
             req.setAttribute("errorMessage", "Errore durante il login. Riprova.");
-            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
         }
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.getRequestDispatcher("/login.jsp").forward(req, resp);
+        req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
     }
 }

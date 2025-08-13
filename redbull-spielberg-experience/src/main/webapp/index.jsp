@@ -1,21 +1,21 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="model.User" %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RedBull Spielberg Experience</title>
-    <link rel="stylesheet" href="styles/indexStyle.css" />
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css" />
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/userLogo.css" />
     <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
 </head>
 <body>
-<!-- Audio per la loading screen -->
 <audio id="loading-sound" loop autoplay muted>
-    <source src="sounds/loading.mp3" type="audio/mpeg" />
+    <source src="${pageContext.request.contextPath}/sounds/loading.mp3" type="audio/mpeg" />
 </audio>
 
-<!-- Loading Screen -->
 <div class="loading-screen">
     <div class="middle">
         <div class="bar bar1"></div><div class="bar bar2"></div><div class="bar bar3"></div><div class="bar bar4"></div>
@@ -23,7 +23,6 @@
     </div>
 </div>
 
-<!-- Header -->
 <header>
     <div class="container nav-container">
         <div class="logo">
@@ -38,14 +37,37 @@
                 <li><a href="#shop">SHOP</a></li>
             </ul>
             <ul class="menu-right">
-                <li><a href="views/login.jsp" class="btn-login">Login</a></li>
-                <!-- se login.jsp è in /views: href="views/login.jsp" -->
+                <%
+                    User authUser = (User) session.getAttribute("authUser");
+                    if (authUser == null) {
+                %>
+                    <!-- Solo Login quando non autenticato -->
+                    <li><a href="${pageContext.request.contextPath}/views/login.jsp" class="btn-login">Login</a></li>
+                <%
+                    } else {
+                %>
+                    <!-- Carrello + Logout quando autenticato -->
+                    <li><a href="${pageContext.request.contextPath}/views/cart.jsp" class="btn-cart">Carrello</a></li>
+                    <li>
+                        <form action="${pageContext.request.contextPath}/logout" method="get" style="display:inline;">
+                            <button class="Btn" type="submit" title="Logout">
+                                <div class="sign">
+                                    <svg viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+                                        <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path>
+                                    </svg>
+                                </div>
+                                <div class="text">Logout</div>
+                            </button>
+                        </form>
+                    </li>
+                <%
+                    }
+                %>
             </ul>
         </nav>
     </div>
 </header>
 
-<!-- Hero Section con GIF di sfondo -->
 <section class="hero-section">
     <div class="hero-overlay">
         <div class="hero-text">
@@ -57,7 +79,6 @@
     </div>
 </section>
 
-<!-- Descrizione progetto -->
 <section class="project-intro">
     <div class="intro-container">
         <div class="intro-text">
@@ -70,19 +91,18 @@
     </div>
 </section>
 
-<!-- Sezione Acquisto -->
 <section class="purchase-section" id="shop">
     <div class="container">
         <h2>Acquista il Tuo Pacchetto</h2>
         <p>Scegli tra Standard e Premium e vivi l’esperienza Red Bull come mai prima.</p>
         <div class="purchase-options">
-            <a href="pages/acquisto.html" class="card-link">
+            <a href="${pageContext.request.contextPath}/pages/acquisto.html" class="card-link">
                 <div class="purchase-card">
                     <h3>Standard</h3>
                     <p>Accesso circuito, kit benvenuto, ristoro</p>
                 </div>
             </a>
-            <a href="pages/acquisto.html" class="card-link">
+            <a href="${pageContext.request.contextPath}/pages/acquisto.html" class="card-link">
                 <div class="purchase-card premium">
                     <h3>Premium</h3>
                     <p>Accesso circuito, giro in pista, box team, merchandising esclusivo</p>
@@ -92,7 +112,6 @@
     </div>
 </section>
 
-<!-- Sezione Pista -->
 <section id="track" class="track-section">
     <div class="container">
         <h2>Scopri la Pista</h2>
@@ -105,7 +124,6 @@
     </div>
 </section>
 
-<!-- Sezione Impariamo la pista -->
 <section class="learn-track-section">
     <div class="container">
         <h2>Impariamo la Pista</h2>
@@ -120,6 +138,6 @@
     </div>
 </section>
 
-<script src="scripts/loadScript.js"></script>
+<script src="${pageContext.request.contextPath}/scripts/loadScript.js"></script>
 </body>
 </html>
