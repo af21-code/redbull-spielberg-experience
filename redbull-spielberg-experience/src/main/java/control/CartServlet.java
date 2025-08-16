@@ -4,53 +4,29 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
-import model.User;
 import model.CartItem;
-import model.dao.CartDAO;
-import model.dao.impl.CartDAOImpl;
+import model.Product;
+import model.dao.ProductDAO;
+import model.dao.impl.ProductDAOImpl;
 
 @WebServlet(urlPatterns = {"/cart", "/cart/add", "/cart/update", "/cart/remove", "/cart/clear"})
 public class CartServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    private final CartDAO cartDAO = new CartDAOImpl();
-
-    private User requireLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        HttpSession session = req.getSession(false);
-        User u = (session != null) ? (User) session.getAttribute("authUser") : null;
-        if (u == null) {
-            // non loggato -> vai al login
-            resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
-            return null;
-        }
-        return u;
-    }
+    private final ProductDAO productDAO = new ProductDAOImpl();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        String servletPath = req.getServletPath();
-        if ("/cart".equals(servletPath)) {
-            User u = requireLogin(req, resp);
-            if (u == null) return;
-            try {
-                List<CartItem> items = cartDAO.findByUser(u.getUserId());
-                req.setAttribute("items", items);
-
-                BigDecimal subtotal = items.stream()
-                        .map(CartItem::getTotal)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-                req.setAttribute("subtotal", subtotal);
-
-                req.getRequestDispatcher("/views/cart.jsp").forward(req, resp);
-            } catch (Exception e) {
-                e.printStackTrace();
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore caricamento carrello");
-            }
+        String path = req.getServletPath();
+        if ("/cart".equals(path)) {
+            List<CartItem> cart = getCart(req.getSession());
+            req.setAttribute("cartItems", cart);
+            req.getRequestDispatcher("/views/cart.jsp").forward(req, resp);
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -59,65 +35,123 @@ public class CartServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
         String path = req.getServletPath();
-        User u = requireLogin(req, resp);
-        if (u == null) return;
+        switch (path) {
+            case "/cart/add":
+                handleAdd(req, resp);
+                break;
+            case "/cart/update":
+                handleUpdate(req, resp);
+                break;
+            case "/cart/remove":
+                handleRemove(req, resp);
+                break;
+            case "/cart/clear":
+                handleClear(req, resp);
+                break;
+            default:
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
 
+    // ------- handlers -------
+
+    private void handleAdd(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+
+        int productId = Integer.parseInt(req.getParameter("productId"));
+        int quantity = Integer.parseInt(Optional.ofNullable(req.getParameter("quantity")).orElse("1"));
+        String slotParam = req.getParameter("slotId");
+        Integer slotId = (slotParam == null || slotParam.isBlank()) ? null : Integer.valueOf(slotParam);
+
+        final Product p;
         try {
-            switch (path) {
-                case "/cart/add": {
-                    int productId = Integer.parseInt(req.getParameter("productId"));
-                    Integer slotId = parseNullableInt(req.getParameter("slotId"));
-                    int qty = parsePositiveInt(req.getParameter("quantity"), 1);
-                    cartDAO.addOrIncrement(u.getUserId(), productId, slotId, qty);
-                    resp.sendRedirect(req.getContextPath() + "/cart");
-                    return;
-                }
-                case "/cart/update": {
-                    int productId = Integer.parseInt(req.getParameter("productId"));
-                    Integer slotId = parseNullableInt(req.getParameter("slotId"));
-                    int qty = parsePositiveInt(req.getParameter("quantity"), 1);
-                    cartDAO.updateQuantity(u.getUserId(), productId, slotId, qty);
-                    resp.sendRedirect(req.getContextPath() + "/cart");
-                    return;
-                }
-                case "/cart/remove": {
-                    int productId = Integer.parseInt(req.getParameter("productId"));
-                    Integer slotId = parseNullableInt(req.getParameter("slotId"));
-                    cartDAO.removeItem(u.getUserId(), productId, slotId);
-                    resp.sendRedirect(req.getContextPath() + "/cart");
-                    return;
-                }
-                case "/cart/clear": {
-                    cartDAO.clearCart(u.getUserId());
-                    resp.sendRedirect(req.getContextPath() + "/cart");
-                    return;
-                }
-                default:
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
+            p = productDAO.findById(productId); // <-- può lanciare Exception
         } catch (Exception e) {
-            e.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore operazione carrello");
+            log("Errore recuperando il prodotto id=" + productId, e);
+            resp.sendRedirect(req.getContextPath() + "/views/shop.jsp");
+            return;
         }
+
+        if (p == null) {
+            resp.sendRedirect(req.getContextPath() + "/views/shop.jsp");
+            return;
+        }
+
+        List<CartItem> cart = getCart(req.getSession());
+
+        // merge su stessa chiave (productId + slotId)
+        for (CartItem it : cart) {
+            if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
+                it.setQuantity(it.getQuantity() + Math.max(1, quantity));
+                redirectBack(req, resp);
+                return;
+            }
+        }
+
+        CartItem item = new CartItem();
+        item.setProductId(productId);
+        item.setSlotId(slotId);
+        item.setProductName(p.getName());
+        item.setUnitPrice(p.getPrice()); // BigDecimal
+        item.setQuantity(Math.max(1, quantity));
+        item.setProductType(p.getProductType() == null ? null : p.getProductType().name()); // enum -> String
+        item.setImageUrl(p.getImageUrl());
+
+        cart.add(item);
+        redirectBack(req, resp);
     }
 
-    private Integer parseNullableInt(String s) {
-        try {
-            if (s == null || s.isBlank()) return null;
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            return null;
+    private void handleUpdate(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        int productId = Integer.parseInt(req.getParameter("productId"));
+        String slotParam = req.getParameter("slotId");
+        Integer slotId = (slotParam == null || slotParam.isBlank()) ? null : Integer.valueOf(slotParam);
+        int quantity = Math.max(1, Integer.parseInt(req.getParameter("quantity")));
+
+        List<CartItem> cart = getCart(req.getSession());
+        for (CartItem it : cart) {
+            if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
+                it.setQuantity(quantity);
+                break;
+            }
         }
+        resp.sendRedirect(req.getContextPath() + "/views/cart.jsp");
     }
 
-    private int parsePositiveInt(String s, int fallback) {
-        try {
-            int v = Integer.parseInt(s);
-            return v > 0 ? v : fallback;
-        } catch (NumberFormatException e) {
-            return fallback;
+    private void handleRemove(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        int productId = Integer.parseInt(req.getParameter("productId"));
+        String slotParam = req.getParameter("slotId");
+        Integer slotId = (slotParam == null || slotParam.isBlank()) ? null : Integer.valueOf(slotParam);
+
+        List<CartItem> cart = getCart(req.getSession());
+        cart.removeIf(it -> it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId));
+        resp.sendRedirect(req.getContextPath() + "/views/cart.jsp");
+    }
+
+    private void handleClear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        List<CartItem> cart = getCart(req.getSession());
+        cart.clear();
+        resp.sendRedirect(req.getContextPath() + "/views/cart.jsp");
+    }
+
+    // ------- helpers -------
+
+    @SuppressWarnings("unchecked")
+    private List<CartItem> getCart(HttpSession session) {
+        List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
+        if (cart == null) {
+            cart = new ArrayList<>();
+            session.setAttribute("cartItems", cart);
+        }
+        return cart;
+    }
+
+    private void redirectBack(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String referer = req.getHeader("Referer");
+        if (referer != null && !referer.isBlank()) {
+            resp.sendRedirect(referer);
+        } else {
+            resp.sendRedirect(req.getContextPath() + "/views/cart.jsp");
         }
     }
 }

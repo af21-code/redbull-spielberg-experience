@@ -13,31 +13,27 @@ import model.dao.impl.ProductDAOImpl;
 @WebServlet("/shop")
 public class ProductListServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
     private final ProductDAO productDAO = new ProductDAOImpl();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String categoryParam = req.getParameter("category");
         Integer categoryId = null;
+        String categoryParam = req.getParameter("category");
         if (categoryParam != null && !categoryParam.isBlank()) {
-            try {
-                categoryId = Integer.parseInt(categoryParam);
-            } catch (NumberFormatException ignored) {}
+            try { categoryId = Integer.parseInt(categoryParam); } catch (NumberFormatException ignored) {}
         }
 
         try {
-            List<Product> products = productDAO.findAll(categoryId);
+            // SOLO MERCHANDISE attivi, con categoria opzionale
+            List<Product> products = productDAO.findActiveMerchandise(categoryId);
             req.setAttribute("products", products);
+            req.setAttribute("selectedCategory", categoryId);
 
-            // forward alla JSP
             req.getRequestDispatcher("/views/shop.jsp").forward(req, resp);
-
         } catch (Exception e) {
             e.printStackTrace();
-            // in caso di errore, puoi reindirizzare a 500
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore nel caricamento prodotti");
         }
     }

@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, model.Product" %>
+<%@ page import="java.util.*, model.Product, model.Product.ProductType" %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -47,6 +47,9 @@
           String img = (p.getImageUrl() != null && !p.getImageUrl().isBlank())
                      ? (request.getContextPath() + "/" + p.getImageUrl())
                      : "https://via.placeholder.com/400x300?text=Red+Bull";
+          boolean isMerch = (p.getProductType() == ProductType.MERCHANDISE);
+          boolean hasStock = (p.getStockQuantity() != null);
+          boolean outOfStock = hasStock && p.getStockQuantity() == 0;
     %>
       <div class="product-card">
         <div class="product-image">
@@ -57,7 +60,7 @@
           <p class="desc"><%= (p.getShortDescription() != null ? p.getShortDescription() : "") %></p>
           <div class="meta">
             <span class="price">€ <%= p.getPrice() %></span>
-            <% if ("MERCHANDISE".equalsIgnoreCase(p.getProductType()) && p.getStockQuantity() != null) { %>
+            <% if (isMerch && hasStock) { %>
               <span class="stock <%= (p.getStockQuantity() > 0 ? "in" : "out") %>">
                 <%= p.getStockQuantity() > 0 ? "Disponibile" : "Esaurito" %>
               </span>
@@ -67,7 +70,16 @@
           <form class="add-to-cart" action="${pageContext.request.contextPath}/cart/add" method="post">
             <input type="hidden" name="productId" value="<%= p.getProductId() %>">
             <input type="hidden" name="quantity" value="1">
-            <button type="submit" <%= ("MERCHANDISE".equalsIgnoreCase(p.getProductType()) && p.getStockQuantity() != null && p.getStockQuantity() == 0) ? "disabled" : "" %>>
+
+            <!-- Hidden per carrello guest (sessione) -->
+            <input type="hidden" name="name" value="<%= p.getName() %>">
+            <input type="hidden" name="imageUrl" value="<%= (p.getImageUrl() == null ? "" : p.getImageUrl()) %>">
+            <input type="hidden" name="price" value="<%= p.getPrice() %>">
+            <input type="hidden" name="productType" value="<%= p.getProductType().name() %>">
+
+            <%-- In futuro, per le esperienze con slot: <input type="hidden" name="slotId" value="..."> --%>
+
+            <button type="submit" <%= (isMerch && outOfStock) ? "disabled" : "" %>>
               Aggiungi al carrello
             </button>
           </form>

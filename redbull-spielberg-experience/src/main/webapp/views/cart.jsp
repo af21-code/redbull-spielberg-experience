@@ -5,82 +5,91 @@
 <head>
   <meta charset="UTF-8">
   <title>Carrello - RedBull Spielberg Experience</title>
+  <!-- Stili globali -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/userLogo.css">
+  <!-- Stili condivisi dello shop (palette, bottoni) -->
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/shop.css">
+  <!-- Stili specifici del carrello -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/cart.css">
 </head>
-<body class="page-cart">
-
+<body>
 <jsp:include page="header.jsp" />
 
-<section class="cart-wrap">
-  <h1>Il tuo carrello</h1>
-
+<div class="cart-wrap">
   <%
-    List<CartItem> items = (List<CartItem>) request.getAttribute("items");
-    BigDecimal subtotal = (BigDecimal) request.getAttribute("subtotal");
+    List<CartItem> items = (List<CartItem>) request.getAttribute("cartItems");
     if (items == null || items.isEmpty()) {
   %>
-    <p class="empty">Il carrello è vuoto.</p>
+    <p class="empty">Il tuo carrello è vuoto.</p>
   <%
     } else {
+      BigDecimal total = BigDecimal.ZERO;
+      String ctx = request.getContextPath();
   %>
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Prodotto</th>
+          <th>Tipo</th>
+          <th>Prezzo</th>
+          <th>Qty</th>
+          <th>Subtotale</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+      <%
+        for (CartItem it : items) {
+          total = total.add(it.getTotal());
+          String img = (it.getImageUrl() != null && !it.getImageUrl().isBlank())
+              ? (ctx + "/" + it.getImageUrl())
+              : "https://via.placeholder.com/400x300?text=Red+Bull";
+      %>
+        <tr>
+          <td>
+            <img class="cart-img" src="<%= img %>" alt="<%= it.getProductName() %>">
+            &nbsp; <strong><%= it.getProductName() %></strong>
+            <% if (it.getSlotId() != null) { %><br/><small>Slot: <%= it.getSlotId() %></small><% } %>
+          </td>
+          <td><%= it.getProductType() %></td>
+          <td>€ <%= it.getUnitPrice() %></td>
+          <td>
+            <form action="<%= ctx %>/cart/update" method="post" class="inline-form">
+              <input type="hidden" name="productId" value="<%= it.getProductId() %>">
+              <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
+              <input class="qty-input" type="number" name="quantity" min="1" value="<%= it.getQuantity() %>">
+              <button class="btn" type="submit">Aggiorna</button>
+            </form>
+          </td>
+          <td>€ <%= it.getTotal() %></td>
+          <td>
+            <form action="<%= ctx %>/cart/remove" method="post" class="inline-form">
+              <input type="hidden" name="productId" value="<%= it.getProductId() %>">
+              <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
+              <button class="btn secondary" type="submit">Rimuovi</button>
+            </form>
+          </td>
+        </tr>
+      <%
+        } // end for
+      %>
+      </tbody>
+    </table>
 
-  <div class="cart-table">
-    <div class="cart-head">
-      <div>Prodotto</div>
-      <div>Prezzo</div>
-      <div>Quantità</div>
-      <div>Totale</div>
-      <div></div>
+    <div class="summary">
+      <span class="total">Totale: € <%= total %></span>
+      <form action="<%= ctx %>/cart/clear" method="post">
+        <button class="btn secondary" type="submit">Svuota</button>
+      </form>
+      <form action="<%= ctx %>/checkout" method="get">
+        <button class="btn" type="submit">Checkout</button>
+      </form>
     </div>
-
-    <%
-      for (CartItem it : items) {
-        String img = (it.getImageUrl() != null && !it.getImageUrl().isBlank())
-                   ? (request.getContextPath() + "/" + it.getImageUrl())
-                   : "https://via.placeholder.com/100x80?text=RB";
-    %>
-      <div class="cart-row">
-        <div class="prod">
-          <img src="<%= img %>" alt="<%= it.getProductName() %>">
-          <span><%= it.getProductName() %></span>
-        </div>
-        <div class="price">€ <%= it.getUnitPrice() %></div>
-        <div class="qty">
-          <form action="${pageContext.request.contextPath}/cart/update" method="post">
-            <input type="hidden" name="productId" value="<%= it.getProductId() %>">
-            <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
-            <input type="number" name="quantity" value="<%= it.getQuantity() %>" min="0">
-            <button type="submit">Aggiorna</button>
-          </form>
-        </div>
-        <div class="total">€ <%= it.getTotal() %></div>
-        <div class="remove">
-          <form action="${pageContext.request.contextPath}/cart/remove" method="post">
-            <input type="hidden" name="productId" value="<%= it.getProductId() %>">
-            <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
-            <button type="submit" class="danger">Rimuovi</button>
-          </form>
-        </div>
-      </div>
-    <%
-      }
-    %>
-  </div>
-
-  <div class="cart-summary">
-    <div class="line"><span>Subtotale</span><strong>€ <%= subtotal %></strong></div>
-    <form action="${pageContext.request.contextPath}/cart/clear" method="post">
-      <button type="submit" class="danger">Svuota carrello</button>
-    </form>
-    <a class="btn-primary" href="#">Procedi al checkout</a>
-  </div>
-
   <%
-    }
+    } // end else
   %>
-</section>
+</div>
 
 <jsp:include page="footer.jsp" />
 </body>

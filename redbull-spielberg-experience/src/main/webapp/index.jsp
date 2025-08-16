@@ -39,7 +39,8 @@
                 <li><a href="#">ESPLORA</a></li>
                 <li><a href="#rb-21">RB-21</a></li>
                 <li><a href="#track">PISTA</a></li>
-                <li><a href="${pageContext.request.contextPath}/views/shop.jsp">SHOP</a></li>
+                <!-- QUI la modifica: vai al servlet /shop -->
+                <li><a href="${pageContext.request.contextPath}/shop">SHOP</a></li>
             </ul>
 
             <ul class="menu-right">
