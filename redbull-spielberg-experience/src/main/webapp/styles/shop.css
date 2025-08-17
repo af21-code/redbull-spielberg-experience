@@ -1,67 +1,92 @@
-/* ============ SHOP (scoped sulla pagina) ============ */
+/* ===========================
+   Red Bull Shop – Stylesheet
+   =========================== */
 
-/* Hero shop */
-.page-shop .shop-hero {
+:root {
+  --rb-blue: #001e36;
+  --rb-navy: #000b2b;
+  --rb-red:  #E30613;
+  --rb-yellow:#F5A600;
+  --rb-white:#ffffff;
+}
+
+/* ===== HERO (grande, full-bleed) ===== */
+.shop-hero {
+  --hero: url('https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1600&auto=format&fit=crop');
+  background-image:
+    linear-gradient(180deg, rgba(0,14,40,0.15) 0%, rgba(0,14,40,0.55) 55%, rgba(0,14,40,0.85) 100%),
+    var(--hero);
+  background-position: center 20%;
+  background-size: cover;
+  background-repeat: no-repeat;
   position: relative;
-  height: 40vh;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55)),
-    url('https://images.unsplash.com/photo-1604480131931-0f35c0b31165?q=80&w=1400&auto=format&fit=crop')
-    center/cover no-repeat;
+  min-height: 88vh;
+  height: 88svh;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  margin-top: 0; /* header è sticky nel CSS globale */
+  padding: 56px 24px;
 }
-
-.page-shop .shop-hero__overlay {
-  background: rgba(0, 14, 40, 0.65);
-  padding: 24px 32px;
-  border-radius: 12px;
-  text-align: center;
-  color: #fff;
+.shop-hero__overlay {
+  background: rgba(0, 14, 40, 0.55);
   border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+  padding: 24px 32px;
+  border-radius: 14px;
+  text-align: center;
+  color: var(--rb-white);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
-.page-shop .shop-hero__overlay h1 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.2rem;
-  letter-spacing: 1px;
-  margin: 0;
-  color: #F5A600;
-}
-.page-shop .shop-hero__overlay p {
-  margin: 6px 0 0;
-  opacity: .9;
-  color: #e8e8e8;
+/* Titolo hero: font più racing */
+.shop-hero__overlay h1 {
+  font-family: 'Teko', 'Barlow Condensed', 'Bebas Neue', sans-serif;
+  font-weight: 700;
+  font-size: clamp(3.2rem, 7.2vw, 6rem);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 0.9;
+  color: var(--rb-yellow);
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.35); /* contorno leggero */
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);   /* profondità */
+  margin: 0 0 8px;
 }
 
-/* Container */
-.page-shop .shop-container {
+/* Sottotitolo hero in Barlow Condensed per coerenza */
+.shop-hero__overlay p {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: .3px;
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  margin: 0;
+  opacity: .95;
+}
+
+/* ===== CONTAINER ===== */
+.shop-container {
   padding: 40px 24px 80px;
-  background: linear-gradient(135deg, #001e36 0%, #000b2b 100%);
+  background: linear-gradient(135deg, var(--rb-blue) 0%, var(--rb-navy) 100%);
   color: #f0f0f0;
   min-height: 60vh;
 }
 
-/* Toolbar */
-.page-shop .shop-toolbar {
+/* ===== TOOLBAR ===== */
+.shop-toolbar {
   max-width: 1100px;
   margin: 0 auto 20px;
   display: flex;
   justify-content: flex-end;
 }
-.page-shop .shop-toolbar .filter select {
-  background: #001e36;
-  color: #fff;
+.shop-toolbar .filter select {
+  background: var(--rb-blue);
+  color: var(--rb-white);
   border: 1px solid #0a3565;
   padding: 8px 12px;
   border-radius: 8px;
   outline: none;
 }
 
-/* Grid */
-.page-shop .product-grid {
+/* ===== GRID ===== */
+.product-grid {
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
@@ -69,7 +94,8 @@
   gap: 22px;
 }
 
-.page-shop .product-card {
+/* ===== CARD PRODOTTO ===== */
+.product-card {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 16px;
@@ -79,65 +105,58 @@
   box-shadow: 0 10px 32px rgba(0,0,0,0.3);
   transition: transform .2s ease, box-shadow .2s ease;
 }
-.page-shop .product-card:hover {
+.product-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 16px 44px rgba(0,0,0,0.5);
 }
 
-.page-shop .product-image img {
-  display: block;
+/* ===== IMMAGINE PRODOTTO (più alta + non tagliata) ===== */
+.product-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(240px, 32vw, 360px);   /* ↑ area più grande */
+  background: radial-gradient(110% 120% at 50% 0%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 40%, transparent 70%);
+  padding: 12px;                       /* un po’ di respiro per “contain” */
+}
+.product-image img {
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: contain;                 /* mostra l’intera immagine (cap/polo/RB19) */
+  image-rendering: auto;
 }
 
-.page-shop .product-info {
-  padding: 16px;
-}
-.page-shop .product-info h3 {
-  margin: 0 0 6px;
-  font-size: 1.25rem;
-  color: #fff;
-}
-.page-shop .product-info .desc {
-  margin: 0 0 12px;
-  font-size: .95rem;
-  color: #d4d4d4;
-  min-height: 44px;
-}
+/* ===== INFO ===== */
+.product-info { padding: 16px; }
+.product-info h3 { margin: 0 0 6px; font-size: 1.25rem; color: var(--rb-white); }
+.product-info .desc { margin: 0 0 12px; font-size: .95rem; color: #d4d4d4; min-height: 44px; }
 
-.page-shop .meta {
+/* ===== META ===== */
+.meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
-.page-shop .price { font-weight: 700; color: #F5A600; }
-.page-shop .stock.in { color: #48e09d; }
-.page-shop .stock.out { color: #ff6b6b; }
+.price { font-weight: 700; color: var(--rb-yellow); }
+.stock.in { color: #48e09d; }
+.stock.out { color: #ff6b6b; }
 
-/* Button add-to-cart */
-.page-shop .add-to-cart button {
+/* ===== BUTTON ===== */
+.add-to-cart button {
   width: 100%;
-  background: #E30613;
-  color: #fff;
+  background: var(--rb-red);
+  color: var(--rb-white);
   border: none;
   padding: 10px 14px;
   border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
-  transition: filter .2s ease, transform .06s ease, background .2s ease;
+  transition: filter .2s ease, transform .06s ease;
 }
-.page-shop .add-to-cart button:hover { filter: brightness(1.05); }
-.page-shop .add-to-cart button:active { transform: translateY(1px); }
-.page-shop .add-to-cart button:disabled {
-  background: #5a5a5a;
-  cursor: not-allowed;
-}
+.add-to-cart button:hover { filter: brightness(1.05); }
+.add-to-cart button:active { transform: translateY(1px); }
+.add-to-cart button:disabled { background: #5a5a5a; cursor: not-allowed; }
 
-/* Empty state */
-.page-shop .empty {
-  grid-column: 1/-1;
-  text-align: center;
-  opacity: .8;
-}
+/* ===== EMPTY ===== */
+.empty { grid-column: 1/-1; text-align: center; opacity: .85; padding: 16px 0; }

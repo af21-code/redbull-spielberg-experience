@@ -9,17 +9,19 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/userLogo.css">
   <!-- CSS della pagina shop -->
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/shop.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/shop.css?v=6">
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body class="page-shop">
 <jsp:include page="header.jsp" flush="true">
   <jsp:param name="active" value="shop" />
 </jsp:include>
 
-<section class="shop-hero">
+<!-- HERO con immagine passata via CSS variable per rispettare il context path -->
+<section class="shop-hero" style="--hero:url('${pageContext.request.contextPath}/images/shop-hero.jpg')">
   <div class="shop-hero__overlay">
-    <h1>Official Shop</h1>
-    <p>Caps, hoodies, collectibles and more.</p>
+    <h1>RB OFFICIAL SHOP</h1>
+    <p>Caps, hoodies, collezionabili e molto altro.</p>
   </div>
 </section>
 
@@ -27,10 +29,10 @@
   <div class="shop-toolbar">
     <form class="filter" method="get" action="${pageContext.request.contextPath}/shop">
       <select name="category" onchange="this.form.submit()">
-        <option value="">All categories</option>
-        <option value="2" <%= "2".equals(request.getParameter("category")) ? "selected" : "" %>>Apparel</option>
-        <option value="3" <%= "3".equals(request.getParameter("category")) ? "selected" : "" %>>Models And Collectibles</option>
-        <option value="4" <%= "4".equals(request.getParameter("category")) ? "selected" : "" %>>Accessories</option>
+        <option value="">Tutte le categorie</option>
+        <option value="2" <%= "2".equals(request.getParameter("category")) ? "selected" : "" %>>Abbigliamento</option>
+        <option value="3" <%= "3".equals(request.getParameter("category")) ? "selected" : "" %>>Collezionabili</option>
+        <option value="4" <%= "4".equals(request.getParameter("category")) ? "selected" : "" %>>Accessori</option>
       </select>
     </form>
   </div>
@@ -76,8 +78,6 @@
             <input type="hidden" name="imageUrl" value="<%= (p.getImageUrl() == null ? "" : p.getImageUrl()) %>">
             <input type="hidden" name="price" value="<%= p.getPrice() %>">
             <input type="hidden" name="productType" value="<%= p.getProductType().name() %>">
-
-            <%-- In futuro, per le esperienze con slot: <input type="hidden" name="slotId" value="..."> --%>
 
             <button type="submit" <%= (isMerch && outOfStock) ? "disabled" : "" %>>
               Aggiungi al carrello
