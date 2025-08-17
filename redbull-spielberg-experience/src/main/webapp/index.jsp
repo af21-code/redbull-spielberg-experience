@@ -54,7 +54,7 @@
                     } else {
                 %>
                     <!-- Carrello + Logout quando autenticato -->
-                    <li><a class="btn-cart" href="${pageContext.request.contextPath}/views/cart.jsp">Carrello</a></li>
+                    <li><a class="btn-cart" href="${pageContext.request.contextPath}/cart">Carrello</a></li>
                     <li>
                         <form action="${pageContext.request.contextPath}/logout" method="get" style="display:inline;">
                             <button class="Btn" type="submit" title="Logout" aria-label="Logout">

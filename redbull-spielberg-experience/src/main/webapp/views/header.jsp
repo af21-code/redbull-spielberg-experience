@@ -3,6 +3,7 @@
 <%
   User authUser = (User) session.getAttribute("authUser");
   String ctx = request.getContextPath();
+  boolean shopActive = request.getRequestURI() != null && request.getRequestURI().endsWith("/shop");
 %>
 
 <!-- Header comune -->
@@ -19,22 +20,23 @@
 
     <nav>
       <ul class="main-menu">
-        <li><a href="#">ESPLORA</a></li>
-        <li><a href="#rb-21">RB-21</a></li>
-        <li><a href="#track">PISTA</a></li>
-        <li><a href="<%=ctx%>/views/shop.jsp"
-               class="<%= (request.getRequestURI()!=null && request.getRequestURI().endsWith("/views/shop.jsp")) ? "active" : "" %>">SHOP</a></li>
+        <li><a href="<%=ctx%>/index.jsp">ESPLORA</a></li>
+        <li><a href="<%=ctx%>/index.jsp#rb-21">RB-21</a></li>
+        <li><a href="<%=ctx%>/index.jsp#track">PISTA</a></li>
+        <li>
+          <a href="<%=ctx%>/shop" class="<%= shopActive ? "active" : "" %>">SHOP</a>
+        </li>
       </ul>
 
       <ul class="menu-right">
         <% if (authUser == null) { %>
-          <!-- Stesso bottone login dell’index -->
+          <!-- Login (stile index) -->
           <li><a href="<%=ctx%>/views/login.jsp" class="btn-login">Login</a></li>
         <% } else { %>
-          <!-- Carrello solo da loggato -->
-          <li><a href="<%=ctx%>/views/cart.jsp" class="btn-cart">Carrello</a></li>
+          <!-- Carrello solo da loggato: passa dal controller -->
+          <li><a href="<%=ctx%>/cart/view" class="btn-cart">Carrello</a></li>
 
-          <!-- Icona Logout (animata, stile Red Bull) -->
+          <!-- Icona Logout -->
           <li>
             <form action="<%=ctx%>/logout" method="get" style="display:inline;">
               <button class="Btn" type="submit" title="Logout">
