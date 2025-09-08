@@ -12,7 +12,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>I miei ordini</title>
+  <title><%= isAdmin ? "Ordini (Admin)" : "I miei ordini" %></title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <style>
     .orders-wrap { padding: 40px 24px 80px; background: linear-gradient(135deg,#001e36 0%,#000b2b 100%); color:#fff; min-height:60vh; }
@@ -25,10 +25,12 @@
     .items-table { width:100%; border-collapse:collapse; }
     .items-table th, .items-table td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.12); }
     .items-table th { text-align:left; color:#F5A600; }
-    .order-foot { padding:12px 18px 18px; display:flex; justify-content:space-between; align-items:center; }
+    .order-foot { padding:12px 18px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
     .total { font-weight:900; color:#F5A600; }
     .track-btn { background:#E30613; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
+    .details-btn { background:#0a84ff; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
     .empty { max-width:1100px; margin:40px auto; text-align:center; opacity:.85; }
+    .order-actions { display:flex; gap:8px; align-items:center; }
   </style>
 </head>
 <body>
@@ -60,14 +62,23 @@
           } else if ("FEDEX".equalsIgnoreCase(carrier) || "FEDEX EXPRESS".equalsIgnoreCase(carrier)) {
             trackUrl = "https://www.fedex.com/fedextrack/?trknbr=" + code;
           } else {
-            // fallback generico: prova a mostrare il codice
             trackUrl = null;
           }
         }
+
+        // Provo a recuperare l'orderId via reflection per evitare errori di compilazione se il getter ha nome diverso
+        Integer orderId = null;
+        try { orderId = (Integer) o.getClass().getMethod("getOrderId").invoke(o); } catch (Exception ignored) {}
   %>
     <div class="order-card">
       <div class="order-head">
-        <span class="badge"># <%= o.getOrderNumber() %></span>
+        <span class="badge">
+          <% if (orderId != null) { %>
+            <a href="<%=ctx%>/order?id=<%=orderId%>" style="text-decoration:none; color:#001e36;"># <%= o.getOrderNumber() %></a>
+          <% } else { %>
+            # <%= o.getOrderNumber() %>
+          <% } %>
+        </span>
         <span>Stato: <strong><%= o.getStatus() %></strong></span>
         <span>Pagamento: <strong><%= o.getPaymentStatus() %></strong></span>
         <span class="muted">Creato: <%= df.format(o.getOrderDate()) %></span>
@@ -107,7 +118,10 @@
 
       <div class="order-foot">
         <div class="total">Totale: € <%= o.getTotalAmount() %></div>
-        <div>
+        <div class="order-actions">
+          <% if (orderId != null) { %>
+            <a class="details-btn" href="<%=ctx%>/order?id=<%=orderId%>">Dettagli</a>
+          <% } %>
           <% if (trackUrl != null) { %>
             <a class="track-btn" href="<%= trackUrl %>" target="_blank" rel="noopener">Track</a>
           <% } else if (code != null && !code.isBlank()) { %>
