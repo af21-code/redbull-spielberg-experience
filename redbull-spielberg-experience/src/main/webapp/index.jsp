@@ -55,7 +55,7 @@
                 %>
                     <!-- Ordini + Carrello + Logout quando autenticato -->
                     <li><a class="btn-cart" href="${pageContext.request.contextPath}/orders">Ordini</a></li>
-                    <li><a class="btn-cart" href="${pageContext.request.contextPath}/cart">Carrello</a></li>
+                    <li><a class="btn-cart" href="${pageContext.request.contextPath}/cart/view">Carrello</a></li>
                     <li>
                         <form action="${pageContext.request.contextPath}/logout" method="get" style="display:inline;">
                             <button class="Btn" type="submit" title="Logout" aria-label="Logout">
@@ -107,13 +107,15 @@
         <h2>Acquista il Tuo Pacchetto</h2>
         <p>Scegli tra Standard e Premium e vivi l’esperienza Red Bull come mai prima.</p>
         <div class="purchase-options">
-            <a href="${pageContext.request.contextPath}/pages/acquisto.html" class="card-link">
+            <!-- Standard -> booking prodotto esperienza BASE (id 1) -->
+            <a href="${pageContext.request.contextPath}/booking?productId=1" class="card-link">
                 <div class="purchase-card">
                     <h3>Standard</h3>
                     <p>Accesso circuito, kit benvenuto, ristoro</p>
                 </div>
             </a>
-            <a href="${pageContext.request.contextPath}/pages/acquisto.html" class="card-link">
+            <!-- Premium -> booking prodotto esperienza PREMIUM (id 2) -->
+            <a href="${pageContext.request.contextPath}/booking?productId=2" class="card-link">
                 <div class="purchase-card premium">
                     <h3>Premium</h3>
                     <p>Accesso circuito, giro in pista, box team, merchandising esclusivo</p>

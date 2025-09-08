@@ -8,10 +8,6 @@
   boolean ordersActive = (uri != null) && (uri.endsWith("/orders") || uri.endsWith("/views/orders.jsp"));
 %>
 
-<!-- Header comune -->
-<link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
-<link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
-
 <header>
   <div class="container nav-container">
     <div class="logo">
@@ -32,16 +28,10 @@
 
       <ul class="menu-right">
         <% if (authUser == null) { %>
-          <!-- Login (stile index) -->
           <li><a href="<%=ctx%>/views/login.jsp" class="btn-login">Login</a></li>
         <% } else { %>
-          <!-- Ordini + Carrello solo da loggato -->
-          <li>
-            <a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a>
-          </li>
-          <li><a href="<%=ctx%>/cart" class="btn-cart">Carrello</a></li>
-
-          <!-- Icona Logout -->
+          <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
+          <li><a href="<%=ctx%>/cart/view" class="btn-cart">Carrello</a></li>
           <li>
             <form action="<%=ctx%>/logout" method="get" style="display:inline;">
               <button class="Btn" type="submit" title="Logout">

@@ -55,12 +55,18 @@ public class CartServlet extends HttpServlet {
         String slotParam = req.getParameter("slotId");
         Integer slotId = (slotParam == null || slotParam.isBlank()) ? null : Integer.valueOf(slotParam);
 
+        // Nuovi parametri (prenotazione esperienza)
+        String driverName    = req.getParameter("driverName");
+        String companionName = req.getParameter("companionName");
+        String vehicleCode   = req.getParameter("vehicleCode");
+        String eventDate     = req.getParameter("eventDate"); // yyyy-MM-dd
+
         final Product p;
         try {
             p = productDAO.findById(productId);
         } catch (Exception e) {
             log("Errore recuperando il prodotto id=" + productId, e);
-            resp.sendRedirect(req.getContextPath() + "/shop"); // << controller, non la JSP
+            resp.sendRedirect(req.getContextPath() + "/shop");
             return;
         }
         if (p == null) {
@@ -68,11 +74,25 @@ public class CartServlet extends HttpServlet {
             return;
         }
 
+        // Se è un'esperienza, forziamo qty=1
+        if (p.getProductType() != null && "EXPERIENCE".equalsIgnoreCase(p.getProductType().name())) {
+            quantity = 1;
+        }
+
         List<CartItem> cart = getCart(req.getSession());
 
+        // merge su stessa chiave (productId + slotId)
         for (CartItem it : cart) {
             if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
-                it.setQuantity(it.getQuantity() + Math.max(1, quantity));
+                // per MERCH aumenta, per EXPERIENCE lascia 1
+                if (!"EXPERIENCE".equalsIgnoreCase(it.getProductType())) {
+                    it.setQuantity(it.getQuantity() + Math.max(1, quantity));
+                }
+                // aggiorna i dettagli prenotazione se passati
+                if (driverName != null) it.setDriverName(driverName);
+                if (companionName != null) it.setCompanionName(companionName);
+                if (vehicleCode != null) it.setVehicleCode(vehicleCode);
+                if (eventDate != null) it.setEventDate(eventDate);
                 redirectBack(req, resp);
                 return;
             }
@@ -87,6 +107,12 @@ public class CartServlet extends HttpServlet {
         item.setProductType(p.getProductType() == null ? null : p.getProductType().name());
         item.setImageUrl(p.getImageUrl());
 
+        // set dettagli prenotazione
+        item.setDriverName(driverName);
+        item.setCompanionName(companionName);
+        item.setVehicleCode(vehicleCode);
+        item.setEventDate(eventDate);
+
         cart.add(item);
         redirectBack(req, resp);
     }
@@ -100,7 +126,10 @@ public class CartServlet extends HttpServlet {
         List<CartItem> cart = getCart(req.getSession());
         for (CartItem it : cart) {
             if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
-                it.setQuantity(quantity);
+                // non permettere di cambiare qty per EXPERIENCE
+                if (!"EXPERIENCE".equalsIgnoreCase(it.getProductType())) {
+                    it.setQuantity(quantity);
+                }
                 break;
             }
         }
@@ -138,7 +167,7 @@ public class CartServlet extends HttpServlet {
         if (referer != null && !referer.isBlank()) {
             resp.sendRedirect(referer);
         } else {
-            resp.sendRedirect(req.getContextPath() + "/cart/view"); // << fallback al controller
+            resp.sendRedirect(req.getContextPath() + "/cart/view");
         }
-    }
+        }
 }

@@ -5,12 +5,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Carrello - RedBull Spielberg Experience</title>
-  <!-- Stili globali -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/userLogo.css">
-  <!-- Stili condivisi dello shop (palette, bottoni) -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/shop.css">
-  <!-- Stili specifici del carrello -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/cart.css">
 </head>
 <body>
@@ -50,19 +47,54 @@
           <td>
             <img class="cart-img" src="<%= img %>" alt="<%= it.getProductName() %>">
             &nbsp; <strong><%= it.getProductName() %></strong>
-            <% if (it.getSlotId() != null) { %><br/><small>Slot: <%= it.getSlotId() %></small><% } %>
+
+            <% if (it.getSlotId() != null) { %>
+              <br/><small>Slot: <%= it.getSlotId() %></small>
+            <% } %>
+
+            <% if (it.getDriverName() != null && !it.getDriverName().isBlank()) { %>
+              <br/><small>Pilota: <%= it.getDriverName() %></small>
+            <% } %>
+
+            <% if (it.getCompanionName() != null && !it.getCompanionName().isBlank()) { %>
+              <br/><small>Accompagnatore: <%= it.getCompanionName() %></small>
+            <% } %>
+
+            <% if (it.getVehicleCode() != null && !it.getVehicleCode().isBlank()) { %>
+              <br/><small>Veicolo: <%= it.getVehicleCode() %></small>
+            <% } %>
+
+            <% if (it.getEventDate() != null) { %>
+              <br/><small>Data:
+                <%= it.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) %>
+              </small>
+            <% } %>
           </td>
+
           <td><%= it.getProductType() %></td>
           <td>€ <%= it.getUnitPrice() %></td>
+
           <td>
-            <form action="<%= ctx %>/cart/update" method="post" class="inline-form">
-              <input type="hidden" name="productId" value="<%= it.getProductId() %>">
-              <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
-              <input class="qty-input" type="number" name="quantity" min="1" value="<%= it.getQuantity() %>">
-              <button class="btn" type="submit">Aggiorna</button>
-            </form>
+            <%
+              if ("EXPERIENCE".equalsIgnoreCase(it.getProductType())) {
+            %>
+                1
+            <%
+              } else {
+            %>
+                <form action="<%= ctx %>/cart/update" method="post" class="inline-form">
+                  <input type="hidden" name="productId" value="<%= it.getProductId() %>">
+                  <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
+                  <input class="qty-input" type="number" name="quantity" min="1" value="<%= it.getQuantity() %>">
+                  <button class="btn" type="submit">Aggiorna</button>
+                </form>
+            <%
+              }
+            %>
           </td>
+
           <td>€ <%= it.getTotal() %></td>
+
           <td>
             <form action="<%= ctx %>/cart/remove" method="post" class="inline-form">
               <input type="hidden" name="productId" value="<%= it.getProductId() %>">

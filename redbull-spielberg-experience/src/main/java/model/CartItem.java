@@ -11,6 +11,12 @@ public class CartItem {
     private int quantity;
     private String productType; // "EXPERIENCE" | "MERCHANDISE"
 
+    // Dati aggiuntivi per prenotazione
+    private String driverName;
+    private String companionName;
+    private String vehicleCode; // RB21 F1 | F2 Red Bull | NASCAR Red Bull
+    private String eventDate;   // yyyy-MM-dd (stringa per semplicità)
+
     public CartItem() {}
 
     public CartItem(int productId, Integer slotId, String productName, String imageUrl,
@@ -39,6 +45,23 @@ public class CartItem {
     public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public void setProductType(String productType) { this.productType = productType; }
+
+    // --- Prenotazione ---
+    public String getDriverName() { return driverName; }
+    public void setDriverName(String driverName) { this.driverName = driverName; }
+
+    public String getCompanionName() { return companionName; }
+    public void setCompanionName(String companionName) { this.companionName = companionName; }
+
+    public String getVehicleCode() { return vehicleCode; }
+    public void setVehicleCode(String vehicleCode) { this.vehicleCode = vehicleCode; }
+
+    // Alias per compatibilità con JSP esistenti
+    public String getVehicle() { return vehicleCode; }
+    public void setVehicle(String vehicle) { this.vehicleCode = vehicle; }
+
+    public String getEventDate() { return eventDate; }
+    public void setEventDate(String eventDate) { this.eventDate = eventDate; }
 
     public BigDecimal getTotal() {
         if (unitPrice == null) return BigDecimal.ZERO;
