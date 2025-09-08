@@ -3,7 +3,9 @@
 <%
   User authUser = (User) session.getAttribute("authUser");
   String ctx = request.getContextPath();
-  boolean shopActive = request.getRequestURI() != null && request.getRequestURI().endsWith("/shop");
+  String uri = request.getRequestURI();
+  boolean shopActive   = (uri != null) && (uri.endsWith("/shop") || uri.endsWith("/views/shop.jsp"));
+  boolean ordersActive = (uri != null) && (uri.endsWith("/orders") || uri.endsWith("/views/orders.jsp"));
 %>
 
 <!-- Header comune -->
@@ -33,8 +35,11 @@
           <!-- Login (stile index) -->
           <li><a href="<%=ctx%>/views/login.jsp" class="btn-login">Login</a></li>
         <% } else { %>
-          <!-- Carrello solo da loggato: passa dal controller -->
-          <li><a href="<%=ctx%>/cart/view" class="btn-cart">Carrello</a></li>
+          <!-- Ordini + Carrello solo da loggato -->
+          <li>
+            <a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a>
+          </li>
+          <li><a href="<%=ctx%>/cart" class="btn-cart">Carrello</a></li>
 
           <!-- Icona Logout -->
           <li>

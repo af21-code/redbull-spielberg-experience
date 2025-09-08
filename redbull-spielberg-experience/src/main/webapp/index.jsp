@@ -39,7 +39,7 @@
                 <li><a href="#">ESPLORA</a></li>
                 <li><a href="#rb-21">RB-21</a></li>
                 <li><a href="#track">PISTA</a></li>
-                <!-- QUI la modifica: vai al servlet /shop -->
+                <!-- vai al servlet /shop -->
                 <li><a href="${pageContext.request.contextPath}/shop">SHOP</a></li>
             </ul>
 
@@ -53,7 +53,8 @@
                 <%
                     } else {
                 %>
-                    <!-- Carrello + Logout quando autenticato -->
+                    <!-- Ordini + Carrello + Logout quando autenticato -->
+                    <li><a class="btn-cart" href="${pageContext.request.contextPath}/orders">Ordini</a></li>
                     <li><a class="btn-cart" href="${pageContext.request.contextPath}/cart">Carrello</a></li>
                     <li>
                         <form action="${pageContext.request.contextPath}/logout" method="get" style="display:inline;">
