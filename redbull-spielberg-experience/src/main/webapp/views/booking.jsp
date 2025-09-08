@@ -13,9 +13,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Prenotazione - <%= (product!=null?product.getName():"") %></title>
-  <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css?v=2">
-  <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css?v=2">
-  <link rel="stylesheet" href="<%=ctx%>/styles/booking.css?v=3">
+  <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
+  <link rel="stylesheet" href="<%=ctx%>/styles/booking.css?v=4">
 </head>
 <body class="page-booking">
 <jsp:include page="header.jsp" />
@@ -29,15 +28,15 @@
 </html>
 <% return; } %>
 
-<section class="booking-hero">
-  <div class="booking-hero__inner">
+<section class="booking-hero" style="--hero:url('<%= (product.getImageUrl()!=null && !product.getImageUrl().isBlank()) ? (ctx + "/" + product.getImageUrl()) : (ctx + "/images/experience-elite.jpg") %>')">
+  <div class="booking-hero__overlay">
     <h1><%= product.getName() %></h1>
     <p><%= product.getShortDescription()==null?"":product.getShortDescription() %></p>
   </div>
 </section>
 
-<section class="booking-form__wrap">
-  <!-- Filtro per data (GET) -->
+<section class="booking-shell">
+  <!-- Filtro per data -->
   <form class="booking-filter" method="get" action="<%=ctx%>/booking">
     <input type="hidden" name="productId" value="<%= product.getProductId() %>">
     <label>Seleziona data:
@@ -47,90 +46,114 @@
              min="<%= java.time.LocalDate.now().toString() %>"
              required>
     </label>
-    <button type="submit" class="btn">Cerca disponibilità</button>
+    <button type="submit" class="btn primary">Cerca disponibilità</button>
   </form>
 
   <div class="booking-grid">
-    <!-- Form prenotazione -->
-    <div class="card">
-      <h3>Seleziona veicolo e orario</h3>
+    <!-- Colonna sinistra: form prenotazione -->
+    <form class="booking-form card" id="addToCartForm" method="post" action="<%=ctx%>/cart/add">
+      <!-- Dati base -->
+      <input type="hidden" name="productId" value="<%= product.getProductId() %>">
+      <input type="hidden" name="quantity" value="1">
 
-      <form id="addToCartForm" method="post" action="<%=ctx%>/cart/add">
-        <!-- Dati base -->
-        <input type="hidden" name="productId" value="<%= product.getProductId() %>">
-        <input type="hidden" name="quantity" value="1">
+      <!-- 1) Slot orari -->
+      <div class="section">
+        <div class="section-head">
+          <h3>Seleziona orario</h3>
+          <small class="muted"><%= (selectedDate==null?"—":selectedDate.toString()) %></small>
+        </div>
 
-        <!-- Data evento (in POST, visibile e required) -->
-        <label>Data evento:
-          <input type="date"
-                 name="eventDate"
-                 value="<%= selectedDate==null ? "" : selectedDate.toString() %>"
-                 min="<%= java.time.LocalDate.now().toString() %>"
-                 required>
-        </label>
+        <!-- mantieni la data evento in POST -->
+        <label class="sr-only">Data evento</label>
+        <input class="visually-hidden" type="date" name="eventDate"
+               value="<%= selectedDate==null ? "" : selectedDate.toString() %>"
+               aria-hidden="true">
 
-        <!-- Slot disponibili -->
-        <label>Orario disponibile:
-          <select name="slotId" required>
-            <option value="" disabled <%= (slots==null||slots.isEmpty())?"selected":"" %> >Seleziona uno slot</option>
-            <%
-              if (slots != null) {
-                for (TimeSlot t : slots) {
-                  int remaining = (t.getMaxCapacity() - t.getBookedCapacity());
-                  String label = t.getSlotDate().toString() + " " + t.getSlotTime().toString()
-                               + " — posti: " + remaining;
-            %>
-              <option value="<%= t.getSlotId() %>"><%= label %></option>
-            <%
-                }
-              }
-            %>
-          </select>
-        </label>
-
-        <% if (slots == null || slots.isEmpty()) { %>
-          <p class="muted" style="margin-top:6px;">Nessuno slot disponibile per questa data. Prova un altro giorno.</p>
-        <% } %>
-
-        <!-- Veicoli -->
-        <div class="vehicle-options">
+        <div class="slot-grid">
           <%
-            if (vehicles != null && !vehicles.isEmpty()) {
+            if (slots != null && !slots.isEmpty()) {
               boolean first = true;
-              for (VehicleOption v : vehicles) {
+              for (TimeSlot t : slots) {
+                int remaining = t.getMaxCapacity() - t.getBookedCapacity();
+                boolean soldOut = remaining <= 0;
+                String label = t.getSlotTime().toString() + " · posti " + Math.max(remaining,0);
           %>
-            <label>
-              <input type="radio" name="vehicleCode" value="<%= v.getCode() %>" <%= first?"checked":"" %> >
-              <strong><%= v.getLabel() %></strong> — <%= v.getSpecs() %>
+            <label class="slot-pill <%= soldOut?"disabled":"" %>">
+              <input type="radio" name="slotId" value="<%= t.getSlotId() %>" <%= (first && !soldOut)?"checked":"" %> <%= soldOut?"disabled":"" %> >
+              <span><%= label %></span>
             </label>
           <%
-                first = false;
+                if (!soldOut) first = false;
               }
             } else {
           %>
-            <em>Nessun veicolo configurato.</em>
+            <div class="empty">Nessuno slot disponibile per questa data. Prova a cambiarla.</div>
+          <%
+            }
+          %>
+        </div>
+      </div>
+
+      <!-- 2) Dati pilota -->
+      <div class="section">
+        <h3>Dati pilota</h3>
+        <div class="fields two">
+          <label>Nome pilota*<input type="text" name="driverName" required></label>
+          <label>Accompagnatore (opzionale)<input type="text" name="companionName"></input></label>
+        </div>
+      </div>
+
+      <!-- 3) Selezione veicolo -->
+      <div class="section">
+        <h3>Seleziona il veicolo</h3>
+        <div class="vehicle-grid">
+          <%
+            if (vehicles != null && !vehicles.isEmpty()) {
+              boolean firstV = true;
+              for (VehicleOption v : vehicles) {
+                String img;
+                String code = v.getCode().toUpperCase();
+                if (code.contains("RB21"))           img = ctx + "/images/vehicles/rb21.jpg";
+                else if (code.contains("F2"))        img = ctx + "/images/vehicles/f2.jpg";
+                else if (code.contains("NASCAR"))    img = ctx + "/images/vehicles/nascar.jpg";
+                else                                  img = ctx + "/images/vehicles/placeholder-vehicle.jpg";
+          %>
+            <label class="vehicle-card">
+              <input type="radio" name="vehicleCode" value="<%= v.getCode() %>" <%= firstV?"checked":"" %> >
+              <div class="veh-inner">
+                <img src="<%= img %>" alt="<%= v.getLabel() %>">
+                <div class="veh-body">
+                  <h4><%= v.getLabel() %></h4>
+                  <p class="veh-specs"><%= v.getSpecs() %></p>
+                </div>
+              </div>
+            </label>
+          <%
+                firstV = false;
+              }
+            } else {
+          %>
+            <div class="empty">Nessun veicolo configurato.</div>
           <% } %>
         </div>
+      </div>
 
-        <!-- Dati anagrafici -->
-        <div class="driver-box">
-          <label>Nome pilota* <input type="text" name="driverName" required></label>
-          <label>Accompagnatore (opzionale) <input type="text" name="companionName"></label>
-        </div>
-
+      <!-- CTA -->
+      <div class="submit-bar">
         <button class="btn primary" type="submit" <%= (slots==null||slots.isEmpty())?"disabled":"" %>>
           Aggiungi al carrello
         </button>
-      </form>
-    </div>
+        <a class="btn secondary" href="<%=ctx%>/shop">Torna allo shop</a>
+      </div>
+    </form>
 
-    <!-- Riepilogo -->
-    <aside class="card">
+    <!-- Colonna destra: riepilogo -->
+    <aside class="card booking-aside">
       <h3>Dettagli pacchetto</h3>
       <ul class="bullets">
         <li>Tipo: <strong><%= product.getProductType() %></strong></li>
-        <li>Prezzo: <strong>€ <%= product.getPrice() %></strong></li>
         <li>Esperienza: <strong><%= product.getExperienceType()==null?"—":product.getExperienceType() %></strong></li>
+        <li>Prezzo: <strong>€ <%= product.getPrice() %></strong></li>
       </ul>
       <p><%= product.getDescription()==null?"":product.getDescription() %></p>
     </aside>

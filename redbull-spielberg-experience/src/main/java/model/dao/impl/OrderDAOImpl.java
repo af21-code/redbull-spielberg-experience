@@ -22,15 +22,19 @@ public class OrderDAOImpl implements OrderDAO {
             VALUES (?, ?, ?, 'PENDING', 'PENDING', ?, ?, ?, ?)
         """;
 
+        // AGGIORNATO: aggiunte colonne driver_name, companion_name, vehicle_code, event_date
         String insertItemSql = """
-            INSERT INTO order_items (order_id, product_id, slot_id, quantity, unit_price, total_price, product_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO order_items (
+                order_id, product_id, slot_id, quantity, unit_price, total_price, product_name,
+                driver_name, companion_name, vehicle_code, event_date
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         try (Connection con = DatabaseConnection.getInstance().getConnection()) {
             con.setAutoCommit(false);
 
-            // totale
+            // totale carrello
             BigDecimal total = BigDecimal.ZERO;
             for (CartItem it : items) {
                 total = total.add(it.getTotal());
@@ -53,11 +57,10 @@ public class OrderDAOImpl implements OrderDAO {
                 }
             }
 
-            // per ogni item
+            // righe ordine
             for (CartItem it : items) {
                 BigDecimal lineTotal = it.getTotal();
 
-                // inserisci riga ordine
                 try (PreparedStatement ps = con.prepareStatement(insertItemSql)) {
                     ps.setLong(1, orderId);
                     ps.setInt(2, it.getProductId());
@@ -66,10 +69,21 @@ public class OrderDAOImpl implements OrderDAO {
                     ps.setBigDecimal(5, it.getUnitPrice());
                     ps.setBigDecimal(6, lineTotal);
                     ps.setString(7, it.getProductName());
+
+                    // nuovi campi
+                    ps.setString(8, it.getDriverName());
+                    ps.setString(9, it.getCompanionName());
+                    ps.setString(10, it.getVehicleCode());
+                    if (it.getEventDate() != null) {
+                        ps.setDate(11, java.sql.Date.valueOf(it.getEventDate()));
+                    } else {
+                        ps.setNull(11, Types.DATE);
+                    }
+
                     ps.executeUpdate();
                 }
 
-                // gestisci stock MERCHANDISE
+                // stock MERCH
                 if ("MERCHANDISE".equalsIgnoreCase(it.getProductType())) {
                     String decStock = """
                         UPDATE products SET stock_quantity = stock_quantity - ?
@@ -87,7 +101,7 @@ public class OrderDAOImpl implements OrderDAO {
                     }
                 }
 
-                // gestisci slot EXPERIENCE (se presente slot_id)
+                // capacità slot EXPERIENCE
                 if (it.getSlotId() != null) {
                     String book = """
                         UPDATE time_slots

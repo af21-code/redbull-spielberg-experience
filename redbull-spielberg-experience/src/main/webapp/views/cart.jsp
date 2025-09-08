@@ -64,9 +64,18 @@
               <br/><small>Veicolo: <%= it.getVehicleCode() %></small>
             <% } %>
 
-            <% if (it.getEventDate() != null) { %>
+            <%-- Data evento: parse sicuro + fallback --%>
+            <% if (it.getEventDate() != null && !it.getEventDate().isBlank()) { %>
               <br/><small>Data:
-                <%= it.getEventDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) %>
+                <%
+                  String _s = it.getEventDate();
+                  try {
+                    java.time.LocalDate _d = java.time.LocalDate.parse(_s); // atteso yyyy-MM-dd
+                    out.print(_d.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                  } catch (Exception ex) {
+                    out.print(_s); // se non è nel formato atteso, mostra com'è
+                  }
+                %>
               </small>
             <% } %>
           </td>

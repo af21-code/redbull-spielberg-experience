@@ -1,82 +1,109 @@
-/* Pagina prenotazione */
+/* Shell */
 .page-booking {
-  background: linear-gradient(135deg,#001e36 0%,#000b2b 100%);
-  color:#fff;
-  min-height:100vh;
+  --bg1:#001e36; --bg2:#000b2b; --card:rgba(255,255,255,.08);
+  --stroke:rgba(255,255,255,.12);
+  --text:#fff; --muted:rgba(255,255,255,.8);
+  --accent:#F5A600; --brand:#E30613;
+  background: linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
+  color: var(--text);
+  min-height: 100vh;
 }
 
-/* HERO */
-.booking-hero {
-  position:relative;
-  height:42vh;
-  background:url('../images/experience-elite.jpg') center/cover no-repeat;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding: 0 24px;
+/* Hero */
+.booking-hero{
+  --hero: none;
+  position:relative; height: 46vh;
+  background: var(--bg1) center/cover no-repeat;
 }
-.booking-hero__inner {
-  background:rgba(0,14,40,.65);
-  padding:24px 32px;
-  border-radius:12px;
+.booking-hero::before{
+  content:""; position:absolute; inset:0;
+  background-image: var(--hero);
+  background-position:center; background-size:cover; opacity:.25;
+}
+.booking-hero__overlay{
+  position:relative; z-index:1; width:100%;
+  max-width:1100px; margin:0 auto; padding:34px 20px;
   text-align:center;
 }
-.booking-hero__inner h1{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:3.1rem;
-  margin:0 0 6px;
-}
+.booking-hero__overlay h1{ font-family:'Bebas Neue',sans-serif; font-size:3.2rem; margin:0 0 6px; }
+.booking-hero__overlay p{ margin:0; opacity:.9 }
 
-/* WRAP & GRID */
-.booking-form__wrap{
-  max-width:1100px;
-  margin:24px auto 80px;
-  padding:0 24px;
+/* Layout */
+.booking-shell{ max-width:1100px; margin:0 auto; padding:26px 16px 70px; }
+.booking-filter{ display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+.booking-filter input[type="date"]{
+  background:#001E36; color:#fff; border:1px solid #0a3565; border-radius:10px; padding:8px 10px;
 }
-
-.booking-grid{
-  display:grid;
-  grid-template-columns: 1fr 320px;
-  gap:16px;
-}
-@media (max-width: 900px){
-  .booking-grid{ grid-template-columns: 1fr; }
-}
-
-/* CARD */
+.booking-grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; }
 .card{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.15);
-  border-radius:16px;
-  padding:16px;
+  background:var(--card); border:1px solid var(--stroke); border-radius:16px; overflow:hidden;
+  box-shadow:0 10px 32px rgba(0,0,0,.28);
 }
-.card h3{
-  margin:0 0 12px;
-  color:#F5A600;
-}
+.booking-aside{ padding:18px; }
+.booking-aside h3{ margin:0 0 8px; }
+.bullets{ list-style:disc; margin:0 0 12px 18px; }
 
-/* FILTRO DATA */
-.booking-filter{
-  display:flex; gap:12px; align-items:center; margin-bottom:16px;
-}
-.booking-filter .btn{
-  background:#E30613; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer;
-}
-
-/* CAMPI FORM */
-label{ display:block; margin:10px 0; }
-input[type="text"], input[type="date"], select{
-  width:100%;
-  background:#001E36; color:#fff;
-  border:1px solid #0a3565; border-radius:10px;
-  padding:10px 12px;
-}
-.vehicle-options label{ display:block; margin:6px 0; }
-.driver-box label{ display:block; margin:6px 0; }
-
-/* BOTTONI */
-.btn{ background:#444; color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; }
-.btn.primary{ background:#F5A600; color:#001e36; }
-
-/* Testi di servizio */
+/* Form sections */
+.booking-form{ padding:18px; }
+.section{ margin-bottom:18px; }
+.section h3{ margin:0 0 10px; }
+.section-head{ display:flex; align-items:baseline; gap:10px; }
 .muted{ opacity:.8; }
+
+/* Slots */
+.slot-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+.slot-pill{
+  display:inline-flex; align-items:center; gap:8px;
+  background:#001E36; border:1px solid #0a3565;
+  border-radius:999px; padding:8px 12px; cursor:pointer;
+  transition:transform .15s ease;
+}
+.slot-pill:hover{ transform: translateY(-2px); }
+.slot-pill input{ display:none; }
+.slot-pill input:checked + span{ text-decoration:underline; color: var(--accent); }
+.slot-pill.disabled{ opacity:.5; cursor:not-allowed; }
+
+/* Fields */
+.fields.two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.fields label{ display:flex; flex-direction:column; gap:6px; }
+.fields input{
+  background:#001E36; color:#fff; border:1px solid #0a3565; border-radius:10px; padding:10px 12px;
+}
+
+/* Vehicles */
+.vehicle-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:14px; }
+.vehicle-card{ display:block; cursor:pointer; }
+.vehicle-card input{ display:none; }
+.veh-inner{
+  background:rgba(255,255,255,.06); border:1px solid var(--stroke);
+  border-radius:14px; overflow:hidden; transition:transform .15s, box-shadow .15s, outline .15s;
+}
+.vehicle-card img{ width:100%; height:140px; object-fit:cover; background:rgba(0,0,0,.25); }
+.veh-body{ padding:10px 12px 12px; }
+.veh-body h4{ margin:0 0 6px; }
+.veh-specs{ margin:0; opacity:.9; }
+.vehicle-card input:checked + .veh-inner{
+  transform:translateY(-3px); box-shadow:0 14px 30px rgba(0,0,0,.35); outline:2px solid var(--accent);
+}
+
+/* Actions */
+.submit-bar{ display:flex; gap:12px; margin-top:2px; }
+.btn{ background:#444; color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; text-decoration:none; }
+.btn.primary{ background:var(--brand); }
+.btn.secondary{ background:#3b3b3b; }
+
+/* Make the search button red too */
+.booking-filter .btn{ background:var(--brand); color:#fff; }
+
+.empty{ padding:8px 0; opacity:.85; }
+
+/* Utilities */
+.visually-hidden{ position:absolute !important; opacity:0 !important; pointer-events:none !important; height:0 !important; width:0 !important; }
+.sr-only{ position:absolute; left:-9999px; }
+
+/* Responsive */
+@media (max-width: 960px){
+  .booking-grid{ grid-template-columns:1fr; }
+  .booking-hero{ height:42vh; }
+  .fields.two{ grid-template-columns:1fr; }
+}

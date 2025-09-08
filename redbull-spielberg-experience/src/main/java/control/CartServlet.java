@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -52,14 +53,22 @@ public class CartServlet extends HttpServlet {
             throws IOException {
         int productId = Integer.parseInt(req.getParameter("productId"));
         int quantity  = Integer.parseInt(Optional.ofNullable(req.getParameter("quantity")).orElse("1"));
+
+        // slot (solo esperienze)
         String slotParam = req.getParameter("slotId");
         Integer slotId = (slotParam == null || slotParam.isBlank()) ? null : Integer.valueOf(slotParam);
 
-        // Nuovi parametri (prenotazione esperienza)
-        String driverName    = req.getParameter("driverName");
-        String companionName = req.getParameter("companionName");
-        String vehicleCode   = req.getParameter("vehicleCode");
-        String eventDate     = req.getParameter("eventDate"); // yyyy-MM-dd
+        // nuovi parametri prenotazione (possono essere null per il merch)
+        String driverName    = Optional.ofNullable(req.getParameter("driverName")).orElse(null);
+        String companionName = Optional.ofNullable(req.getParameter("companionName")).orElse(null);
+        // accetta sia "vehicleCode" (booking.jsp) sia "vehicle" (vecchio form)
+        String vehicleCode   = Optional.ofNullable(req.getParameter("vehicleCode"))
+                                       .orElse(req.getParameter("vehicle"));
+        LocalDate eventDate  = null;
+        String dateParam     = req.getParameter("eventDate");
+        if (dateParam != null && !dateParam.isBlank()) {
+            try { eventDate = LocalDate.parse(dateParam); } catch (Exception ignored) {}
+        }
 
         final Product p;
         try {
@@ -74,27 +83,20 @@ public class CartServlet extends HttpServlet {
             return;
         }
 
-        // Se è un'esperienza, forziamo qty=1
-        if (p.getProductType() != null && "EXPERIENCE".equalsIgnoreCase(p.getProductType().name())) {
-            quantity = 1;
-        }
+        // Per le esperienze forziamo qty=1 e NON facciamo merge
+        boolean isExperience = (p.getProductType() != null && p.getProductType().name().equalsIgnoreCase("EXPERIENCE"));
+        if (isExperience) quantity = 1;
 
         List<CartItem> cart = getCart(req.getSession());
 
-        // merge su stessa chiave (productId + slotId)
-        for (CartItem it : cart) {
-            if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
-                // per MERCH aumenta, per EXPERIENCE lascia 1
-                if (!"EXPERIENCE".equalsIgnoreCase(it.getProductType())) {
+        // Merge solo per MERCH (stessa chiave productId+slotId)
+        if (!isExperience) {
+            for (CartItem it : cart) {
+                if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
                     it.setQuantity(it.getQuantity() + Math.max(1, quantity));
+                    redirectBack(req, resp);
+                    return;
                 }
-                // aggiorna i dettagli prenotazione se passati
-                if (driverName != null) it.setDriverName(driverName);
-                if (companionName != null) it.setCompanionName(companionName);
-                if (vehicleCode != null) it.setVehicleCode(vehicleCode);
-                if (eventDate != null) it.setEventDate(eventDate);
-                redirectBack(req, resp);
-                return;
             }
         }
 
@@ -107,7 +109,7 @@ public class CartServlet extends HttpServlet {
         item.setProductType(p.getProductType() == null ? null : p.getProductType().name());
         item.setImageUrl(p.getImageUrl());
 
-        // set dettagli prenotazione
+        // set nuovi campi
         item.setDriverName(driverName);
         item.setCompanionName(companionName);
         item.setVehicleCode(vehicleCode);
@@ -126,10 +128,7 @@ public class CartServlet extends HttpServlet {
         List<CartItem> cart = getCart(req.getSession());
         for (CartItem it : cart) {
             if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
-                // non permettere di cambiare qty per EXPERIENCE
-                if (!"EXPERIENCE".equalsIgnoreCase(it.getProductType())) {
-                    it.setQuantity(quantity);
-                }
+                it.setQuantity(quantity);
                 break;
             }
         }
@@ -169,5 +168,5 @@ public class CartServlet extends HttpServlet {
         } else {
             resp.sendRedirect(req.getContextPath() + "/cart/view");
         }
-        }
+    }
 }
