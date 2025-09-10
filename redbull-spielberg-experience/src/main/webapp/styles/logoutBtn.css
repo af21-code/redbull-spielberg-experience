@@ -1,0 +1,70 @@
+/* Fancy Logout Button (scoped so it won't clash with .btn) */
+.menu-right .Btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#121826;
+  color:#fff;
+  cursor:pointer;
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.menu-right .Btn .sign{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:42px; height:42px;
+  border-radius:10px;
+  background:#E30613; /* Red Bull red */
+  transition:transform .2s ease, background .2s ease, width .25s ease;
+  overflow:hidden;
+}
+
+.menu-right .Btn .sign svg{
+  width:18px; height:18px;
+  fill:#fff;
+  transition:transform .25s ease;
+}
+
+.menu-right .Btn .text{
+  font-weight:700;
+  letter-spacing:.2px;
+  transform:translateX(0);
+  transition:transform .25s ease, opacity .25s ease;
+  opacity:.95;
+  white-space:nowrap;
+}
+
+/* Hover effects */
+.menu-right .Btn:hover{
+  background:#172036;
+  box-shadow:0 10px 24px rgba(0,0,0,.25);
+  transform:translateY(-2px);
+}
+
+.menu-right .Btn:hover .sign{
+  transform:translateX(2px);
+  background:#ff0a1a; /* brighter red on hover */
+}
+
+.menu-right .Btn:hover .sign svg{
+  transform:translateX(3px);
+}
+
+.menu-right .Btn:active{
+  transform:translateY(0);
+  box-shadow:none;
+}
+
+.menu-right .Btn:active .sign{
+  transform:translateX(0) scale(.96);
+}
+
+/* Keyboard focus */
+.menu-right .Btn:focus-visible{
+  outline:2px solid #F5A600;
+  outline-offset:2px;
+}

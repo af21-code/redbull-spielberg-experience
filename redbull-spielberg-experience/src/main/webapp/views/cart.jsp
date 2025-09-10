@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, java.math.BigDecimal, model.CartItem" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -23,6 +24,7 @@
     } else {
       BigDecimal total = BigDecimal.ZERO;
       String ctx = request.getContextPath();
+      DateTimeFormatter df = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   %>
     <table class="cart-table">
       <thead>
@@ -64,19 +66,9 @@
               <br/><small>Veicolo: <%= it.getVehicleCode() %></small>
             <% } %>
 
-            <%-- Data evento: parse sicuro + fallback --%>
-            <% if (it.getEventDate() != null && !it.getEventDate().isBlank()) { %>
-              <br/><small>Data:
-                <%
-                  String _s = it.getEventDate();
-                  try {
-                    java.time.LocalDate _d = java.time.LocalDate.parse(_s); // atteso yyyy-MM-dd
-                    out.print(_d.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-                  } catch (Exception ex) {
-                    out.print(_s); // se non è nel formato atteso, mostra com'è
-                  }
-                %>
-              </small>
+            <%-- Data evento: essendo LocalDate, niente isBlank(); solo null-check e format. --%>
+            <% if (it.getEventDate() != null) { %>
+              <br/><small>Data: <%= it.getEventDate().format(df) %></small>
             <% } %>
           </td>
 
