@@ -3,6 +3,7 @@ package control;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -10,10 +11,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import model.User;
 import model.CartItem;
 import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
+import model.dao.CartDAO;
+import model.dao.impl.CartDAOImpl;
 
 @WebServlet(urlPatterns = {
         "/cart", "/cart/view",
@@ -21,7 +25,9 @@ import model.dao.impl.ProductDAOImpl;
 })
 public class CartServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+
     private final ProductDAO productDAO = new ProductDAOImpl();
+    private final CartDAO    cartDAO    = new CartDAOImpl(); // usa connessioni on-demand
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -49,8 +55,7 @@ public class CartServlet extends HttpServlet {
         }
     }
 
-    private void handleAdd(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+    private void handleAdd(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         int productId = Integer.parseInt(req.getParameter("productId"));
         int quantity  = Integer.parseInt(Optional.ofNullable(req.getParameter("quantity")).orElse("1"));
 
@@ -61,9 +66,7 @@ public class CartServlet extends HttpServlet {
         // nuovi parametri prenotazione (possono essere null per il merch)
         String driverName    = Optional.ofNullable(req.getParameter("driverName")).orElse(null);
         String companionName = Optional.ofNullable(req.getParameter("companionName")).orElse(null);
-        // accetta sia "vehicleCode" (booking.jsp) sia "vehicle" (vecchio form)
-        String vehicleCode   = Optional.ofNullable(req.getParameter("vehicleCode"))
-                                       .orElse(req.getParameter("vehicle"));
+        String vehicleCode   = Optional.ofNullable(req.getParameter("vehicleCode")).orElse(req.getParameter("vehicle"));
         LocalDate eventDate  = null;
         String dateParam     = req.getParameter("eventDate");
         if (dateParam != null && !dateParam.isBlank()) {
@@ -83,39 +86,57 @@ public class CartServlet extends HttpServlet {
             return;
         }
 
-        // Per le esperienze forziamo qty=1 e NON facciamo merge
         boolean isExperience = (p.getProductType() != null && p.getProductType().name().equalsIgnoreCase("EXPERIENCE"));
         if (isExperience) quantity = 1;
 
         List<CartItem> cart = getCart(req.getSession());
 
         // Merge solo per MERCH (stessa chiave productId+slotId)
+        boolean merged = false;
         if (!isExperience) {
             for (CartItem it : cart) {
                 if (it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId)) {
                     it.setQuantity(it.getQuantity() + Math.max(1, quantity));
-                    redirectBack(req, resp);
-                    return;
+                    merged = true;
+                    break;
                 }
             }
         }
 
-        CartItem item = new CartItem();
-        item.setProductId(productId);
-        item.setSlotId(slotId);
-        item.setProductName(p.getName());
-        item.setUnitPrice(p.getPrice());
-        item.setQuantity(Math.max(1, quantity));
-        item.setProductType(p.getProductType() == null ? null : p.getProductType().name());
-        item.setImageUrl(p.getImageUrl());
+        if (!merged) {
+            CartItem item = new CartItem();
+            item.setProductId(productId);
+            item.setSlotId(slotId);
+            item.setProductName(p.getName());
+            item.setUnitPrice(p.getPrice());
+            item.setQuantity(Math.max(1, quantity));
+            item.setProductType(p.getProductType() == null ? null : p.getProductType().name());
+            item.setImageUrl(p.getImageUrl());
+            // set nuovi campi
+            item.setDriverName(driverName);
+            item.setCompanionName(companionName);
+            item.setVehicleCode(vehicleCode);
+            item.setEventDate(eventDate);
+            cart.add(item);
+        }
 
-        // set nuovi campi
-        item.setDriverName(driverName);
-        item.setCompanionName(companionName);
-        item.setVehicleCode(vehicleCode);
-        item.setEventDate(eventDate);
+     // --- SYNC DB se loggato ---
+        Integer userId = getLoggedUserId(req.getSession());
+        if (userId != null) {
+            try {
+                if (isExperience) {
+                    // ✅ Assicura l'esistenza e qty=1 su DB
+                    cartDAO.upsertItem(userId, productId, slotId, 1);
+                } else if (merged) {
+                    cartDAO.upsertItem(userId, productId, slotId, Math.max(1, quantity));
+                } else {
+                    cartDAO.upsertItem(userId, productId, slotId, Math.max(1, quantity));
+                }
+            } catch (Exception e) {
+                log("SYNC DB add cart failed", e);
+            }
+        }
 
-        cart.add(item);
         redirectBack(req, resp);
     }
 
@@ -132,6 +153,17 @@ public class CartServlet extends HttpServlet {
                 break;
             }
         }
+
+        // --- SYNC DB se loggato ---
+        Integer userId = getLoggedUserId(req.getSession());
+        if (userId != null) {
+            try {
+                cartDAO.updateQuantity(userId, productId, slotId, quantity);
+            } catch (Exception e) {
+                log("SYNC DB update qty failed", e);
+            }
+        }
+
         resp.sendRedirect(req.getContextPath() + "/cart/view");
     }
 
@@ -142,12 +174,34 @@ public class CartServlet extends HttpServlet {
 
         List<CartItem> cart = getCart(req.getSession());
         cart.removeIf(it -> it.getProductId() == productId && Objects.equals(it.getSlotId(), slotId));
+
+        // --- SYNC DB se loggato ---
+        Integer userId = getLoggedUserId(req.getSession());
+        if (userId != null) {
+            try {
+                cartDAO.removeItem(userId, productId, slotId);
+            } catch (Exception e) {
+                log("SYNC DB remove item failed", e);
+            }
+        }
+
         resp.sendRedirect(req.getContextPath() + "/cart/view");
     }
 
     private void handleClear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         List<CartItem> cart = getCart(req.getSession());
         cart.clear();
+
+        // --- SYNC DB se loggato ---
+        Integer userId = getLoggedUserId(req.getSession());
+        if (userId != null) {
+            try {
+                cartDAO.clearCart(userId);
+            } catch (Exception e) {
+                log("SYNC DB clear failed", e);
+            }
+        }
+
         resp.sendRedirect(req.getContextPath() + "/cart/view");
     }
 
@@ -159,6 +213,17 @@ public class CartServlet extends HttpServlet {
             session.setAttribute("cartItems", cart);
         }
         return cart;
+    }
+
+    private Integer getLoggedUserId(HttpSession session) {
+        Object u = session.getAttribute("authUser");
+        if (u == null) return null;
+        try {
+            if (u instanceof User) return ((User) u).getUserId();
+            return (Integer) u.getClass().getMethod("getUserId").invoke(u);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void redirectBack(HttpServletRequest req, HttpServletResponse resp) throws IOException {

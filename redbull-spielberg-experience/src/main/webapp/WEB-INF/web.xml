@@ -6,23 +6,30 @@
 
     <display-name>redbull-spielberg-experience</display-name>
 
-    <!-- Pagina di benvenuto -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Sessioni -->
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
 
-    <!-- Filtro UTF-8 su tutte le richieste -->
     <filter>
         <filter-name>UTF8Filter</filter-name>
         <filter-class>filter.UTF8Filter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>UTF8Filter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    
+        <!-- Badge carrello: calcola cartCount per l'header -->
+    <filter>
+        <filter-name>CartBadgeFilter</filter-name>
+        <filter-class>filter.CartBadgeFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CartBadgeFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
@@ -48,7 +55,11 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- Pagine di errore -->
+    <!-- 👇 NEW: merge carrello guest → DB al login -->
+    <listener>
+        <listener-class>listener.SessionCartMergeListener</listener-class>
+    </listener>
+
     <error-page>
         <error-code>404</error-code>
         <location>/views/errors/404.jsp</location>
@@ -62,7 +73,6 @@
         <location>/views/errors/500.jsp</location>
     </error-page>
 
-    <!-- Config JSP: forziamo UTF-8 -->
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>

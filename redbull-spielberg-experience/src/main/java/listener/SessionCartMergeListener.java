@@ -1,31 +1,23 @@
 package listener;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpSessionAttributeListener;
-import jakarta.servlet.http.HttpSessionBindingEvent;
-import model.SessionCart;
-import model.SessionCartItem;
+import jakarta.servlet.annotation.WebListener;
+import jakarta.servlet.http.*;
+import model.CartItem;
 import model.dao.CartDAO;
 import model.dao.impl.CartDAOImpl;
 import utils.DatabaseConnection;
 
 import java.sql.Connection;
+import java.util.List;
 
-/**
- * Quando in sessione viene impostato "authUser" (login effettuato),
- * se esiste un carrello in sessione ("sessionCart") lo fonde nel DB.
- */
+@WebListener
 public class SessionCartMergeListener implements HttpSessionAttributeListener {
 
     @Override
-    public void attributeAdded(HttpSessionBindingEvent event) {
-        maybeMerge(event);
-    }
+    public void attributeAdded(HttpSessionBindingEvent event) { maybeMerge(event); }
 
     @Override
-    public void attributeReplaced(HttpSessionBindingEvent event) {
-        maybeMerge(event);
-    }
+    public void attributeReplaced(HttpSessionBindingEvent event) { maybeMerge(event); }
 
     private void maybeMerge(HttpSessionBindingEvent event) {
         if (!"authUser".equals(event.getName())) return;
@@ -35,28 +27,28 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
         if (authUser == null) return;
 
         Integer userId = null;
-        try {
-            userId = (Integer) authUser.getClass().getMethod("getUserId").invoke(authUser);
-        } catch (Exception ignored) {}
+        try { userId = (Integer) authUser.getClass().getMethod("getUserId").invoke(authUser); }
+        catch (Exception ignored) {}
 
         if (userId == null) return;
 
-        SessionCart sc = (SessionCart) session.getAttribute("sessionCart");
-        if (sc == null || sc.isEmpty()) return;
+        @SuppressWarnings("unchecked")
+        List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
+        if (items == null || items.isEmpty()) return;
 
         try (Connection con = DatabaseConnection.getInstance().getConnection()) {
             con.setAutoCommit(false);
+            CartDAO dao = new CartDAOImpl(con);
 
-            CartDAO dao = new CartDAOImpl(con); // usa la stessa transazione
-            for (SessionCartItem it : sc.getItems()) {
+            for (CartItem it : items) {
                 dao.upsertItem(userId, it.getProductId(), it.getSlotId(), it.getQuantity());
             }
 
             con.commit();
-            sc.clear();
-            session.removeAttribute("sessionCart");
+            items.clear();                       // svuota il carrello sessione
+            session.setAttribute("cartItems", items);
         } catch (Exception e) {
-            e.printStackTrace(); // in caso di errore, non svuotiamo il carrello in sessione
+            e.printStackTrace();
         }
     }
 }
