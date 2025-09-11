@@ -1,32 +1,27 @@
 package filter;
 
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-@WebFilter(filterName = "AuthFilter", urlPatterns = {"/orders", "/cart/*"})
 public class AuthFilter implements Filter {
+  @Override
+  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+      throws IOException, ServletException {
+    HttpServletRequest  r = (HttpServletRequest) req;
+    HttpServletResponse s = (HttpServletResponse) res;
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-        throws IOException, ServletException {
-
-        HttpServletRequest req  = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
-        HttpSession session     = req.getSession(false);
-
-        boolean logged = (session != null && session.getAttribute("authUser") != null);
-
-        if (!logged) {
-            String ctx = req.getContextPath();
-            String back = URLEncoder.encode(req.getRequestURI(), StandardCharsets.UTF_8);
-            res.sendRedirect(ctx + "/views/login.jsp?redirect=" + back);
-            return;
-        }
-
-        chain.doFilter(request, response);
+    Object auth = r.getSession().getAttribute("authUser");
+    if (auth == null) {
+      String returnTo = r.getRequestURI();
+      String qs = r.getQueryString();
+      if (qs != null && !qs.isBlank()) returnTo += "?" + qs;
+      s.sendRedirect(r.getContextPath() + "/views/login.jsp?returnTo=" +
+        URLEncoder.encode(returnTo, StandardCharsets.UTF_8));
+      return;
     }
+    chain.doFilter(req, res);
+  }
 }

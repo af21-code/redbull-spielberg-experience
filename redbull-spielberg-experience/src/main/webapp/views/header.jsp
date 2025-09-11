@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="model.User" %>
+<%@ page import="model.User, java.util.List, model.CartItem" %>
 <%
   User authUser = (User) session.getAttribute("authUser");
   String ctx = request.getContextPath();
@@ -7,6 +7,14 @@
 
   boolean ordersActive = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
   boolean shopActive   = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
+  boolean cartActive   = uri.contains("/cart");
+
+  // conteggio articoli carrello da sessione (guest o loggato)
+  int cartCount = 0;
+  List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
+  if (sessionCart != null) {
+    for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
+  }
 %>
 
 <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
@@ -32,6 +40,14 @@ header .menu-right .Btn:hover{
 }
 header .menu-right .Btn:hover .sign svg{ transform:translateX(2px); }
 header .menu-right .Btn:active{ transform:translateY(0); box-shadow:none; }
+
+/* Badge quantità carrello */
+header .menu-right .btn-cart .badge{
+  display:inline-grid; place-items:center;
+  min-width:18px; height:18px; padding:0 5px;
+  margin-left:6px; border-radius:999px;
+  background:#E30613; color:#fff; font-weight:800; font-size:.75rem;
+}
 </style>
 
 <header>
@@ -45,18 +61,27 @@ header .menu-right .Btn:active{ transform:translateY(0); box-shadow:none; }
     <nav>
       <ul class="main-menu">
         <li><a href="<%=ctx%>/index.jsp">ESPLORA</a></li>
-        <!-- 👇 link corretto alla route servita dal Servlet -->
         <li><a href="<%=ctx%>/rb21">RB-21</a></li>
         <li><a href="<%=ctx%>/index.jsp#track">PISTA</a></li>
         <li><a href="<%=ctx%>/shop" class="<%= shopActive ? "active" : "" %>">SHOP</a></li>
       </ul>
 
       <ul class="menu-right">
+        <% if (authUser != null) { %>
+          <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
+        <% } %>
+
+        <!-- Carrello SEMPRE visibile -->
+        <li>
+          <a href="<%=ctx%>/cart/view" class="btn-cart <%= cartActive ? "active" : "" %>">
+            Carrello
+            <% if (cartCount > 0) { %><span class="badge"><%= cartCount %></span><% } %>
+          </a>
+        </li>
+
         <% if (authUser == null) { %>
           <li><a href="<%=ctx%>/views/login.jsp" class="btn-login">Login</a></li>
         <% } else { %>
-          <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
-          <li><a href="<%=ctx%>/cart/view" class="btn-cart">Carrello</a></li>
           <li>
             <form action="<%=ctx%>/logout" method="get" style="display:inline;">
               <button class="Btn" type="submit" title="Logout" aria-label="Logout">

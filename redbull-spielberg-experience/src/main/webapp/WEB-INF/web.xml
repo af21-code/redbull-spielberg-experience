@@ -4,6 +4,8 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
          version="5.0">
 
+    <display-name>redbull-spielberg-experience</display-name>
+
     <!-- Pagina di benvenuto -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
@@ -24,7 +26,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- Filtro Auth per aree protette -->
+    <!-- AuthFilter: NON protegge /cart, protegge solo le sezioni riservate -->
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
@@ -35,23 +37,16 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
-        <url-pattern>/cart/*</url-pattern>
+        <url-pattern>/order</url-pattern>
     </filter-mapping>
-
-    <!-- Servlet RB-21 (route pulita /rb21) -->
-    <servlet>
-        <servlet-name>Rb21Servlet</servlet-name>
-        <servlet-class>control.Rb21Servlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>Rb21Servlet</servlet-name>
-        <url-pattern>/rb21</url-pattern>
-    </servlet-mapping>
-
-    <!-- Listener app per shutdown pulito del driver MySQL -->
-    <listener>
-        <listener-class>listener.AppContextListener</listener-class>
-    </listener>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/checkout</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
 
     <!-- Pagine di errore -->
     <error-page>

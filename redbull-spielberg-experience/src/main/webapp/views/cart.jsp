@@ -125,5 +125,6 @@
 </div>
 
 <jsp:include page="footer.jsp" />
+<script src="${pageContext.request.contextPath}/scripts/cart.js"></script>
 </body>
 </html>
