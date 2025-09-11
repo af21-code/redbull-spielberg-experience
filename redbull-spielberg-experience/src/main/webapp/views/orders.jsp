@@ -14,6 +14,8 @@
   <meta charset="UTF-8">
   <title><%= isAdmin ? "Ordini (Admin)" : "I miei ordini" %></title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
+  <!-- 👇 Forzo anche qui il CSS del logout per evitare race/ordine caricamento -->
+  <link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=3">
   <style>
     .orders-wrap { padding: 40px 24px 80px; background: linear-gradient(135deg,#001e36 0%,#000b2b 100%); color:#fff; min-height:60vh; }
     .orders-title { max-width:1100px; margin:0 auto 18px; display:flex; justify-content:space-between; align-items:center; }
@@ -66,7 +68,6 @@
           }
         }
 
-        // Provo a recuperare l'orderId via reflection per evitare errori di compilazione se il getter ha nome diverso
         Integer orderId = null;
         try { orderId = (Integer) o.getClass().getMethod("getOrderId").invoke(o); } catch (Exception ignored) {}
   %>

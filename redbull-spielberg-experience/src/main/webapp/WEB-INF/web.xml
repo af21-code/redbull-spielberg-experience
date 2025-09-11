@@ -45,4 +45,20 @@
             <page-encoding>UTF-8</page-encoding>
         </jsp-property-group>
     </jsp-config>
+
+    <!-- Route /rb21 -> /views/rb21.jsp -->
+    <servlet>
+        <servlet-name>rb21</servlet-name>
+        <jsp-file>/views/rb21.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>rb21</servlet-name>
+        <url-pattern>/rb21</url-pattern>
+    </servlet-mapping>
+
+    <!-- MIME WebP -->
+    <mime-mapping>
+        <extension>webp</extension>
+        <mime-type>image/webp</mime-type>
+    </mime-mapping>
 </web-app>

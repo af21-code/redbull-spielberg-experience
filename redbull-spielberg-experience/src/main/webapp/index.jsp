@@ -10,6 +10,8 @@
     <!-- Styles -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css" />
     <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/userLogo.css" />
+    <!-- Stile bottone logout (perché qui non includiamo header.jsp) -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/logoutbtn.css?v=2" />
 
     <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
@@ -37,9 +39,9 @@
         <nav>
             <ul class="main-menu">
                 <li><a href="#">ESPLORA</a></li>
-                <li><a href="#rb-21">RB-21</a></li>
+                <!-- RB-21 ora porta alla pagina dedicata -->
+                <li><a href="${pageContext.request.contextPath}/views/rb21.jsp">RB-21</a></li>
                 <li><a href="#track">PISTA</a></li>
-                <!-- vai al servlet /shop -->
                 <li><a href="${pageContext.request.contextPath}/shop">SHOP</a></li>
             </ul>
 
@@ -48,12 +50,10 @@
                     User authUser = (User) session.getAttribute("authUser");
                     if (authUser == null) {
                 %>
-                    <!-- Solo Login quando NON autenticato -->
                     <li><a class="btn-login" href="${pageContext.request.contextPath}/views/login.jsp">Login</a></li>
                 <%
                     } else {
                 %>
-                    <!-- Ordini + Carrello + Logout quando autenticato -->
                     <li><a class="btn-cart" href="${pageContext.request.contextPath}/orders">Ordini</a></li>
                     <li><a class="btn-cart" href="${pageContext.request.contextPath}/cart/view">Carrello</a></li>
                     <li>
@@ -107,14 +107,12 @@
         <h2>Acquista il Tuo Pacchetto</h2>
         <p>Scegli tra Standard e Premium e vivi l’esperienza Red Bull come mai prima.</p>
         <div class="purchase-options">
-            <!-- Standard -> booking prodotto esperienza BASE (id 1) -->
             <a href="${pageContext.request.contextPath}/booking?productId=1" class="card-link">
                 <div class="purchase-card">
                     <h3>Standard</h3>
                     <p>Accesso circuito, kit benvenuto, ristoro</p>
                 </div>
             </a>
-            <!-- Premium -> booking prodotto esperienza PREMIUM (id 2) -->
             <a href="${pageContext.request.contextPath}/booking?productId=2" class="card-link">
                 <div class="purchase-card premium">
                     <h3>Premium</h3>
@@ -129,7 +127,7 @@
 <section id="track" class="track-section">
     <div class="container">
         <h2>Scopri la Pista</h2>
-        <p>Entra nel cuore del <span class="red">Red Bull Ring</span> e lasciati travolgere dalla sua storia, le sue curve leggendarie e l'adrenalina pura che solo un circuito di Formula 1 può offrire.</p>
+        <p>Entra nel cuore del <span class="red">Red Bull Ring</span> e lasciati travolgere...</p>
         <div class="slideshow-container">
             <img src="https://www.redbullring.com/en/wp-content/uploads/sites/1/2021/07/Red-Bull-Ring-Luftaufnahme-Styrian-GP-2021-e1649946807938-scaled.jpg" class="slide" alt="Red Bull Ring 1" />
             <img src="https://www.tauroa.at/wp-content/uploads/2024/03/red-bull-ringcarmin-walcher-red-bull-ring-4-scaled.jpg" class="slide" alt="Red Bull Ring 2" />
@@ -147,8 +145,7 @@
             <iframe width="100%" height="480"
                 src="https://www.youtube.com/embed/sIUL3VHODIE"
                 title="Red Bull Racing Video"
-                style="border:0">
-            </iframe>
+                style="border:0"></iframe>
         </div>
     </div>
 </section>

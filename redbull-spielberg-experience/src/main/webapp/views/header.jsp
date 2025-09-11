@@ -5,20 +5,31 @@
   String ctx = request.getContextPath();
   String uri = request.getRequestURI() == null ? "" : request.getRequestURI();
 
-  // Evidenziazione voci menu
   boolean ordersActive = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
   boolean shopActive   = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
 %>
 
-<!-- CSS globale (animazione logout) -->
-<link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=2">
+<!-- Inietta dinamicamente il CSS del logout nel <head> anche se questo file è incluso dentro <body> -->
+<script>
+(function(){
+  try {
+    var id = "rb-logout-css";
+    if (!document.getElementById(id)) {
+      var l = document.createElement("link");
+      l.id = id; l.rel = "stylesheet";
+      l.href = "<%=ctx%>/styles/logoutbtn.css?v=3";
+      (document.head || document.getElementsByTagName('head')[0]).appendChild(l);
+    }
+  } catch(e){}
+})();
+</script>
 
-<!-- Fallback SCOPATO: se il file sopra non carica, questo assicura stile base SOLO al bottone nel header -->
+<!-- Fallback minimo e ad alta specificità, nel caso il link non carichi -->
 <style>
 header .menu-right .Btn{
   --bg:#1f2937; --bgH:#E30613; --txt:#fff; --ring:rgba(227,6,19,.35);
   display:inline-flex; align-items:center; gap:.6rem;
-  background:var(--bg); color:var(--txt);
+  background:var(--bg) !important; color:var(--txt) !important;
   border:1px solid rgba(255,255,255,.12); border-radius:12px;
   padding:.55rem .9rem; cursor:pointer;
   transition:background .2s, transform .15s, box-shadow .2s, border-color .2s;
@@ -27,7 +38,7 @@ header .menu-right .Btn .sign{ display:grid; place-items:center; width:20px; hei
 header .menu-right .Btn .sign svg{ width:100%; height:100%; transition:transform .2s; }
 header .menu-right .Btn .text{ font-weight:700; letter-spacing:.2px; }
 header .menu-right .Btn:hover{
-  background:var(--bgH); transform:translateY(-1px);
+  background:var(--bgH) !important; transform:translateY(-1px);
   box-shadow:0 10px 24px var(--ring); border-color:rgba(227,6,19,.55);
 }
 header .menu-right .Btn:hover .sign svg{ transform:translateX(2px); }
@@ -45,7 +56,7 @@ header .menu-right .Btn:active{ transform:translateY(0); box-shadow:none; }
     <nav>
       <ul class="main-menu">
         <li><a href="<%=ctx%>/index.jsp">ESPLORA</a></li>
-        <li><a href="<%=ctx%>/index.jsp#rb-21">RB-21</a></li>
+        <li><a href="<%=ctx%>/views/rb21.jsp">RB-21</a></li>
         <li><a href="<%=ctx%>/index.jsp#track">PISTA</a></li>
         <li><a href="<%=ctx%>/shop" class="<%= shopActive ? "active" : "" %>">SHOP</a></li>
       </ul>
