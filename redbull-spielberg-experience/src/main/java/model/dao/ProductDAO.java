@@ -5,21 +5,30 @@ import model.Product;
 
 public interface ProductDAO {
 
-    /**
-     * Ritorna SOLO i prodotti MERCHANDISE attivi.
-     * Se categoryId è null => tutte le categorie.
-     */
+    // --- Public/Shop (già esistenti) ---
     List<Product> findActiveMerchandise(Integer categoryId) throws Exception;
-
-    /**
-     * Trova un prodotto attivo per id (qualsiasi tipo).
-     * Ritorna null se non trovato o non attivo.
-     */
     Product findById(int productId) throws Exception;
-
-    /**
-     * (Opzionale) Tutti i prodotti attivi, filtrabili per categoria.
-     * Utile se vuoi una lista “generica” (esperienze + merchandising).
-     */
     List<Product> findAll(Integer categoryId) throws Exception;
+
+    // --- Admin: gestione catalogo ---
+    /** Tutti i prodotti (anche non attivi), con filtro opzionale per categoria e/o testo nel nome. */
+    List<Product> adminFindAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception;
+
+    /** Trova anche se non attivo. */
+    Product adminFindById(int productId) throws Exception;
+
+    /** Crea nuovo prodotto. Ritorna il product_id generato. */
+    int insert(Product p) throws Exception;
+
+    /** Aggiorna un prodotto esistente. */
+    void update(Product p) throws Exception;
+
+    /** Soft-delete: imposta is_active=false. */
+    void softDelete(int productId) throws Exception;
+
+    /** Attiva/disattiva. */
+    void setActive(int productId, boolean active) throws Exception;
+
+    /** Evidenzia/Non evidenzia (home/featured). */
+    void setFeatured(int productId, boolean featured) throws Exception;
 }

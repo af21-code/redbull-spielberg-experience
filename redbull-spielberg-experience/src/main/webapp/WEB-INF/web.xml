@@ -6,14 +6,17 @@
 
     <display-name>redbull-spielberg-experience</display-name>
 
+    <!-- Pagina di benvenuto -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
+    <!-- Sessioni -->
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
 
+    <!-- Filtro UTF-8 su tutte le richieste -->
     <filter>
         <filter-name>UTF8Filter</filter-name>
         <filter-class>filter.UTF8Filter</filter-class>
@@ -22,8 +25,8 @@
         <filter-name>UTF8Filter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    
-        <!-- Badge carrello: calcola cartCount per l'header -->
+
+    <!-- Badge carrello: calcola cartCount per l'header -->
     <filter>
         <filter-name>CartBadgeFilter</filter-name>
         <filter-class>filter.CartBadgeFilter</filter-class>
@@ -33,7 +36,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- AuthFilter: NON protegge /cart, protegge solo le sezioni riservate -->
+    <!-- AuthFilter: protegge sezioni riservate (NON /cart) -->
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
@@ -50,16 +53,47 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/checkout</url-pattern>
     </filter-mapping>
+    <!-- Login obbligatorio anche per l'area admin -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+    </filter-mapping>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- 👇 NEW: merge carrello guest → DB al login -->
+    <!-- Listener: merge carrello guest → DB al login -->
     <listener>
         <listener-class>listener.SessionCartMergeListener</listener-class>
     </listener>
 
+    <!-- ===== ADMIN DASHBOARD (mappo direttamente la JSP) ===== -->
+    <servlet>
+        <servlet-name>AdminDashboardJsp</servlet-name>
+        <jsp-file>/views/admin/dashboard.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminDashboardJsp</servlet-name>
+        <url-pattern>/admin</url-pattern>
+    </servlet-mapping>
+
+    <!-- ===== Admin Users (mappato via XML) ===== -->
+    <servlet>
+        <servlet-name>UserAdminServlet</servlet-name>
+        <servlet-class>control.admin.UserAdminServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>UserAdminServlet</servlet-name>
+        <url-pattern>/admin/users</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>UserAdminServlet</servlet-name>
+        <url-pattern>/admin/users/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- Pagine di errore -->
     <error-page>
         <error-code>404</error-code>
         <location>/views/errors/404.jsp</location>
@@ -73,6 +107,7 @@
         <location>/views/errors/500.jsp</location>
     </error-page>
 
+    <!-- Config JSP: forziamo UTF-8 -->
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>

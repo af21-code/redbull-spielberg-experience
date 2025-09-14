@@ -12,8 +12,9 @@ public class CartItem {
     private int quantity;
     private String productType; // "EXPERIENCE" | "MERCHANDISE"
 
-    // NUOVI CAMPI PRENOTAZIONE
+    // CAMPI PRENOTAZIONE
     private String driverName;
+    private String driverNumber;   // NEW
     private String companionName;
     private String vehicleCode;
     private LocalDate eventDate;
@@ -47,9 +48,11 @@ public class CartItem {
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public void setProductType(String productType) { this.productType = productType; }
 
-    // Getter/Setter nuovi campi
     public String getDriverName() { return driverName; }
     public void setDriverName(String driverName) { this.driverName = driverName; }
+
+    public String getDriverNumber() { return driverNumber; }
+    public void setDriverNumber(String driverNumber) { this.driverNumber = driverNumber; }
 
     public String getCompanionName() { return companionName; }
     public void setCompanionName(String companionName) { this.companionName = companionName; }

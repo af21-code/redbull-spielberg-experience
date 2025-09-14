@@ -13,11 +13,8 @@ import java.util.List;
 @WebListener
 public class SessionCartMergeListener implements HttpSessionAttributeListener {
 
-    @Override
-    public void attributeAdded(HttpSessionBindingEvent event) { maybeMerge(event); }
-
-    @Override
-    public void attributeReplaced(HttpSessionBindingEvent event) { maybeMerge(event); }
+    @Override public void attributeAdded(HttpSessionBindingEvent event)   { maybeMerge(event); }
+    @Override public void attributeReplaced(HttpSessionBindingEvent event){ maybeMerge(event); }
 
     private void maybeMerge(HttpSessionBindingEvent event) {
         if (!"authUser".equals(event.getName())) return;
@@ -29,7 +26,6 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
         Integer userId = null;
         try { userId = (Integer) authUser.getClass().getMethod("getUserId").invoke(authUser); }
         catch (Exception ignored) {}
-
         if (userId == null) return;
 
         @SuppressWarnings("unchecked")
@@ -41,11 +37,21 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
             CartDAO dao = new CartDAOImpl(con);
 
             for (CartItem it : items) {
-                dao.upsertItem(userId, it.getProductId(), it.getSlotId(), it.getQuantity());
+                dao.upsertItem(
+                        userId,
+                        it.getProductId(),
+                        it.getSlotId(),
+                        it.getQuantity(),
+                        it.getDriverName(),
+                        it.getDriverNumber(),
+                        it.getCompanionName(),
+                        it.getVehicleCode(),
+                        it.getEventDate()
+                );
             }
 
             con.commit();
-            items.clear();                       // svuota il carrello sessione
+            items.clear(); // svuota il carrello di sessione dopo merge
             session.setAttribute("cartItems", items);
         } catch (Exception e) {
             e.printStackTrace();

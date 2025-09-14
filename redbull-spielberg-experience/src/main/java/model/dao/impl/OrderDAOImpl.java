@@ -7,13 +7,20 @@ import utils.DatabaseConnection;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class OrderDAOImpl implements OrderDAO {
 
     @Override
-    public String createOrder(int userId, List<CartItem> cart, String shippingAddress,
-                              String billingAddress, String notes, String paymentMethod) throws Exception {
+    public String createOrder(int userId,
+                              List<CartItem> cart,
+                              String shippingAddress,
+                              String billingAddress,
+                              String notes,
+                              String paymentMethod) throws Exception {
 
         if (cart == null || cart.isEmpty()) throw new IllegalArgumentException("Carrello vuoto.");
 
@@ -27,7 +34,7 @@ public class OrderDAOImpl implements OrderDAO {
 
             int orderId;
 
-            // Header
+            // Header ordine
             String insOrder = """
                 INSERT INTO orders
                   (user_id, order_number, total_amount, status, payment_status, payment_method,
@@ -51,7 +58,7 @@ public class OrderDAOImpl implements OrderDAO {
                 }
             }
 
-            // Righe (snapshot prezzo/nome + dettagli esperienza)
+            // Righe ordine (snapshot prezzo/nome + dettagli esperienza se presenti)
             String insItem = """
                 INSERT INTO order_items
                   (order_id, product_id, slot_id, quantity, unit_price, total_price, product_name,
@@ -76,7 +83,7 @@ public class OrderDAOImpl implements OrderDAO {
                 ps.executeBatch();
             }
 
-            // Update slot capacity (solo se presente uno slot_id)
+            // Aggiorna capacità slot (se presenti)
             String updSlot = """
                UPDATE time_slots
                SET booked_capacity = booked_capacity + 1,
@@ -93,7 +100,7 @@ public class OrderDAOImpl implements OrderDAO {
                 ps.executeBatch();
             }
 
-            // Update stock per MERCHANDISE
+            // Aggiorna stock per MERCHANDISE
             String updStock = """
                UPDATE products
                SET stock_quantity = GREATEST(0, stock_quantity - ?)
@@ -112,9 +119,67 @@ public class OrderDAOImpl implements OrderDAO {
 
             con.commit();
             return orderNumber;
-
-        } catch (Exception e) {
-            throw e;
         }
+    }
+
+    @Override
+    public List<Map<String, Object>> adminList(LocalDate from, LocalDate to, Integer userId) throws Exception {
+        StringBuilder sql = new StringBuilder("""
+            SELECT o.order_id,
+                   o.order_number,
+                   o.user_id,
+                   CONCAT(u.first_name, ' ', u.last_name) AS customer_name,
+                   o.total_amount,
+                   o.status,
+                   o.payment_status,
+                   o.payment_method,
+                   o.order_date
+            FROM orders o
+            LEFT JOIN users u ON u.user_id = o.user_id
+            WHERE 1=1
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (from != null) {
+            sql.append(" AND o.order_date >= ? ");
+            params.add(Timestamp.valueOf(from.atStartOfDay()));
+        }
+        if (to != null) {
+            sql.append(" AND o.order_date < ? ");
+            params.add(Timestamp.valueOf(to.plusDays(1).atStartOfDay())); // half-open range
+        }
+        if (userId != null) {
+            sql.append(" AND o.user_id = ? ");
+            params.add(userId);
+        }
+
+        sql.append(" ORDER BY o.order_date DESC ");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("order_id", rs.getInt("order_id"));
+                    m.put("order_number", rs.getString("order_number"));
+                    m.put("user_id", rs.getInt("user_id"));
+                    m.put("customer_name", rs.getString("customer_name"));
+                    m.put("total_amount", rs.getBigDecimal("total_amount"));
+                    m.put("status", rs.getString("status"));
+                    m.put("payment_status", rs.getString("payment_status"));
+                    m.put("payment_method", rs.getString("payment_method"));
+                    m.put("order_date", rs.getTimestamp("order_date"));
+                    rows.add(m);
+                }
+            }
+        }
+        return rows;
     }
 }

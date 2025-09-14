@@ -1,18 +1,20 @@
 package model.dao;
 
 import model.CartItem;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface OrderDAO {
-    /**
-     * Crea l'ordine (header + righe) prendendo i prezzi/nomi dal carrello (snapshot),
-     * aggiorna stock (MERCHANDISE) e capacity degli slot (EXPERIENCE).
-     * Ritorna l'order_number generato.
-     */
+
+   
     String createOrder(int userId,
-                       List<model.CartItem> cart,
+                       List<CartItem> cart,
                        String shippingAddress,
                        String billingAddress,
                        String notes,
                        String paymentMethod) throws Exception;
+
+    
+    List<Map<String, Object>> adminList(LocalDate from, LocalDate to, Integer userId) throws Exception;
 }

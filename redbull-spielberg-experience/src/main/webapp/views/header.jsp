@@ -1,20 +1,36 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="model.User, java.util.List, model.CartItem" %>
 <%
+  // --- Context & stato ---
   User authUser = (User) session.getAttribute("authUser");
   String ctx = request.getContextPath();
   String uri = request.getRequestURI() == null ? "" : request.getRequestURI();
 
-  boolean ordersActive = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
-  boolean shopActive   = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
-  boolean cartActive   = uri.contains("/cart");
+  // Attivi per la navbar
+  boolean exploreActive = uri.endsWith("/index.jsp");
+  boolean rb21Active    = uri.contains("/rb21");
+  boolean trackActive   = uri.contains("#track"); // solo ancoraggio
+  boolean shopActive    = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
+  boolean ordersActive  = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
+  boolean cartActive    = uri.contains("/cart");
+  boolean adminActive   = uri.contains("/admin");
 
-  // 1) Prova a leggere il conteggio messo nel request dal CartSyncFilter
+  // Admin?
+  boolean isAdmin = false;
+  if (authUser != null) {
+    try {
+      Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
+      isAdmin = (t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t)));
+    } catch (Exception ignored) {}
+  }
+
+  // Conteggio carrello:
+  // 1) prova da request (es. impostato da un filtro)
   Integer cartCountObj = (Integer) request.getAttribute("cartCount");
   int cartCount = (cartCountObj != null) ? cartCountObj : 0;
 
-  // 2) Fallback: se per qualsiasi motivo manca, ricava dalla sessione
-  if (cartCount == 0) {
+  // 2) fallback dalla sessione se nullo/zero
+  if (cartCount <= 0) {
     List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
     if (sessionCart != null) {
       for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
@@ -22,10 +38,12 @@
   }
 %>
 
+<!-- CSS globali -->
 <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
 <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
 <link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=3">
 
+<!-- Fallback minimo per il bottone Logout + badge carrello -->
 <style>
 header .menu-right .Btn{
   --bg:#1f2937; --bgH:#E30613; --txt:#fff; --ring:rgba(227,6,19,.35);
@@ -45,6 +63,7 @@ header .menu-right .Btn:hover{
 header .menu-right .Btn:hover .sign svg{ transform:translateX(2px); }
 header .menu-right .Btn:active{ transform:translateY(0); box-shadow:none; }
 
+/* Badge quantità carrello */
 header .menu-right .btn-cart .badge{
   display:inline-grid; place-items:center;
   min-width:18px; height:18px; padding:0 5px;
@@ -56,17 +75,20 @@ header .menu-right .btn-cart .badge{
 <header>
   <div class="container nav-container">
     <div class="logo">
-      <a href="<%=ctx%>/index.jsp">
+      <a href="<%=ctx%>/index.jsp" aria-label="Home">
         <img src="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" alt="Red Bull Racing Logo" />
       </a>
     </div>
 
     <nav>
       <ul class="main-menu">
-        <li><a href="<%=ctx%>/index.jsp">ESPLORA</a></li>
-        <li><a href="<%=ctx%>/rb21">RB-21</a></li>
-        <li><a href="<%=ctx%>/index.jsp#track">PISTA</a></li>
+        <li><a href="<%=ctx%>/index.jsp" class="<%= exploreActive ? "active" : "" %>">ESPLORA</a></li>
+        <li><a href="<%=ctx%>/rb21" class="<%= rb21Active ? "active" : "" %>">RB-21</a></li>
+        <li><a href="<%=ctx%>/index.jsp#track" class="<%= trackActive ? "active" : "" %>">PISTA</a></li>
         <li><a href="<%=ctx%>/shop" class="<%= shopActive ? "active" : "" %>">SHOP</a></li>
+        <% if (isAdmin) { %>
+          <li><a href="<%=ctx%>/admin" class="<%= adminActive ? "active" : "" %>">ADMIN</a></li>
+        <% } %>
       </ul>
 
       <ul class="menu-right">
@@ -74,6 +96,7 @@ header .menu-right .btn-cart .badge{
           <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
         <% } %>
 
+        <!-- Carrello sempre visibile -->
         <li>
           <a href="<%=ctx%>/cart/view" class="btn-cart <%= cartActive ? "active" : "" %>">
             Carrello
@@ -89,7 +112,8 @@ header .menu-right .btn-cart .badge{
               <button class="Btn" type="submit" title="Logout" aria-label="Logout">
                 <div class="sign" aria-hidden="true">
                   <svg viewBox="0 0 512 512" focusable="false">
-                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"/>
+                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"/>
+                  </svg>
                 </div>
                 <span class="text">Logout</span>
               </button>
