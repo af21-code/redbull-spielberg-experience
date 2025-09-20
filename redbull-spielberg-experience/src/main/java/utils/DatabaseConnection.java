@@ -1,72 +1,38 @@
 package utils;
 
+import javax.naming.InitialContext;
+import javax.naming.Context;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * Classe per la gestione della connessione al database
- * Implementa il pattern Singleton per garantire una sola istanza
- */
 public class DatabaseConnection {
-    
-    private static final String URL = "jdbc:mysql://localhost:3306/red_bull_spielberg?useSSL=false&serverTimezone=Europe/Rome&allowPublicKeyRetrieval=true";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "RedBull2025!"; // La tua password MySQL
-    private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
-    
-    private static DatabaseConnection instance;
-    private Connection connection;
-    
-    /**
-     * Costruttore privato per implementare Singleton
-     */
+    private static final DatabaseConnection INSTANCE = new DatabaseConnection();
+    private DataSource ds;
+
     private DatabaseConnection() {
         try {
-            Class.forName(DRIVER);
-            this.connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            System.out.println("Connessione al database stabilita con successo!");
-        } catch (ClassNotFoundException e) {
-            System.err.println("Driver MySQL non trovato: " + e.getMessage());
-        } catch (SQLException e) {
-            System.err.println("Errore nella connessione al database: " + e.getMessage());
+            Context ic = new InitialContext();
+            // cerca il DataSource definito in context.xml
+            ds = (DataSource) ic.lookup("java:comp/env/jdbc/redbull");
+        } catch (Exception e) {
+            ds = null; // fallback a DriverManager
         }
     }
-    
-    /**
-     * Metodo per ottenere l'istanza della connessione (Singleton)
-     * @return istanza di DatabaseConnection
-     */
-    public static synchronized DatabaseConnection getInstance() {
-        if (instance == null) {
-            instance = new DatabaseConnection();
-        }
-        return instance;
+
+    public static DatabaseConnection getInstance() {
+        return INSTANCE;
     }
-    
-    /**
-     * Metodo per ottenere la connessione al database
-     * @return Connection object
-     * @throws SQLException se la connessione non è disponibile
-     */
+
     public Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        if (ds != null) {
+            return ds.getConnection();
         }
-        return connection;
-    }
-    
-    /**
-     * Metodo per chiudere la connessione
-     */
-    public void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                System.out.println("Connessione al database chiusa.");
-            }
-        } catch (SQLException e) {
-            System.err.println("Errore nella chiusura della connessione: " + e.getMessage());
-        }
+        // Fallback: usa i parametri attuali (adatta user/pass/URL ai tuoi)
+        String url = "jdbc:mysql://localhost:3306/red_bull_spielberg?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+        String user = "root";
+        String pass = "";
+        return DriverManager.getConnection(url, user, pass);
     }
 }
