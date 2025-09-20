@@ -38,12 +38,12 @@
         <div class="srv-error"><%= request.getAttribute("checkoutError") %></div>
       <% } %>
 
-      <!-- MOD: action -> /checkout/confirm -->
+      <!-- action -> /checkout/confirm -->
       <form id="checkout-form" method="post" action="<%=ctx%>/checkout/confirm" novalidate>
-        <!-- NEW: idempotency key (arriva dal CheckoutServlet via req.setAttribute) -->
+        <!-- idempotency key (dal servlet) -->
         <input type="hidden" name="idempotencyKey" value="${idempotencyKey}">
-        <!-- (opzionale) CSRF token: lo gestiamo quando abilitiamo il filtro CSRF -->
-        <!-- <input type="hidden" name="csrf" value="${csrfToken}"> -->
+        <!-- CSRF token (dal servlet) -->
+        <input type="hidden" name="csrf" value="${csrfToken}">
 
         <!-- hidden fields to keep backend contract -->
         <textarea name="shippingAddress" id="shippingAddress" hidden></textarea>

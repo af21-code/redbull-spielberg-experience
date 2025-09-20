@@ -1,7 +1,18 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%
   String ctx = request.getContextPath();
-  String orderNumber = (String) request.getAttribute("orderNumber");
+
+  // Supporta sia il vecchio forward (attribute) sia il nuovo redirect PRG (parameter)
+  String orderNumberAttr  = (String) request.getAttribute("orderNumber");
+  String orderNumberParam = request.getParameter("orderNumber");
+  String orderNumber = (orderNumberAttr != null && !orderNumberAttr.isEmpty())
+                        ? orderNumberAttr : orderNumberParam;
+
+  // Safety: se manca (refresh diretto senza param), rimanda all’elenco ordini
+  if (orderNumber == null || orderNumber.isEmpty()) {
+    response.sendRedirect(ctx + "/orders");
+    return;
+  }
 %>
 <!DOCTYPE html>
 <html lang="it">

@@ -6,6 +6,8 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +38,21 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        // --- Idempotency key per prevenire doppi invii (F5 / doppio click)
+        // Idempotency key (anti doppio invio)
         String idem = (String) session.getAttribute("checkoutIdem");
         if (idem == null || idem.isEmpty()) {
             idem = UUID.randomUUID().toString();
             session.setAttribute("checkoutIdem", idem);
         }
         req.setAttribute("idempotencyKey", idem);
+
+        // CSRF token (token in sessione come da traccia)
+        String csrf = (String) session.getAttribute("csrfToken");
+        if (csrf == null || csrf.isEmpty()) {
+            csrf = UUID.randomUUID().toString();
+            session.setAttribute("csrfToken", csrf);
+        }
+        req.setAttribute("csrfToken", csrf);
 
         req.getRequestDispatcher("/views/checkout.jsp").forward(req, resp);
     }
@@ -73,22 +83,29 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        // --- Verifica idempotency
-        String idemForm = trim(req.getParameter("idempotencyKey"));
-        String idemSess = (String) session.getAttribute("checkoutIdem");
-        if (idemSess == null || !idemSess.equals(idemForm)) {
-            // Key mancante/non combaciante: evita doppio submit o sessione scaduta
+        // CSRF check
+        String csrfForm = trim(req.getParameter("csrf"));
+        String csrfSess = (String) session.getAttribute("csrfToken");
+        if (csrfSess == null || !csrfSess.equals(csrfForm)) {
             resp.sendRedirect(ctx + "/checkout");
             return;
         }
 
-        // --- Lettura form
+        // Idempotency check
+        String idemForm = trim(req.getParameter("idempotencyKey"));
+        String idemSess = (String) session.getAttribute("checkoutIdem");
+        if (idemSess == null || !idemSess.equals(idemForm)) {
+            resp.sendRedirect(ctx + "/checkout");
+            return;
+        }
+
+        // Lettura form
         String shipping = trim(req.getParameter("shippingAddress"));
         String billing  = trim(req.getParameter("billingAddress"));
         String notes    = trim(req.getParameter("notes"));
         String payment  = trim(req.getParameter("paymentMethod"));
 
-        // --- Validazioni server-side minime
+        // Validazioni minime
         List<String> errors = new ArrayList<>();
         if (isBlank(shipping)) errors.add("L'indirizzo di spedizione è obbligatorio.");
         if (isBlank(payment))  errors.add("Seleziona un metodo di pagamento.");
@@ -98,10 +115,8 @@ public class CheckoutServlet extends HttpServlet {
             errors.add("Metodo di pagamento non valido.");
         }
 
-        // se fatturazione assente, copia spedizione
         if (isBlank(billing)) billing = shipping;
 
-        // opzionale: controllo totale > 0 (coerente con carrello sessione)
         BigDecimal total = BigDecimal.ZERO;
         for (CartItem it : cart) total = total.add(it.getTotal());
         if (total.signum() <= 0) errors.add("Totale ordine non valido (0 o negativo).");
@@ -113,24 +128,20 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         try {
-            // --- Checkout transazionale con lock (products/time_slots) + snapshot prezzo/nome
-        	CheckoutService.Input in = new CheckoutService.Input(shipping, billing, notes, payment);
-        	CheckoutService svc = new CheckoutService();
-        	CheckoutService.Result res = svc.checkout(auth.getUserId(), idemForm, in, cart);
+            // Checkout transazionale con locking (service)
+            CheckoutService.Input in = new CheckoutService.Input(shipping, billing, notes, payment);
+            CheckoutService svc = new CheckoutService();
+            CheckoutService.Result res = svc.checkout(auth.getUserId(), idemForm, in, cart);
 
-            // Consuma la chiave di idempotency
+            // Consuma idempotency + pulizia sessione
             session.removeAttribute("checkoutIdem");
-
-            // Svuota carrello di sessione (il carrello DB è svuotato dal service)
             session.removeAttribute("cartItems");
 
-            // Success: forward alla pagina esistente di successo (manteniamo il tuo flow)
-            req.setAttribute("orderNumber", res.orderNumber);
-            req.getRequestDispatcher("/views/order_success.jsp").forward(req, resp);
-
-            // In alternativa: PRG per evitare re-post su refresh.
-            // resp.sendRedirect(ctx + "/orders/" + res.orderNumber);
-            // return;
+            // PRG: redirect alla pagina di successo con orderNumber come parametro
+            String target = ctx + "/views/order_success.jsp?orderNumber=" +
+                    URLEncoder.encode(res.orderNumber, StandardCharsets.UTF_8);
+            resp.sendRedirect(target);
+            return;
 
         } catch (Exception e) {
             e.printStackTrace();
