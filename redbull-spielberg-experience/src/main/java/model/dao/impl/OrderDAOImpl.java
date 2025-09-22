@@ -195,9 +195,10 @@ public class OrderDAOImpl implements OrderDAO {
             int limit
     ) throws Exception {
 
+        // NOTA: order_date viene restituito grezzo come TIMESTAMP (no DATE_FORMAT)
         StringBuilder sql = new StringBuilder(
-            "SELECT o.order_id, o.order_number, o.total_amount, o.status, o.payment_status, " +
-            "DATE_FORMAT(o.order_date, '%Y-%m-%d %H:%i') AS order_date, " +
+            "SELECT o.order_id, o.order_number, o.total_amount, o.status, o.payment_status, o.payment_method, " +
+            "o.order_date, " +
             "CONCAT(u.first_name, ' ', u.last_name, ' <', u.email, '>') AS customer " +
             "FROM orders o JOIN users u ON o.user_id = u.user_id WHERE 1=1 "
         );
@@ -236,13 +237,14 @@ public class OrderDAOImpl implements OrderDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String,Object> row = new HashMap<>();
-                    row.put("order_id",       rs.getInt("order_id"));
-                    row.put("order_number",   rs.getString("order_number"));
-                    row.put("order_date",     rs.getString("order_date"));
-                    row.put("customer",       rs.getString("customer"));
-                    row.put("total_amount",   rs.getBigDecimal("total_amount"));
-                    row.put("status",         rs.getString("status"));
-                    row.put("payment_status", rs.getString("payment_status"));
+                    row.put("order_id",        rs.getInt("order_id"));
+                    row.put("order_number",    rs.getString("order_number"));
+                    row.put("order_date",      rs.getTimestamp("order_date")); // <-- TIMESTAMP
+                    row.put("customer",        rs.getString("customer"));
+                    row.put("total_amount",    rs.getBigDecimal("total_amount"));
+                    row.put("status",          rs.getString("status"));
+                    row.put("payment_status",  rs.getString("payment_status"));
+                    row.put("payment_method",  rs.getString("payment_method")); // <-- incluso
                     out.add(row);
                 }
             }
@@ -290,6 +292,147 @@ public class OrderDAOImpl implements OrderDAO {
                 rs.next();
                 return rs.getInt(1);
             }
+        }
+    }
+
+    // ========= METODI PER DETTAGLIO ORDINE & AZIONI ADMIN =========
+
+    /** Header singolo ordine (per order-details.jsp). */
+    public Map<String, Object> findOrderHeader(int orderId) throws Exception {
+        String sql = """
+            SELECT
+              o.order_id,
+              o.user_id,
+              o.order_number,
+              o.total_amount,
+              o.status,
+              o.payment_status,
+              o.payment_method,
+              o.carrier,
+              o.tracking_code,
+              o.shipping_address,
+              o.billing_address,
+              o.notes,
+              o.order_date,
+              o.estimated_delivery,
+              o.shipped_at,
+              o.delivered_at,
+              u.first_name AS buyer_first_name,
+              u.last_name  AS buyer_last_name,
+              u.email      AS buyer_email,
+              u.phone      AS buyer_phone
+            FROM orders o
+            JOIN users u ON u.user_id = o.user_id
+            WHERE o.order_id = ?
+        """;
+
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                Map<String,Object> m = new HashMap<>();
+                m.put("order_id",           rs.getInt("order_id"));
+                m.put("user_id",            rs.getInt("user_id"));
+                m.put("order_number",       rs.getString("order_number"));
+                m.put("total_amount",       rs.getBigDecimal("total_amount"));
+                m.put("status",             rs.getString("status"));
+                m.put("payment_status",     rs.getString("payment_status"));
+                m.put("payment_method",     rs.getString("payment_method"));
+                m.put("carrier",            rs.getString("carrier"));
+                m.put("tracking_code",      rs.getString("tracking_code"));
+                m.put("shipping_address",   rs.getString("shipping_address"));
+                m.put("billing_address",    rs.getString("billing_address"));
+                m.put("notes",              rs.getString("notes"));
+                m.put("order_date",         rs.getTimestamp("order_date"));
+                m.put("estimated_delivery", rs.getDate("estimated_delivery"));
+                m.put("shipped_at",         rs.getTimestamp("shipped_at"));
+                m.put("delivered_at",       rs.getTimestamp("delivered_at"));
+                m.put("buyer_first_name",   rs.getString("buyer_first_name"));
+                m.put("buyer_last_name",    rs.getString("buyer_last_name"));
+                m.put("buyer_email",        rs.getString("buyer_email"));
+                m.put("buyer_phone",        rs.getString("buyer_phone"));
+                return m;
+            }
+        }
+    }
+
+    /** Righe/Articoli di un ordine (con eventuale immagine prodotto). */
+    public List<Map<String,Object>> findOrderItems(int orderId) throws Exception {
+        String sql = """
+            SELECT
+              oi.order_item_id,
+              oi.product_id,
+              oi.product_name,
+              oi.quantity,
+              oi.unit_price,
+              oi.total_price,
+              oi.driver_name,
+              oi.companion_name,
+              oi.vehicle_code,
+              oi.event_date,
+              p.image_url
+            FROM order_items oi
+            LEFT JOIN products p ON p.product_id = oi.product_id
+            WHERE oi.order_id = ?
+            ORDER BY oi.order_item_id ASC
+        """;
+
+        List<Map<String,Object>> list = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String,Object> r = new HashMap<>();
+                    r.put("order_item_id",   rs.getInt("order_item_id"));
+                    r.put("product_id",      rs.getInt("product_id"));
+                    r.put("product_name",    rs.getString("product_name"));
+                    r.put("quantity",        rs.getInt("quantity"));
+                    r.put("unit_price",      rs.getBigDecimal("unit_price"));
+                    r.put("total_price",     rs.getBigDecimal("total_price"));
+                    r.put("driver_name",     rs.getString("driver_name"));
+                    r.put("companion_name",  rs.getString("companion_name"));
+                    r.put("vehicle_code",    rs.getString("vehicle_code"));
+                    r.put("event_date",      rs.getDate("event_date"));
+                    r.put("image_url",       rs.getString("image_url"));
+                    list.add(r);
+                }
+            }
+        }
+        return list;
+    }
+
+    /** Aggiorna tracking; valorizza shipped_at se non presente. */
+    @Override
+    public boolean updateTracking(int orderId, String carrier, String trackingCode) throws Exception {
+        String sql = """
+            UPDATE orders
+               SET carrier = ?, tracking_code = ?,
+                   shipped_at = COALESCE(shipped_at, NOW())
+             WHERE order_id = ?
+        """;
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, carrier);
+            ps.setString(2, trackingCode);
+            ps.setInt(3, orderId);
+            return ps.executeUpdate() > 0; // true se almeno una riga aggiornata
+        }
+    }
+
+    /** Segna ordine come COMPLETED; valorizza delivered_at se non presente. */
+    public boolean markCompleted(int orderId) throws Exception {
+        String sql = """
+            UPDATE orders
+               SET status = 'COMPLETED',
+                   delivered_at = COALESCE(delivered_at, NOW())
+             WHERE order_id = ?
+        """;
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            return ps.executeUpdate() > 0;
         }
     }
 }

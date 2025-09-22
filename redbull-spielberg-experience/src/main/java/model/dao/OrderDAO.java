@@ -20,15 +20,14 @@ public interface OrderDAO {
                        String paymentMethod) throws Exception;
 
     /**
-     * Lista admin "storica" (già presente).
+     * Lista admin "storica".
      * Filtra per data e, opzionalmente, per utente.
      */
     List<Map<String, Object>> adminList(LocalDate from, LocalDate to, Integer userId) throws Exception;
 
     /**
-     * NUOVO: lista ordini per admin con filtri (data da/a, query cliente, stato)
-     * e paginazione (offset/limit). I campi mappati nelle mappe sono:
-     *  - order_id, order_number, order_date (string formattata), customer, total_amount, status, payment_status
+     * Lista ordini per admin con filtri (data da/a, query cliente, stato) e paginazione.
+     * Campi attesi: order_id, order_number, order_date (string), customer, total_amount, status, payment_status
      */
     List<Map<String, Object>> findOrdersAdmin(
             Date from,
@@ -40,7 +39,7 @@ public interface OrderDAO {
     ) throws Exception;
 
     /**
-     * NUOVO: conteggio totale per paginazione con gli stessi filtri della lista.
+     * Conteggio totale per paginazione con gli stessi filtri della lista admin.
      */
     int countOrdersAdmin(
             Date from,
@@ -48,4 +47,28 @@ public interface OrderDAO {
             String customerQuery,
             String status
     ) throws Exception;
+
+    // ===================== NUOVI METODI: DETTAGLIO ORDINE =====================
+
+    /**
+     * Header del singolo ordine (con dati acquirente).
+     * Ritorna una mappa con i campi usati dalla JSP: vedi findOrderHeader() in impl.
+     */
+    Map<String, Object> findOrderHeader(int orderId) throws Exception;
+
+    /**
+     * Righe del singolo ordine (con eventuale image_url del prodotto).
+     * Ritorna una lista di mappe con i campi usati dalla JSP.
+     */
+    List<Map<String, Object>> findOrderItems(int orderId) throws Exception;
+
+    /**
+     * Aggiorna corriere/codice tracking; imposta shipped_at se non valorizzato (se presente nello schema).
+     */
+    boolean updateTracking(int orderId, String carrier, String trackingCode) throws Exception;
+
+    /**
+     * Segna l'ordine come COMPLETED; imposta delivered_at se non valorizzato (se presente nello schema).
+     */
+    boolean markCompleted(int orderId) throws Exception;
 }
