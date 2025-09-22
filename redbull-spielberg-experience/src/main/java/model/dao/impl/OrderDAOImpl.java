@@ -182,4 +182,114 @@ public class OrderDAOImpl implements OrderDAO {
         }
         return rows;
     }
+
+    // ========= NUOVI METODI per Admin / Paginazione / Filtri =========
+
+    @Override
+    public List<Map<String, Object>> findOrdersAdmin(
+            java.sql.Date from,
+            java.sql.Date to,
+            String customerQuery,
+            String status,
+            int offset,
+            int limit
+    ) throws Exception {
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT o.order_id, o.order_number, o.total_amount, o.status, o.payment_status, " +
+            "DATE_FORMAT(o.order_date, '%Y-%m-%d %H:%i') AS order_date, " +
+            "CONCAT(u.first_name, ' ', u.last_name, ' <', u.email, '>') AS customer " +
+            "FROM orders o JOIN users u ON o.user_id = u.user_id WHERE 1=1 "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (from != null) { sql.append(" AND DATE(o.order_date) >= ?"); params.add(from); }
+        if (to   != null) { sql.append(" AND DATE(o.order_date) <= ?"); params.add(to); }
+
+        if (customerQuery != null && !customerQuery.isBlank()) {
+            sql.append(" AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)");
+            String like = "%" + customerQuery + "%";
+            params.add(like); params.add(like); params.add(like);
+        }
+
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND o.status = ?");
+            params.add(status.toUpperCase());
+        }
+
+        sql.append(" ORDER BY o.order_date DESC LIMIT ? OFFSET ?");
+        params.add(limit <= 0 ? 20 : limit);
+        params.add(Math.max(0, offset));
+
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof java.sql.Date) ps.setDate(i+1, (java.sql.Date) p);
+                else if (p instanceof Integer)  ps.setInt(i+1, (Integer) p);
+                else                            ps.setString(i+1, String.valueOf(p));
+            }
+
+            List<Map<String,Object>> out = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String,Object> row = new HashMap<>();
+                    row.put("order_id",       rs.getInt("order_id"));
+                    row.put("order_number",   rs.getString("order_number"));
+                    row.put("order_date",     rs.getString("order_date"));
+                    row.put("customer",       rs.getString("customer"));
+                    row.put("total_amount",   rs.getBigDecimal("total_amount"));
+                    row.put("status",         rs.getString("status"));
+                    row.put("payment_status", rs.getString("payment_status"));
+                    out.add(row);
+                }
+            }
+            return out;
+        }
+    }
+
+    @Override
+    public int countOrdersAdmin(
+            java.sql.Date from,
+            java.sql.Date to,
+            String customerQuery,
+            String status
+    ) throws Exception {
+
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM orders o JOIN users u ON o.user_id = u.user_id WHERE 1=1 "
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (from != null) { sql.append(" AND DATE(o.order_date) >= ?"); params.add(from); }
+        if (to   != null) { sql.append(" AND DATE(o.order_date) <= ?"); params.add(to); }
+
+        if (customerQuery != null && !customerQuery.isBlank()) {
+            sql.append(" AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)");
+            String like = "%" + customerQuery + "%";
+            params.add(like); params.add(like); params.add(like);
+        }
+
+        if (status != null && !status.isBlank()) {
+            sql.append(" AND o.status = ?");
+            params.add(status.toUpperCase());
+        }
+
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof java.sql.Date) ps.setDate(i+1, (java.sql.Date) p);
+                else                            ps.setString(i+1, String.valueOf(p));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
 }

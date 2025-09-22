@@ -71,10 +71,12 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- Listener: merge carrello guest → DB al login -->
+    <!-- Listener rimosso: la classe è annotata con @WebListener e viene rilevata automaticamente -->
+    <!--
     <listener>
         <listener-class>listener.SessionCartMergeListener</listener-class>
     </listener>
+    -->
 
     <!-- ===== ADMIN DASHBOARD (mappo direttamente la JSP) ===== -->
     <servlet>

@@ -1,10 +1,10 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, java.text.SimpleDateFormat, model.Order, model.OrderItem" %>
+<%@ page import="java.util.*, java.math.BigDecimal, java.text.SimpleDateFormat, model.Order" %>
 <%
   String ctx = request.getContextPath();
+  @SuppressWarnings("unchecked")
   List<Order> orders = (List<Order>) request.getAttribute("orders");
-  Boolean isAdmin = (Boolean) request.getAttribute("isAdmin");
-  if (isAdmin == null) isAdmin = false;
+  if (orders == null) orders = Collections.emptyList();
 
   SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 %>
@@ -12,131 +12,72 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title><%= isAdmin ? "Ordini (Admin)" : "I miei ordini" %></title>
+  <title>I miei ordini</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
-  <!-- 👇 Forzo anche qui il CSS del logout per evitare race/ordine caricamento -->
-  <link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=3">
   <style>
-    .orders-wrap { padding: 40px 24px 80px; background: linear-gradient(135deg,#001e36 0%,#000b2b 100%); color:#fff; min-height:60vh; }
-    .orders-title { max-width:1100px; margin:0 auto 18px; display:flex; justify-content:space-between; align-items:center; }
-    .order-card { max-width:1100px; margin:12px auto; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:16px; overflow:hidden; }
-    .order-head { padding:16px 18px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; border-bottom:1px solid rgba(255,255,255,0.15); }
-    .order-head .badge { background:#F5A600; color:#001e36; font-weight:800; border-radius:10px; padding:6px 10px; }
-    .order-head .muted { opacity:.8; }
-    .order-body { padding:14px 18px; }
-    .items-table { width:100%; border-collapse:collapse; }
-    .items-table th, .items-table td { padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.12); }
-    .items-table th { text-align:left; color:#F5A600; }
-    .order-foot { padding:12px 18px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
-    .total { font-weight:900; color:#F5A600; }
-    .track-btn { background:#E30613; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
-    .details-btn { background:#0a84ff; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
-    .empty { max-width:1100px; margin:40px auto; text-align:center; opacity:.85; }
-    .order-actions { display:flex; gap:8px; align-items:center; }
+    .wrap{padding:30px 18px 80px;background:linear-gradient(135deg,#001e36 0%,#000b2b 100%);min-height:60vh;color:#fff}
+    .container{max-width:1100px;margin:0 auto}
+    .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px}
+    .title{margin:0 0 12px}
+    .table{width:100%;border-collapse:collapse;margin-top:12px}
+    .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.15);vertical-align:top}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid rgba(255,255,255,.3);border-radius:999px}
+    .muted{opacity:.85}
+    .btn{background:#444;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;text-decoration:none}
+    .btn.primary{background:#E30613}
   </style>
 </head>
 <body>
-<jsp:include page="header.jsp" />
+<jsp:include page="/views/header.jsp" />
 
-<div class="orders-wrap">
-  <div class="orders-title">
-    <h2><%= isAdmin ? "Ordini (Admin)" : "I miei ordini" %></h2>
-  </div>
+<div class="wrap">
+  <div class="container">
 
-  <%
-    if (orders == null || orders.isEmpty()) {
-  %>
-    <p class="empty">Nessun ordine trovato.</p>
-  <%
-    } else {
-      for (Order o : orders) {
-        String shipped = (o.getShippedAt() != null) ? df.format(o.getShippedAt()) : "—";
-        String eta = (o.getEstimatedDelivery() != null) ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(o.getEstimatedDelivery()) : "—";
+    <h2 class="title">I miei ordini</h2>
 
-        String carrier = (o.getCarrier() == null ? "" : o.getCarrier());
-        String code = (o.getTrackingCode() == null ? "" : o.getTrackingCode());
-        String trackUrl = null;
-        if (!carrier.isBlank() && !code.isBlank()) {
-          if ("DHL".equalsIgnoreCase(carrier)) {
-            trackUrl = "https://www.dhl.com/it-it/home/tracking/tracking-express.html?tracking-id=" + code;
-          } else if ("UPS".equalsIgnoreCase(carrier)) {
-            trackUrl = "https://www.ups.com/track?tracknum=" + code;
-          } else if ("FEDEX".equalsIgnoreCase(carrier) || "FEDEX EXPRESS".equalsIgnoreCase(carrier)) {
-            trackUrl = "https://www.fedex.com/fedextrack/?trknbr=" + code;
-          } else {
-            trackUrl = null;
-          }
-        }
-
-        Integer orderId = null;
-        try { orderId = (Integer) o.getClass().getMethod("getOrderId").invoke(o); } catch (Exception ignored) {}
-  %>
-    <div class="order-card">
-      <div class="order-head">
-        <span class="badge">
-          <% if (orderId != null) { %>
-            <a href="<%=ctx%>/order?id=<%=orderId%>" style="text-decoration:none; color:#001e36;"># <%= o.getOrderNumber() %></a>
-          <% } else { %>
-            # <%= o.getOrderNumber() %>
-          <% } %>
-        </span>
-        <span>Stato: <strong><%= o.getStatus() %></strong></span>
-        <span>Pagamento: <strong><%= o.getPaymentStatus() %></strong></span>
-        <span class="muted">Creato: <%= df.format(o.getOrderDate()) %></span>
-        <span class="muted">Spedito: <%= shipped %></span>
-        <span class="muted">Consegna stimata: <%= eta %></span>
-      </div>
-
-      <div class="order-body">
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th>Articolo</th>
-              <th>Qty</th>
-              <th>Prezzo</th>
-              <th>Totale</th>
-            </tr>
-          </thead>
-          <tbody>
-          <%
-            List<OrderItem> items = o.getItems();
-            if (items != null) {
-              for (OrderItem it : items) {
-          %>
-            <tr>
-              <td><%= it.getProductName() %></td>
-              <td><%= it.getQuantity() %></td>
-              <td>€ <%= it.getUnitPrice() %></td>
-              <td>€ <%= it.getTotalPrice() %></td>
-            </tr>
-          <%
-              }
-            }
-          %>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="order-foot">
-        <div class="total">Totale: € <%= o.getTotalAmount() %></div>
-        <div class="order-actions">
-          <% if (orderId != null) { %>
-            <a class="details-btn" href="<%=ctx%>/order?id=<%=orderId%>">Dettagli</a>
-          <% } %>
-          <% if (trackUrl != null) { %>
-            <a class="track-btn" href="<%= trackUrl %>" target="_blank" rel="noopener">Track</a>
-          <% } else if (code != null && !code.isBlank()) { %>
-            <span class="muted">Tracking: <strong><%= code %></strong> (<%= carrier %>)</span>
-          <% } %>
-        </div>
-      </div>
+    <div class="card">
+      <table class="table">
+        <thead>
+        <tr>
+          <th># Ordine</th>
+          <th>Data</th>
+          <th>Totale</th>
+          <th>Stato</th>
+          <th>Pagamento</th>
+          <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <% if (orders.isEmpty()) { %>
+          <tr><td colspan="6" class="muted">Non hai ancora effettuato ordini.</td></tr>
+        <% } %>
+        <%
+          for (Order o : orders) {
+            String onum  = o.getOrderNumber();
+            java.util.Date od = (o.getOrderDate() instanceof java.util.Date)
+                                ? (java.util.Date) o.getOrderDate()
+                                : null;
+            String date  = (od == null) ? "—" : df.format(od);
+            BigDecimal tot = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
+            String st   = o.getStatus();
+            String pay  = o.getPaymentStatus();
+        %>
+          <tr>
+            <td><strong><%= onum %></strong></td>
+            <td class="muted"><%= date %></td>
+            <td>€ <%= tot %></td>
+            <td><span class="pill"><%= st %></span></td>
+            <td><span class="pill"><%= pay %></span></td>
+            <td><a class="btn" href="<%=ctx%>/order?id=<%= o.getOrderId() %>">Dettagli</a></td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
     </div>
-  <%
-      } // end for
-    } // end else
-  %>
+
+  </div>
 </div>
 
-<jsp:include page="footer.jsp" />
+<jsp:include page="/views/footer.jsp" />
 </body>
 </html>
