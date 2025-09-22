@@ -5,12 +5,15 @@ import model.dao.OrderDAO;
 import utils.DatabaseConnection;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.sql.SQLException; // <-- aggiunto
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OrderDAOImpl implements OrderDAO {
 
@@ -58,12 +61,12 @@ public class OrderDAOImpl implements OrderDAO {
                 }
             }
 
-            // Righe ordine (snapshot prezzo/nome + dettagli esperienza se presenti)
+            // Righe ordine (snapshot + dettagli esperienza)
             String insItem = """
                 INSERT INTO order_items
                   (order_id, product_id, slot_id, quantity, unit_price, total_price, product_name,
-                   driver_name, companion_name, vehicle_code, event_date)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                   driver_name, driver_number, companion_name, vehicle_code, event_date)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
             """;
             try (PreparedStatement ps = con.prepareStatement(insItem)) {
                 for (CartItem it : cart) {
@@ -75,9 +78,14 @@ public class OrderDAOImpl implements OrderDAO {
                     ps.setBigDecimal(6, it.getTotal());
                     ps.setString(7, it.getProductName());
                     ps.setString(8, it.getDriverName());
-                    ps.setString(9, it.getCompanionName());
-                    ps.setString(10, it.getVehicleCode());
-                    if (it.getEventDate() != null) ps.setDate(11, Date.valueOf(it.getEventDate())); else ps.setNull(11, Types.DATE);
+                    ps.setString(9, it.getDriverNumber());
+                    ps.setString(10, it.getCompanionName());
+                    ps.setString(11, it.getVehicleCode());
+                    if (it.getEventDate() != null) {
+                        ps.setDate(12, java.sql.Date.valueOf(it.getEventDate())); // <-- uso esplicito
+                    } else {
+                        ps.setNull(12, Types.DATE);
+                    }
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -147,7 +155,7 @@ public class OrderDAOImpl implements OrderDAO {
         }
         if (to != null) {
             sql.append(" AND o.order_date < ? ");
-            params.add(Timestamp.valueOf(to.plusDays(1).atStartOfDay())); // half-open range
+            params.add(Timestamp.valueOf(to.plusDays(1).atStartOfDay()));
         }
         if (userId != null) {
             sql.append(" AND o.user_id = ? ");
@@ -195,7 +203,6 @@ public class OrderDAOImpl implements OrderDAO {
             int limit
     ) throws Exception {
 
-        // NOTA: order_date viene restituito grezzo come TIMESTAMP (no DATE_FORMAT)
         StringBuilder sql = new StringBuilder(
             "SELECT o.order_id, o.order_number, o.total_amount, o.status, o.payment_status, o.payment_method, " +
             "o.order_date, " +
@@ -239,12 +246,12 @@ public class OrderDAOImpl implements OrderDAO {
                     Map<String,Object> row = new HashMap<>();
                     row.put("order_id",        rs.getInt("order_id"));
                     row.put("order_number",    rs.getString("order_number"));
-                    row.put("order_date",      rs.getTimestamp("order_date")); // <-- TIMESTAMP
+                    row.put("order_date",      rs.getTimestamp("order_date"));
                     row.put("customer",        rs.getString("customer"));
                     row.put("total_amount",    rs.getBigDecimal("total_amount"));
                     row.put("status",          rs.getString("status"));
                     row.put("payment_status",  rs.getString("payment_status"));
-                    row.put("payment_method",  rs.getString("payment_method")); // <-- incluso
+                    row.put("payment_method",  rs.getString("payment_method"));
                     out.add(row);
                 }
             }
@@ -295,9 +302,9 @@ public class OrderDAOImpl implements OrderDAO {
         }
     }
 
-    // ========= METODI PER DETTAGLIO ORDINE & AZIONI ADMIN =========
+    // ========= DETTAGLIO ORDINE & AZIONI ADMIN =========
 
-    /** Header singolo ordine (per order-details.jsp). */
+    /** Header singolo ordine. */
     public Map<String, Object> findOrderHeader(int orderId) throws Exception {
         String sql = """
             SELECT
@@ -316,11 +323,10 @@ public class OrderDAOImpl implements OrderDAO {
               o.order_date,
               o.estimated_delivery,
               o.shipped_at,
-              o.delivered_at,
               u.first_name AS buyer_first_name,
               u.last_name  AS buyer_last_name,
               u.email      AS buyer_email,
-              u.phone      AS buyer_phone
+              u.phone_number AS buyer_phone
             FROM orders o
             JOIN users u ON u.user_id = o.user_id
             WHERE o.order_id = ?
@@ -347,7 +353,7 @@ public class OrderDAOImpl implements OrderDAO {
                 m.put("order_date",         rs.getTimestamp("order_date"));
                 m.put("estimated_delivery", rs.getDate("estimated_delivery"));
                 m.put("shipped_at",         rs.getTimestamp("shipped_at"));
-                m.put("delivered_at",       rs.getTimestamp("delivered_at"));
+                // "delivered_at" non selezionato (colonna opzionale)
                 m.put("buyer_first_name",   rs.getString("buyer_first_name"));
                 m.put("buyer_last_name",    rs.getString("buyer_last_name"));
                 m.put("buyer_email",        rs.getString("buyer_email"));
@@ -357,17 +363,18 @@ public class OrderDAOImpl implements OrderDAO {
         }
     }
 
-    /** Righe/Articoli di un ordine (con eventuale immagine prodotto). */
+    /** Articoli ordine. */
     public List<Map<String,Object>> findOrderItems(int orderId) throws Exception {
         String sql = """
             SELECT
-              oi.order_item_id,
+              oi.item_id AS order_item_id,
               oi.product_id,
               oi.product_name,
               oi.quantity,
               oi.unit_price,
               oi.total_price,
               oi.driver_name,
+              oi.driver_number,
               oi.companion_name,
               oi.vehicle_code,
               oi.event_date,
@@ -375,7 +382,7 @@ public class OrderDAOImpl implements OrderDAO {
             FROM order_items oi
             LEFT JOIN products p ON p.product_id = oi.product_id
             WHERE oi.order_id = ?
-            ORDER BY oi.order_item_id ASC
+            ORDER BY oi.item_id ASC
         """;
 
         List<Map<String,Object>> list = new ArrayList<>();
@@ -392,6 +399,7 @@ public class OrderDAOImpl implements OrderDAO {
                     r.put("unit_price",      rs.getBigDecimal("unit_price"));
                     r.put("total_price",     rs.getBigDecimal("total_price"));
                     r.put("driver_name",     rs.getString("driver_name"));
+                    r.put("driver_number",   rs.getString("driver_number"));
                     r.put("companion_name",  rs.getString("companion_name"));
                     r.put("vehicle_code",    rs.getString("vehicle_code"));
                     r.put("event_date",      rs.getDate("event_date"));
@@ -417,22 +425,32 @@ public class OrderDAOImpl implements OrderDAO {
             ps.setString(1, carrier);
             ps.setString(2, trackingCode);
             ps.setInt(3, orderId);
-            return ps.executeUpdate() > 0; // true se almeno una riga aggiornata
+            return ps.executeUpdate() > 0;
         }
     }
 
-    /** Segna ordine come COMPLETED; valorizza delivered_at se non presente. */
+    /** Segna ordine come COMPLETED; se 'delivered_at' non esiste, fallback. */
     public boolean markCompleted(int orderId) throws Exception {
-        String sql = """
+        String sqlWithDelivered = """
             UPDATE orders
                SET status = 'COMPLETED',
                    delivered_at = COALESCE(delivered_at, NOW())
              WHERE order_id = ?
         """;
+        String sqlWithoutDelivered = "UPDATE orders SET status='COMPLETED' WHERE order_id=?";
+
         try (Connection con = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sqlWithDelivered)) {
             ps.setInt(1, orderId);
-            return ps.executeUpdate() > 0;
+            int n = ps.executeUpdate();
+            return n > 0;
+        } catch (java.sql.SQLSyntaxErrorException e) {
+            // Colonna non presente: fallback
+            try (Connection con = DatabaseConnection.getInstance().getConnection();
+                 PreparedStatement ps2 = con.prepareStatement(sqlWithoutDelivered)) {
+                ps2.setInt(1, orderId);
+                return ps2.executeUpdate() > 0;
+            }
         }
     }
 }
