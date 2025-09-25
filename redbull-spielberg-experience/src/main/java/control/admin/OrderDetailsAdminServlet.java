@@ -12,7 +12,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet("/admin/order")
+/**
+ * Dettaglio ordine per ADMIN (solo GET).
+ * Le azioni (tracking / complete) sono gestite da AdminOrderServlet su /admin/order-action (POST).
+ */
+@WebServlet(name = "OrderDetailsAdminServlet", urlPatterns = {"/admin/order"})
 public class OrderDetailsAdminServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -20,6 +24,7 @@ public class OrderDetailsAdminServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
         // --- Accesso solo ADMIN ---
         HttpSession session = req.getSession(false);
         User auth = (session == null) ? null : (User) session.getAttribute("authUser");
@@ -28,74 +33,37 @@ public class OrderDetailsAdminServlet extends HttpServlet {
             return;
         }
 
-        int id;
+        // --- Parametro id ---
+        int orderId;
         try {
-            id = Integer.parseInt(req.getParameter("id"));
+            orderId = Integer.parseInt(req.getParameter("id"));
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Order id mancante o non valido.");
             return;
         }
 
         try {
-            Map<String,Object> order = orderDAO.findOrderHeader(id);
+            // Header
+            Map<String,Object> order = orderDAO.findOrderHeader(orderId);
             if (order == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Ordine non trovato.");
                 return;
             }
-            List<Map<String,Object>> items = orderDAO.findOrderItems(id);
 
+            // Righe
+            List<Map<String,Object>> items = orderDAO.findOrderItems(orderId);
+
+            // Attributi per la JSP unica
             req.setAttribute("order", order);
             req.setAttribute("items", items);
             req.setAttribute("isAdmin", Boolean.TRUE);
 
-            // 🔧 Forward alla JSP corretta (unica)
+            // Usiamo la JSP unica che mostra azioni solo se isAdmin = true
             req.getRequestDispatcher("/views/order-details.jsp").forward(req, resp);
 
         } catch (Exception ex) {
             ex.printStackTrace();
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore caricando il dettaglio ordine.");
         }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // --- Accesso solo ADMIN ---
-        HttpSession session = req.getSession(false);
-        User auth = (session == null) ? null : (User) session.getAttribute("authUser");
-        if (auth == null || auth.getUserType() == null || !"ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()))) {
-            resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
-            return;
-        }
-
-        int id;
-        try {
-            id = Integer.parseInt(req.getParameter("id"));
-        } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Order id non valido.");
-            return;
-        }
-
-        String action = safe(req.getParameter("action"));
-        try {
-            if ("tracking".equalsIgnoreCase(action)) {
-                String carrier = safe(req.getParameter("carrier"));
-                String code    = safe(req.getParameter("tracking_code"));
-                orderDAO.updateTracking(id, carrier, code);
-                resp.sendRedirect(req.getContextPath() + "/admin/order?id=" + id + "&ok=tracking");
-                return;
-            } else if ("complete".equalsIgnoreCase(action)) {
-                orderDAO.markCompleted(id);
-                resp.sendRedirect(req.getContextPath() + "/admin/order?id=" + id + "&ok=completed");
-                return;
-            }
-            resp.sendRedirect(req.getContextPath() + "/admin/order?id=" + id);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore eseguendo l'azione admin.");
-        }
-    }
-
-    private static String safe(String s) {
-        return s == null ? "" : s.trim();
     }
 }

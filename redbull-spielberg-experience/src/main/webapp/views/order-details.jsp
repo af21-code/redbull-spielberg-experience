@@ -10,9 +10,9 @@
   Boolean isAdmin = (Boolean) request.getAttribute("isAdmin");
   if (isAdmin == null) isAdmin = false;
 
-  // Se manca l'ordine, torna alla lista
+  // Se manca l'ordine, torna alla lista (link dinamico)
   if (o == null) {
-    response.sendRedirect(ctx + "/orders");
+    response.sendRedirect(isAdmin ? (ctx + "/admin/orders") : (ctx + "/orders"));
     return;
   }
   if (items == null) items = Collections.emptyList();
@@ -55,6 +55,9 @@
   String statusClass = "badge";
   if ("COMPLETED".equalsIgnoreCase(status)) statusClass += " ok";
   else if ("CANCELLED".equalsIgnoreCase(status)) statusClass += " warn";
+
+  // Back link dinamico
+  String backHref = isAdmin ? (ctx + "/admin/orders") : (ctx + "/orders");
 %>
 
 <!DOCTYPE html>
@@ -64,7 +67,6 @@
   <title>Ordine <%= onum %></title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <style>
-    /* --- Stilizzazione locale (leggera) --- */
     .page-wrap{padding:40px 18px 100px;background:linear-gradient(135deg,#001e36 0%,#000b2b 100%);color:#fff;min-height:60vh}
     .container{max-width:1100px;margin:0 auto}
     .grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
@@ -87,6 +89,7 @@
     .btn{background:#444;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
     .btn.primary{background:#E30613}
     .btn.line{background:transparent;border:1px solid rgba(255,255,255,.3)}
+    .btn.warn{background:#b33939}
     .block{display:block;width:100%}
     textarea,input[type=text]{background:#001E36;color:#fff;border:1px solid #0a3565;border-radius:10px;padding:10px 12px}
     .hint{font-size:.9rem;opacity:.8;margin-top:6px}
@@ -104,8 +107,21 @@
     <div class="card" style="margin-bottom:18px">
       <div class="row" style="justify-content:space-between">
         <h2 class="title" style="margin:0">Ordine <%= onum %></h2>
-        <a class="btn line" href="<%=ctx%>/orders">← Torna agli ordini</a>
+        <a class="btn line" href="<%= backHref %>">← Torna agli ordini</a>
       </div>
+
+      <!-- Flash messages da querystring (?ok=... / ?err=...) -->
+      <%
+        String ok = request.getParameter("ok");
+        String err = request.getParameter("err");
+      %>
+      <% if (ok != null) { %>
+        <div class="card" style="margin:12px 0;background:#1e824c">Operazione completata: <%= ok %></div>
+      <% } %>
+      <% if (err != null) { %>
+        <div class="card" style="margin:12px 0;background:#b33939">Errore: <%= err %></div>
+      <% } %>
+
       <div class="row">
         <span class="<%= statusClass %>">Stato: <strong><%= status %></strong></span>
         <span class="badge <%= "PAID".equalsIgnoreCase(pay) ? "ok" : "warn" %>">Pagamento: <strong><%= pay %></strong></span>
@@ -139,6 +155,7 @@
               String img = (String) r.get("image_url");
               String imgSrc = (img!=null && !img.isBlank()) ? (ctx+"/"+img) : "https://via.placeholder.com/400x300?text=Red+Bull";
               String driver = (String) r.get("driver_name");
+              String driverNum = (String) r.get("driver_number");
               String comp   = (String) r.get("companion_name");
               String veh    = (String) r.get("vehicle_code");
               java.sql.Date ev = (java.sql.Date) r.get("event_date");
@@ -150,9 +167,10 @@
                 <div class="small muted">Q.tà <%= qty %> × € <%= up %></div>
                 <div class="small muted" style="margin-top:4px">
                   <% if (driver!=null && !driver.isBlank()) { %>Pilota: <strong><%= driver %></strong><% } %>
-                  <% if (comp!=null && !comp.isBlank()) { %><% if (driver!=null && !driver.isBlank()) { %> • <% } %>Accompagnatore: <%= comp %><% } %>
-                  <% if (veh!=null && !veh.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (comp!=null && !comp.isBlank())) { %> • <% } %>Veicolo: <%= veh %><% } %>
-                  <% if (ev!=null) { %><% if ((driver!=null && !driver.isBlank()) || (comp!=null && !comp.isBlank()) || (veh!=null && !veh.isBlank())) { %> • <% } %>Data evento: <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(ev) %><% } %>
+                  <% if (driverNum!=null && !driverNum.isBlank()) { %><% if (driver!=null && !driver.isBlank()) { %> • <% } %>N°: <%= driverNum %><% } %>
+                  <% if (comp!=null && !comp.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank())) { %> • <% } %>Accompagnatore: <%= comp %><% } %>
+                  <% if (veh!=null && !veh.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank()) || (comp!=null && !comp.isBlank())) { %> • <% } %>Veicolo: <%= veh %><% } %>
+                  <% if (ev!=null) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank()) || (comp!=null && !comp.isBlank()) || (veh!=null && !veh.isBlank())) { %> • <% } %>Data evento: <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(ev) %><% } %>
                 </div>
               </div>
               <div class="price">€ <%= tp %></div>
@@ -213,7 +231,7 @@
           <div class="card" style="margin-top:18px">
             <h3 class="section-title">Azioni amministratore</h3>
 
-            <!-- Ora tutte le azioni admin vanno su /admin/order-action -->
+            <!-- Tracking -->
             <form method="post" action="<%=ctx%>/admin/order-action" style="margin-bottom:10px">
               <input type="hidden" name="id" value="<%= o.get("order_id") %>">
               <input type="hidden" name="action" value="tracking">
@@ -224,12 +242,26 @@
               <div class="hint">Alla prima impostazione del tracking verrà valorizzato anche <em>shipped_at</em>.</div>
             </form>
 
+            <!-- Completa -->
             <% if (!"COMPLETED".equalsIgnoreCase(status)) { %>
               <form method="post" action="<%=ctx%>/admin/order-action" onsubmit="return confirm('Segnare l\\'ordine come CONSEGNATO/COMPLETATO?')">
                 <input type="hidden" name="id" value="<%= o.get("order_id") %>">
                 <input type="hidden" name="action" value="complete">
                 <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
                 <button class="btn primary block">Segna come consegnato</button>
+              </form>
+            <% } %>
+
+            <!-- Spazio extra + Annulla -->
+            <% if (!"COMPLETED".equalsIgnoreCase(status) && !"CANCELLED".equalsIgnoreCase(status)) { %>
+              <hr style="border-color:rgba(255,255,255,.15);margin:22px 0 12px">
+              <form method="post" action="<%=ctx%>/admin/order-action"
+                    onsubmit="return confirm('Annullare definitivamente questo ordine? Verranno liberati eventuali slot e ripristinato lo stock.')"
+                    style="margin-top:8px">
+                <input type="hidden" name="id" value="<%= o.get("order_id") %>">
+                <input type="hidden" name="action" value="cancel">
+                <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
+                <button class="btn warn block">Annulla ordine</button>
               </form>
             <% } %>
           </div>

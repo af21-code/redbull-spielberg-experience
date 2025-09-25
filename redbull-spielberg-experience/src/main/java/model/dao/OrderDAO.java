@@ -27,7 +27,7 @@ public interface OrderDAO {
 
     /**
      * Lista ordini per admin con filtri (data da/a, query cliente, stato) e paginazione.
-     * Campi attesi: order_id, order_number, order_date (string), customer, total_amount, status, payment_status
+     * Campi attesi: order_id, order_number, order_date (timestamp), customer, total_amount, status, payment_status, payment_method
      */
     List<Map<String, Object>> findOrdersAdmin(
             Date from,
@@ -48,11 +48,11 @@ public interface OrderDAO {
             String status
     ) throws Exception;
 
-    // ===================== NUOVI METODI: DETTAGLIO ORDINE =====================
+    // ===================== DETTAGLIO ORDINE =====================
 
     /**
      * Header del singolo ordine (con dati acquirente).
-     * Ritorna una mappa con i campi usati dalla JSP: vedi findOrderHeader() in impl.
+     * Ritorna una mappa con i campi usati dalla JSP.
      */
     Map<String, Object> findOrderHeader(int orderId) throws Exception;
 
@@ -71,4 +71,13 @@ public interface OrderDAO {
      * Segna l'ordine come COMPLETED; imposta delivered_at se non valorizzato (se presente nello schema).
      */
     boolean markCompleted(int orderId) throws Exception;
+
+    /**
+     * Annulla l'ordine:
+     * - se lo stato è già CANCELLED o COMPLETED, non fa nulla (ritorna false);
+     * - ripristina stock per i prodotti MERCHANDISE;
+     * - decrementa la booked_capacity degli slot interessati (in base al numero di item per slot);
+     * - imposta lo stato a CANCELLED.
+     */
+    boolean cancelOrder(int orderId) throws Exception;
 }

@@ -5,13 +5,7 @@ import model.dao.OrderDAO;
 import utils.DatabaseConnection;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.sql.SQLException; // <-- aggiunto
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -82,7 +76,7 @@ public class OrderDAOImpl implements OrderDAO {
                     ps.setString(10, it.getCompanionName());
                     ps.setString(11, it.getVehicleCode());
                     if (it.getEventDate() != null) {
-                        ps.setDate(12, java.sql.Date.valueOf(it.getEventDate())); // <-- uso esplicito
+                        ps.setDate(12, java.sql.Date.valueOf(it.getEventDate()));
                     } else {
                         ps.setNull(12, Types.DATE);
                     }
@@ -91,7 +85,7 @@ public class OrderDAOImpl implements OrderDAO {
                 ps.executeBatch();
             }
 
-            // Aggiorna capacità slot (se presenti)
+            // Aggiorna capacità slot (se presenti) -> +1 per item con slot
             String updSlot = """
                UPDATE time_slots
                SET booked_capacity = booked_capacity + 1,
@@ -191,7 +185,7 @@ public class OrderDAOImpl implements OrderDAO {
         return rows;
     }
 
-    // ========= NUOVI METODI per Admin / Paginazione / Filtri =========
+    // ========= LISTE ADMIN con filtri/paginazione =========
 
     @Override
     public List<Map<String, Object>> findOrdersAdmin(
@@ -305,6 +299,7 @@ public class OrderDAOImpl implements OrderDAO {
     // ========= DETTAGLIO ORDINE & AZIONI ADMIN =========
 
     /** Header singolo ordine. */
+    @Override
     public Map<String, Object> findOrderHeader(int orderId) throws Exception {
         String sql = """
             SELECT
@@ -353,7 +348,7 @@ public class OrderDAOImpl implements OrderDAO {
                 m.put("order_date",         rs.getTimestamp("order_date"));
                 m.put("estimated_delivery", rs.getDate("estimated_delivery"));
                 m.put("shipped_at",         rs.getTimestamp("shipped_at"));
-                // "delivered_at" non selezionato (colonna opzionale)
+                // "delivered_at" opzionale
                 m.put("buyer_first_name",   rs.getString("buyer_first_name"));
                 m.put("buyer_last_name",    rs.getString("buyer_last_name"));
                 m.put("buyer_email",        rs.getString("buyer_email"));
@@ -364,6 +359,7 @@ public class OrderDAOImpl implements OrderDAO {
     }
 
     /** Articoli ordine. */
+    @Override
     public List<Map<String,Object>> findOrderItems(int orderId) throws Exception {
         String sql = """
             SELECT
@@ -430,6 +426,7 @@ public class OrderDAOImpl implements OrderDAO {
     }
 
     /** Segna ordine come COMPLETED; se 'delivered_at' non esiste, fallback. */
+    @Override
     public boolean markCompleted(int orderId) throws Exception {
         String sqlWithDelivered = """
             UPDATE orders
@@ -445,12 +442,91 @@ public class OrderDAOImpl implements OrderDAO {
             int n = ps.executeUpdate();
             return n > 0;
         } catch (java.sql.SQLSyntaxErrorException e) {
-            // Colonna non presente: fallback
             try (Connection con = DatabaseConnection.getInstance().getConnection();
                  PreparedStatement ps2 = con.prepareStatement(sqlWithoutDelivered)) {
                 ps2.setInt(1, orderId);
                 return ps2.executeUpdate() > 0;
             }
+        }
+    }
+
+    /** Annulla ordine: ripristina stock MERCHANDISE, libera capacità slot, imposta stato CANCELLED. */
+    @Override
+    public boolean cancelOrder(int orderId) throws Exception {
+        try (Connection con = DatabaseConnection.getInstance().getConnection()) {
+            con.setAutoCommit(false);
+
+            // 1) Blocco riga ordine e verifica stato
+            String checkSql = "SELECT status FROM orders WHERE order_id=? FOR UPDATE";
+            String status = null;
+            try (PreparedStatement ps = con.prepareStatement(checkSql)) {
+                ps.setInt(1, orderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) status = rs.getString(1);
+                }
+            }
+            if (status == null) { con.rollback(); return false; }
+            if ("CANCELLED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+                con.rollback();
+                return false;
+            }
+
+            // 2) Ripristina stock per MERCHANDISE (somma le quantità degli item dell'ordine)
+            String restockSql = """
+                UPDATE products p
+                JOIN order_items oi ON oi.product_id = p.product_id
+                SET p.stock_quantity = p.stock_quantity + oi.quantity
+                WHERE oi.order_id = ? AND p.product_type = 'MERCHANDISE'
+            """;
+            try (PreparedStatement ps = con.prepareStatement(restockSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate(); // anche 0 è ok (se non ci sono merch)
+            }
+
+            // 3) Libera capacità slot: calcoliamo quante righe per ciascuno slot
+            String slotCountsSql = """
+                SELECT slot_id, COUNT(*) AS cnt
+                FROM order_items
+                WHERE order_id=? AND slot_id IS NOT NULL
+                GROUP BY slot_id
+            """;
+            try (PreparedStatement ps = con.prepareStatement(slotCountsSql)) {
+                ps.setInt(1, orderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    String updSlot = """
+                        UPDATE time_slots
+                        SET booked_capacity = GREATEST(0, booked_capacity - ?),
+                            is_available   = CASE WHEN (booked_capacity - ?) >= max_capacity THEN 0 ELSE 1 END
+                        WHERE slot_id = ?
+                    """;
+                    try (PreparedStatement up = con.prepareStatement(updSlot)) {
+                        while (rs.next()) {
+                            int slotId = rs.getInt("slot_id");
+                            int cnt    = rs.getInt("cnt");
+                            up.setInt(1, cnt);
+                            up.setInt(2, cnt);
+                            up.setInt(3, slotId);
+                            up.addBatch();
+                        }
+                        up.executeBatch();
+                    }
+                }
+            }
+
+            // 4) Stato ordine -> CANCELLED
+            int updated;
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE orders SET status='CANCELLED' WHERE order_id=?")) {
+                ps.setInt(1, orderId);
+                updated = ps.executeUpdate();
+            }
+
+            con.commit();
+            return updated > 0;
+        } catch (Exception ex) {
+            // best-effort rollback
+            try { DatabaseConnection.getInstance().getConnection().rollback(); } catch (Exception ignore) {}
+            throw ex;
         }
     }
 }

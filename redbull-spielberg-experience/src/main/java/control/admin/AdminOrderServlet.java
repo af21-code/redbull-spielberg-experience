@@ -3,6 +3,8 @@ package control.admin;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+
+import model.User;
 import model.dao.OrderDAO;
 import model.dao.impl.OrderDAOImpl;
 
@@ -14,6 +16,7 @@ import java.nio.charset.StandardCharsets;
  * Azioni admin su singolo ordine (POST):
  *  - /admin/order-action?action=tracking -> aggiorna corriere/tracking (imposta shipped_at se null)
  *  - /admin/order-action?action=complete -> segna come COMPLETED (e prova a valorizzare delivered_at se la colonna esiste)
+ *  - /admin/order-action?action=cancel   -> annulla ordine (ripristina stock/slot, status=CANCELLED)
  *
  * La pagina di dettaglio (GET) resta su /admin/order, gestita da OrderDetailsAdminServlet.
  */
@@ -26,6 +29,22 @@ public class AdminOrderServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // --- Accesso solo ADMIN ---
+        HttpSession session = req.getSession(false);
+        User auth = (session == null) ? null : (User) session.getAttribute("authUser");
+        if (auth == null || auth.getUserType() == null || !"ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()))) {
+            resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
+            return;
+        }
+
+        // --- Verifica CSRF (soft: se token presente in sessione, deve combaciare col form) ---
+        String csrfSess = (session == null) ? null : (String) session.getAttribute("csrfToken");
+        String csrfForm = req.getParameter("csrf");
+        if (csrfSess != null && (csrfForm == null || !csrfSess.equals(csrfForm))) {
+            redirectWith(resp, req.getContextPath() + "/admin/orders", "err", "CSRF token non valido");
+            return;
+        }
+
         String action  = nz(req.getParameter("action"));
         int orderId    = parseInt(req.getParameter("id"), 0);
 
@@ -48,9 +67,14 @@ public class AdminOrderServlet extends HttpServlet {
                             ok ? "Tracking aggiornato" : "Nessuna riga aggiornata");
                 }
                 case "complete" -> {
-                    boolean ok = ((OrderDAOImpl)orderDAO).markCompleted(orderId);
+                    boolean ok = orderDAO.markCompleted(orderId);
                     redirectBack(resp, req, orderId, ok ? "ok" : "err",
                             ok ? "Ordine segnato come COMPLETATO" : "Nessuna riga aggiornata");
+                }
+                case "cancel" -> {
+                    boolean ok = orderDAO.cancelOrder(orderId);
+                    redirectBack(resp, req, orderId, ok ? "ok" : "err",
+                            ok ? "Ordine annullato" : "Impossibile annullare l'ordine");
                 }
                 default -> redirectBack(resp, req, orderId, "err", "Azione non riconosciuta");
             }
