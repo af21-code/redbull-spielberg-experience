@@ -40,10 +40,10 @@
 
   String trackUrl = null;
   if (carrier != null && tracking != null && !carrier.isBlank() && !tracking.isBlank()) {
-    if ("DHL".equalsIgnoreCase(carrier))        trackUrl = "https://www.dhl.com/it-it/home/tracking/tracking-express.html?tracking-id=" + tracking;
-    else if ("UPS".equalsIgnoreCase(carrier))   trackUrl = "https://www.ups.com/track?tracknum=" + tracking;
-    else if ("FEDEX".equalsIgnoreCase(carrier) || "FEDEX EXPRESS".equalsIgnoreCase(carrier))
-                                               trackUrl = "https://www.fedex.com/fedextrack/?trknbr=" + tracking;
+    String carrUp = carrier.toUpperCase(Locale.ITALY);
+    if      (carrUp.equals("DHL"))     trackUrl = "https://www.dhl.com/it-it/home/tracking/tracking-express.html?tracking-id=" + tracking;
+    else if (carrUp.equals("UPS"))     trackUrl = "https://www.ups.com/track?tracknum=" + tracking;
+    else if (carrUp.contains("FEDEX")) trackUrl = "https://www.fedex.com/fedextrack/?trknbr=" + tracking;
   }
 
   String statusClass = "badge";
@@ -98,6 +98,19 @@
         <h2 class="title" style="margin:0">Ordine <%= onum %></h2>
         <a class="btn line" href="<%=ctx%>/admin/orders">← Torna agli ordini</a>
       </div>
+
+      <!-- Flash messages da querystring (?ok=... / ?err=...) -->
+      <%
+        String ok = request.getParameter("ok");
+        String err = request.getParameter("err");
+      %>
+      <% if (ok != null) { %>
+        <div class="card" style="margin:12px 0;background:#1e824c">Operazione completata: <%= ok %></div>
+      <% } %>
+      <% if (err != null) { %>
+        <div class="card" style="margin:12px 0;background:#b33939">Errore: <%= err %></div>
+      <% } %>
+
       <div class="row">
         <span class="<%= statusClass %>">Stato: <strong><%= status %></strong></span>
         <span class="badge <%= "PAID".equalsIgnoreCase(pay) ? "ok" : "warn" %>">Pagamento: <strong><%= pay %></strong></span>
@@ -126,6 +139,7 @@
               String img = (String) r.get("image_url");
               String imgSrc = (img!=null && !img.isBlank()) ? (ctx+"/"+img) : "https://via.placeholder.com/400x300?text=Red+Bull";
               String driver = (String) r.get("driver_name");
+              String driverNum = (String) r.get("driver_number");
               String comp   = (String) r.get("companion_name");
               String veh    = (String) r.get("vehicle_code");
               java.sql.Date ev = (java.sql.Date) r.get("event_date");
@@ -137,9 +151,10 @@
                 <div class="small muted">Q.tà <%= qty %> × € <%= up %></div>
                 <div class="small muted" style="margin-top:4px">
                   <% if (driver!=null && !driver.isBlank()) { %>Pilota: <strong><%= driver %></strong><% } %>
-                  <% if (comp!=null && !comp.isBlank()) { %><% if (driver!=null && !driver.isBlank()) { %> • <% } %>Accompagnatore: <%= comp %><% } %>
-                  <% if (veh!=null && !veh.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (comp!=null && !comp.isBlank())) { %> • <% } %>Veicolo: <%= veh %><% } %>
-                  <% if (ev!=null) { %><% if ((driver!=null && !driver.isBlank()) || (comp!=null && !comp.isBlank()) || (veh!=null && !veh.isBlank())) { %> • <% } %>Data evento: <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(ev) %><% } %>
+                  <% if (driverNum!=null && !driverNum.isBlank()) { %><% if (driver!=null && !driver.isBlank()) { %> • <% } %>N°: <%= driverNum %><% } %>
+                  <% if (comp!=null && !comp.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank())) { %> • <% } %>Accompagnatore: <%= comp %><% } %>
+                  <% if (veh!=null && !veh.isBlank()) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank()) || (comp!=null && !comp.isBlank())) { %> • <% } %>Veicolo: <%= veh %><% } %>
+                  <% if (ev!=null) { %><% if ((driver!=null && !driver.isBlank()) || (driverNum!=null && !driverNum.isBlank()) || (comp!=null && !comp.isBlank()) || (veh!=null && !veh.isBlank())) { %> • <% } %>Data evento: <%= new java.text.SimpleDateFormat("dd/MM/yyyy").format(ev) %><% } %>
                 </div>
               </div>
               <div class="price">€ <%= tp %></div>
@@ -196,7 +211,8 @@
           <div class="card" style="margin-top:18px">
             <h3 class="section-title">Azioni amministratore</h3>
 
-            <form method="post" action="<%=ctx%>/admin/order" style="margin-bottom:10px">
+            <!-- NOTA: endpoint azioni cambiato in /admin/order-action -->
+            <form method="post" action="<%=ctx%>/admin/order-action" style="margin-bottom:10px">
               <input type="hidden" name="id" value="<%= o.get("order_id") %>">
               <input type="hidden" name="action" value="tracking">
               <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
@@ -207,7 +223,7 @@
             </form>
 
             <% if (!"COMPLETED".equalsIgnoreCase(status)) { %>
-              <form method="post" action="<%=ctx%>/admin/order" onsubmit="return confirm('Segnare l\\'ordine come CONSEGNATO/COMPLETATO?')">
+              <form method="post" action="<%=ctx%>/admin/order-action" onsubmit="return confirm('Segnare l\\'ordine come CONSEGNATO/COMPLETATO?')">
                 <input type="hidden" name="id" value="<%= o.get("order_id") %>">
                 <input type="hidden" name="action" value="complete">
                 <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>

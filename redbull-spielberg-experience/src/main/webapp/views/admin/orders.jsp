@@ -1,5 +1,18 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*" %>
+<%@ page import="java.util.*, java.text.SimpleDateFormat, java.text.NumberFormat, java.net.URLEncoder, java.nio.charset.StandardCharsets, java.util.Locale" %>
+
+<%!
+  // Escape basilare per evitare HTML injection e gestire < > nei campi testuali
+  private String esc(Object o) {
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s
+      .replace("&","&amp;")
+      .replace("<","&lt;")
+      .replace(">","&gt;");
+  }
+%>
+
 <%
   String ctx = request.getContextPath();
 
@@ -13,30 +26,40 @@
   String qVal      = (String) request.getAttribute("q");
   String statusVal = (String) request.getAttribute("status");
 
-  Integer pageObj     = (Integer) request.getAttribute("page");
-  Integer pagesObj    = (Integer) request.getAttribute("pages");
-  Integer pageSizeObj = (Integer) request.getAttribute("pageSize");
-  Integer totalObj    = (Integer) request.getAttribute("total");
+  Integer pageObj       = (Integer) request.getAttribute("page");
+  Integer pagesObj      = (Integer) request.getAttribute("pages");
+  Integer pageSizeObj   = (Integer) request.getAttribute("pageSize");
+  Integer totalCountObj = (Integer) request.getAttribute("total"); // <-- rinominata
 
-  int pageNum  = pageObj     == null ? 1  : pageObj;      // <-- rinominato
-  int pages    = pagesObj    == null ? 1  : pagesObj;
-  int pageSize = pageSizeObj == null ? 20 : pageSizeObj;
-  int total    = totalObj    == null ? 0  : totalObj;
+  int pageNum  = pageObj       == null ? 1  : pageObj;
+  int pages    = pagesObj      == null ? 1  : pagesObj;
+  int pageSize = pageSizeObj   == null ? 20 : pageSizeObj;
+  int total    = totalCountObj == null ? 0  : totalCountObj;
 
-  // Versioni "non null" per comodità
+  // Versioni "non null"
   String fromNZ   = (fromVal   == null) ? "" : fromVal;
   String toNZ     = (toVal     == null) ? "" : toVal;
   String qNZ      = (qVal      == null) ? "" : qVal;
   String statusNZ = (statusVal == null) ? "" : statusVal;
 
-  // URL export CSV (stessi filtri)
-  String exportHref = ctx + "/admin/orders?from=" + fromNZ +
-                      "&to=" + toNZ + "&q=" + qNZ +
-                      "&status=" + statusNZ + "&export=csv";
+  // URL-encode per sicurezza
+  String fromEnc   = URLEncoder.encode(fromNZ,   StandardCharsets.UTF_8);
+  String toEnc     = URLEncoder.encode(toNZ,     StandardCharsets.UTF_8);
+  String qEnc      = URLEncoder.encode(qNZ,      StandardCharsets.UTF_8);
+  String statusEnc = URLEncoder.encode(statusNZ, StandardCharsets.UTF_8);
 
-  // Base querystring per la paginazione
-  String baseQS = "from=" + fromNZ + "&to=" + toNZ + "&q=" + qNZ +
-                  "&status=" + statusNZ + "&pageSize=" + pageSize;
+  // Export CSV
+  String exportHref = ctx + "/admin/orders?from=" + fromEnc +
+                      "&to=" + toEnc + "&q=" + qEnc +
+                      "&status=" + statusEnc + "&export=csv";
+
+  // Base QS per paginazione
+  String baseQS = "from=" + fromEnc + "&to=" + toEnc + "&q=" + qEnc +
+                  "&status=" + statusEnc + "&pageSize=" + pageSize;
+
+  // Formattazioni
+  SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+  NumberFormat cf = NumberFormat.getCurrencyInstance(Locale.ITALY);
 %>
 <!DOCTYPE html>
 <html lang="it">
@@ -58,15 +81,15 @@
   </style>
 </head>
 <body>
-<jsp:include page="../header.jsp"/>
+<jsp:include page="/views/header.jsp"/>
 
 <div class="wrap">
   <div class="top">
     <!-- FILTRI -->
     <form method="get" action="<%=ctx%>/admin/orders" class="filters">
-      <input type="date"  name="from"  value="<%= fromNZ %>">
-      <input type="date"  name="to"    value="<%= toNZ %>">
-      <input type="text"  name="q"     placeholder="Email, nome o cognome" value="<%= qNZ %>" style="min-width:240px">
+      <input type="date"  name="from"  value="<%= esc(fromNZ) %>">
+      <input type="date"  name="to"    value="<%= esc(toNZ) %>">
+      <input type="text"  name="q"     placeholder="Email, nome o cognome" value="<%= esc(qNZ) %>" style="min-width:240px">
       <select name="status">
         <option value="" <%= (statusNZ.isBlank()) ? "selected":"" %>>Tutti gli stati</option>
         <option <%= "PENDING".equalsIgnoreCase(statusNZ)?"selected":"" %>     value="PENDING">PENDING</option>
@@ -110,16 +133,35 @@
       <% if (orders.isEmpty()) { %>
         <tr><td colspan="8" class="muted">Nessun ordine trovato con i filtri selezionati.</td></tr>
       <% } else {
-           for (Map<String,Object> o : orders) { %>
+           for (Map<String,Object> o : orders) {
+             java.sql.Timestamp ts = (java.sql.Timestamp) o.get("order_date");
+             Object totalObj = o.get("total_amount"); // importo ordine
+             String totalStr;
+             if (totalObj instanceof java.math.BigDecimal) {
+               totalStr = cf.format((java.math.BigDecimal) totalObj);
+             } else if (totalObj instanceof Number) {
+               totalStr = cf.format(((Number) totalObj).doubleValue());
+             } else {
+               totalStr = String.valueOf(totalObj);
+             }
+
+             String payStatus = String.valueOf(o.get("payment_status"));
+             Object pmObj = o.get("payment_method");
+             String payMethod = (pmObj == null) ? "" : String.valueOf(pmObj);
+      %>
         <tr>
           <td><%= o.get("order_id") %></td>
-          <td><%= o.get("order_number") %></td>
-          <td><%= o.get("customer") %></td>
-          <td>€ <%= o.get("total_amount") %></td>
-          <td><%= o.get("status") %></td>
-          <td><%= o.get("payment_status") %></td>
-          <!-- order_date è una String già formattata dal DAO -->
-          <td><%= o.get("order_date")==null ? "" : String.valueOf(o.get("order_date")) %></td>
+          <td><%= esc(o.get("order_number")) %></td>
+          <td><%= esc(o.get("customer")) %></td>
+          <td><%= esc(totalStr) %></td>
+          <td><%= esc(o.get("status")) %></td>
+          <td>
+            <%= esc(payStatus) %>
+            <% if (!payMethod.isBlank() && !"null".equalsIgnoreCase(payMethod)) { %>
+              (<%= esc(payMethod) %>)
+            <% } %>
+          </td>
+          <td><%= ts==null ? "" : df.format(ts) %></td>
           <td style="text-align:right">
             <a class="btn" href="<%=ctx%>/admin/order?id=<%= o.get("order_id") %>">Dettagli</a>
           </td>
@@ -139,6 +181,6 @@
   </div>
 </div>
 
-<jsp:include page="../footer.jsp"/>
+<jsp:include page="/views/footer.jsp"/>
 </body>
 </html>

@@ -12,6 +12,8 @@ import java.util.*;
 @WebServlet("/order")
 public class OrderDetailsServlet extends HttpServlet {
 
+  private static final long serialVersionUID = 1L;
+
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
@@ -68,14 +70,15 @@ public class OrderDetailsServlet extends HttpServlet {
       WHERE o.order_id=? AND o.user_id=?
     """;
 
-    // items (include eventuali campi pilota se presenti)
+    // items (allineato allo schema: include driver_number)
     String itemsSql = """
       SELECT oi.product_name, oi.quantity, oi.unit_price, oi.total_price,
              p.image_url,
-             oi.driver_name, oi.companion_name, oi.vehicle_code, oi.event_date
+             oi.driver_name, oi.driver_number, oi.companion_name, oi.vehicle_code, oi.event_date
       FROM order_items oi
       LEFT JOIN products p ON p.product_id = oi.product_id
       WHERE oi.order_id=?
+      ORDER BY oi.item_id ASC
     """;
 
     try (Connection con = DatabaseConnection.getInstance().getConnection()) {
@@ -131,6 +134,7 @@ public class OrderDetailsServlet extends HttpServlet {
             row.put("total_price", rs.getBigDecimal("total_price"));
             row.put("image_url", rs.getString("image_url"));
             row.put("driver_name", rs.getString("driver_name"));
+            row.put("driver_number", rs.getString("driver_number"));
             row.put("companion_name", rs.getString("companion_name"));
             row.put("vehicle_code", rs.getString("vehicle_code"));
             row.put("event_date", rs.getDate("event_date"));
@@ -148,71 +152,5 @@ public class OrderDetailsServlet extends HttpServlet {
       log("Errore caricando ordine " + orderId, e);
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore caricamento ordine");
     }
-  }
-
-  @Override
-  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
-
-    // solo admin aggiorna
-    Object u = req.getSession().getAttribute("authUser");
-    boolean isAdmin = false;
-    try {
-      Object type = (u == null) ? null : u.getClass().getMethod("getUserType").invoke(u);
-      isAdmin = (type != null && "ADMIN".equalsIgnoreCase(String.valueOf(type)));
-    } catch (Exception ignored) {}
-    if (!isAdmin) {
-      resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Operazione non consentita");
-      return;
-    }
-
-    String idParam = req.getParameter("id");
-    if (idParam == null || idParam.isBlank()) {
-      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Order id mancante");
-      return;
-    }
-    int orderId;
-    try { orderId = Integer.parseInt(idParam); }
-    catch (NumberFormatException e) {
-      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Order id non valido");
-      return;
-    }
-
-    String action = req.getParameter("action");
-    if (action == null) action = "";
-
-    try (Connection con = DatabaseConnection.getInstance().getConnection()) {
-      int updated = 0;
-
-      if ("complete".equalsIgnoreCase(action)) {
-        // segna come consegnato/completato
-        try (PreparedStatement ps = con.prepareStatement(
-            "UPDATE orders SET status='COMPLETED' WHERE order_id=?")) {
-          ps.setInt(1, orderId);
-          updated = ps.executeUpdate();
-        }
-      } else if ("tracking".equalsIgnoreCase(action)) {
-        String carrier = trimOrNull(req.getParameter("carrier"));
-        String code = trimOrNull(req.getParameter("tracking_code"));
-        try (PreparedStatement ps = con.prepareStatement(
-            "UPDATE orders SET carrier=?, tracking_code=?, shipped_at=IFNULL(shipped_at, NOW()) WHERE order_id=?")) {
-          ps.setString(1, carrier);
-          ps.setString(2, code);
-          ps.setInt(3, orderId);
-          updated = ps.executeUpdate();
-        }
-      }
-
-      resp.sendRedirect(req.getContextPath() + "/order?id=" + orderId + "&updated=" + updated);
-    } catch (Exception e) {
-      log("Errore aggiornando ordine " + orderId, e);
-      resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore aggiornamento ordine");
-    }
-  }
-
-  private String trimOrNull(String s) {
-    if (s == null) return null;
-    s = s.trim();
-    return s.isEmpty() ? null : s;
   }
 }

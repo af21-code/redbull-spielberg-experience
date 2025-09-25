@@ -213,7 +213,8 @@
           <div class="card" style="margin-top:18px">
             <h3 class="section-title">Azioni amministratore</h3>
 
-            <form method="post" action="<%=ctx%>/order" style="margin-bottom:10px">
+            <!-- Ora tutte le azioni admin vanno su /admin/order-action -->
+            <form method="post" action="<%=ctx%>/admin/order-action" style="margin-bottom:10px">
               <input type="hidden" name="id" value="<%= o.get("order_id") %>">
               <input type="hidden" name="action" value="tracking">
               <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
@@ -224,7 +225,7 @@
             </form>
 
             <% if (!"COMPLETED".equalsIgnoreCase(status)) { %>
-              <form method="post" action="<%=ctx%>/order" onsubmit="return confirm('Segnare l\\'ordine come CONSEGNATO/COMPLETATO?')">
+              <form method="post" action="<%=ctx%>/admin/order-action" onsubmit="return confirm('Segnare l\\'ordine come CONSEGNATO/COMPLETATO?')">
                 <input type="hidden" name="id" value="<%= o.get("order_id") %>">
                 <input type="hidden" name="action" value="complete">
                 <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
