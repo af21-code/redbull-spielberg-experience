@@ -49,6 +49,10 @@
   justify-content: space-between;
 }
 
+/* ✅ Nasconde i bottoni inline duplicati della sidebar nella Dashboard */
+.admin-content > .top .gap-6{ display:none !important; }
+.admin-content > .top{ justify-content:flex-start; }
+
 /* Inputs */
 input[type="text"],
 input[type="number"],
@@ -182,12 +186,6 @@ tbody tr:hover{ background: rgba(255,255,255,.05); }
 .mt-16{ margin-top:16px; }
 .mb-12{ margin-bottom:12px; }
 
-/* Responsive tweaks */
-@media (max-width: 680px){
-  .top{ flex-direction: column; align-items: stretch; }
-  .table-actions{ justify-content: stretch; }
-}
-
 /* Layout a due colonne per il pannello admin */
 .admin-shell{
   display: grid;
@@ -226,3 +224,59 @@ tbody tr:hover{ background: rgba(255,255,255,.05); }
 .admin-content{
   min-height: 420px;
 }
+
+/* ===========================
+   Responsive
+   =========================== */
+@media (max-width: 900px){
+  /* Layout: la sidebar diventa navbar orizzontale sticky in alto */
+  .admin-shell{
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .admin-sidebar{
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 8px;
+    border-radius: 12px;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    background: linear-gradient(135deg, rgba(0,30,54,.9), rgba(0,11,43,.9));
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .admin-sidebar a{
+    display:inline-flex;
+    align-items:center;
+    padding: 8px 10px;
+  }
+
+  /* Anche su mobile evitiamo i duplicati */
+  .admin-content > .top .gap-6{ display:none !important; }
+}
+
+/* KPI grid (dashboard) */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap:12px;
+}
+@media (min-width: 720px){
+  .kpi-grid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+.kpi{
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding:14px;
+}
+.kpi h3{ margin:0 0 8px; font-size:1.05rem; }
+.kpi .value{ font-size:1.6rem; font-weight:900; }
+
+/* --- RB Admin override anti-dup (v3) --- */
+/* Nasconde i 3 pulsanti duplicati dentro la testata della dashboard */
+.admin-content > .top > .gap-6 { display: none !important; }
+/* Cintura e bretelle nel caso Chrome avesse stile in-line o cached */
+.admin-content > .top > .gap-6 .btn { display: none !important; }

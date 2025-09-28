@@ -71,13 +71,14 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- ===== ADMIN DASHBOARD (mappo direttamente la JSP) ===== -->
+    <!-- ===== ADMIN DASHBOARD (Servlet che calcola i KPI) ===== -->
     <servlet>
-        <servlet-name>AdminDashboardJsp</servlet-name>
-        <jsp-file>/views/admin/dashboard.jsp</jsp-file>
+        <servlet-name>AdminDashboardServlet</servlet-name>
+        <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
-        <servlet-name>AdminDashboardJsp</servlet-name>
+        <servlet-name>AdminDashboardServlet</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
 
