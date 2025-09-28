@@ -1,18 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, java.text.SimpleDateFormat, java.text.NumberFormat, java.net.URLEncoder, java.nio.charset.StandardCharsets, java.util.Locale" %>
-
-<%!
-  // Escape basilare per evitare HTML injection e gestire < > nei campi testuali
-  private String esc(Object o) {
-    if (o == null) return "";
-    String s = String.valueOf(o);
-    return s
-      .replace("&","&amp;")
-      .replace("<","&lt;")
-      .replace(">","&gt;");
-  }
-%>
-
+<%@ page import="java.util.*, java.math.BigDecimal, java.text.SimpleDateFormat" %>
 <%
   String ctx = request.getContextPath();
 
@@ -20,167 +7,174 @@
   List<Map<String,Object>> orders = (List<Map<String,Object>>) request.getAttribute("orders");
   if (orders == null) orders = Collections.emptyList();
 
-  // Valori filtri/paginazione passati dal servlet
-  String fromVal   = (String) request.getAttribute("from");
-  String toVal     = (String) request.getAttribute("to");
-  String qVal      = (String) request.getAttribute("q");
-  String statusVal = (String) request.getAttribute("status");
+  int total    = (request.getAttribute("total")    instanceof Integer) ? (Integer) request.getAttribute("total")    : 0;
+  int pageNo   = (request.getAttribute("page")     instanceof Integer) ? (Integer) request.getAttribute("page")     : 1; // <- rinominata
+  int pages    = (request.getAttribute("pages")    instanceof Integer) ? (Integer) request.getAttribute("pages")    : 1;
+  int pageSize = (request.getAttribute("pageSize") instanceof Integer) ? (Integer) request.getAttribute("pageSize") : 20;
 
-  Integer pageObj       = (Integer) request.getAttribute("page");
-  Integer pagesObj      = (Integer) request.getAttribute("pages");
-  Integer pageSizeObj   = (Integer) request.getAttribute("pageSize");
-  Integer totalCountObj = (Integer) request.getAttribute("total"); // <-- rinominata
+  String from   = String.valueOf(request.getAttribute("from"));   if ("null".equals(from)) from = "";
+  String to     = String.valueOf(request.getAttribute("to"));     if ("null".equals(to)) to = "";
+  String q      = String.valueOf(request.getAttribute("q"));      if ("null".equals(q)) q = "";
+  String status = String.valueOf(request.getAttribute("status")); if ("null".equals(status)) status = "";
 
-  int pageNum  = pageObj       == null ? 1  : pageObj;
-  int pages    = pagesObj      == null ? 1  : pagesObj;
-  int pageSize = pageSizeObj   == null ? 20 : pageSizeObj;
-  int total    = totalCountObj == null ? 0  : totalCountObj;
-
-  // Versioni "non null"
-  String fromNZ   = (fromVal   == null) ? "" : fromVal;
-  String toNZ     = (toVal     == null) ? "" : toVal;
-  String qNZ      = (qVal      == null) ? "" : qVal;
-  String statusNZ = (statusVal == null) ? "" : statusVal;
-
-  // URL-encode per sicurezza
-  String fromEnc   = URLEncoder.encode(fromNZ,   StandardCharsets.UTF_8);
-  String toEnc     = URLEncoder.encode(toNZ,     StandardCharsets.UTF_8);
-  String qEnc      = URLEncoder.encode(qNZ,      StandardCharsets.UTF_8);
-  String statusEnc = URLEncoder.encode(statusNZ, StandardCharsets.UTF_8);
-
-  // Export CSV
-  String exportHref = ctx + "/admin/orders?from=" + fromEnc +
-                      "&to=" + toEnc + "&q=" + qEnc +
-                      "&status=" + statusEnc + "&export=csv";
-
-  // Base QS per paginazione
-  String baseQS = "from=" + fromEnc + "&to=" + toEnc + "&q=" + qEnc +
-                  "&status=" + statusEnc + "&pageSize=" + pageSize;
-
-  // Formattazioni
   SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-  NumberFormat cf = NumberFormat.getCurrencyInstance(Locale.ITALY);
+
+  // helper per comporre query string mantenendo i filtri
+  String baseQS = "from=" + java.net.URLEncoder.encode(from, "UTF-8") +
+                  "&to=" + java.net.URLEncoder.encode(to, "UTF-8") +
+                  "&q=" + java.net.URLEncoder.encode(q, "UTF-8") +
+                  "&status=" + java.net.URLEncoder.encode(status, "UTF-8") +
+                  "&pageSize=" + pageSize;
 %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Admin · Ordini</title>
+  <title>Amministrazione • Ordini</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
-  <link rel="stylesheet" href="<%=ctx%>/styles/admin.css?v=1">
+  <link rel="stylesheet" href="<%=ctx%>/styles/admin.css">
   <style>
-    .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .filters input,.filters select{height:36px;padding:6px 10px}
-    .table-actions{display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px}
+    .wrap{padding:30px 18px 80px;background:linear-gradient(135deg,#001e36 0%,#000b2b 100%);min-height:60vh;color:#fff}
+    .container{max-width:1200px;margin:0 auto}
+    .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px}
+    .title{margin:0 0 16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .filters .field{display:flex;flex-direction:column;gap:6px}
+    .filters input,.filters select{background:#001E36;color:#fff;border:1px solid #0a3565;border-radius:10px;padding:8px 10px}
+    .filters .btn{background:#444;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
+    .filters .btn.primary{background:#E30613}
+    .table{width:100%;border-collapse:collapse;margin-top:12px}
+    .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.15);vertical-align:top}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid rgba(255,255,255,.3);border-radius:999px}
     .muted{opacity:.85}
-    .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px}
-    .btn{background:#444;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;text-decoration:none}
-    .btn.line{background:transparent;border:1px solid rgba(255,255,255,.35)}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.15);vertical-align:top}
+    .pagination{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+    .pagination a,.pagination span{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);text-decoration:none;color:#fff}
+    .pagination .active{background:#E30613;border-color:#E30613}
+    .right{margin-left:auto}
   </style>
 </head>
 <body>
-<jsp:include page="/views/header.jsp"/>
+<jsp:include page="/views/header.jsp" />
 
 <div class="wrap">
-  <div class="top">
-    <!-- FILTRI -->
-    <form method="get" action="<%=ctx%>/admin/orders" class="filters">
-      <input type="date"  name="from"  value="<%= esc(fromNZ) %>">
-      <input type="date"  name="to"    value="<%= esc(toNZ) %>">
-      <input type="text"  name="q"     placeholder="Email, nome o cognome" value="<%= esc(qNZ) %>" style="min-width:240px">
-      <select name="status">
-        <option value="" <%= (statusNZ.isBlank()) ? "selected":"" %>>Tutti gli stati</option>
-        <option <%= "PENDING".equalsIgnoreCase(statusNZ)?"selected":"" %>     value="PENDING">PENDING</option>
-        <option <%= "CONFIRMED".equalsIgnoreCase(statusNZ)?"selected":"" %>   value="CONFIRMED">CONFIRMED</option>
-        <option <%= "PROCESSING".equalsIgnoreCase(statusNZ)?"selected":"" %>  value="PROCESSING">PROCESSING</option>
-        <option <%= "COMPLETED".equalsIgnoreCase(statusNZ)?"selected":"" %>   value="COMPLETED">COMPLETED</option>
-        <option <%= "CANCELLED".equalsIgnoreCase(statusNZ)?"selected":"" %>   value="CANCELLED">CANCELLED</option>
-      </select>
-      <select name="pageSize">
-        <option value="10"  <%= pageSize==10  ?"selected":"" %>>10</option>
-        <option value="20"  <%= pageSize==20  ?"selected":"" %>>20</option>
-        <option value="50"  <%= pageSize==50  ?"selected":"" %>>50</option>
-        <option value="100" <%= pageSize==100 ?"selected":"" %>>100</option>
-      </select>
-      <button class="btn" type="submit">Filtra</button>
-      <a class="btn line" href="<%= exportHref %>">Export CSV</a>
-    </form>
-    <div></div>
-  </div>
-
-  <div class="card">
-    <div class="table-actions">
+  <div class="container">
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <h2 class="title">Ordini (Admin)</h2>
       <div class="muted">Totale risultati: <strong><%= total %></strong></div>
-      <div class="muted">Pagina <%= pageNum %> di <%= Math.max(pages,1) %></div>
     </div>
 
-    <table>
-      <thead>
+    <!-- FILTRI -->
+    <div class="card filters">
+      <form method="get" action="<%=ctx%>/admin/orders" class="row" style="align-items:flex-end">
+        <div class="field">
+          <label for="from">Da</label>
+          <input type="date" id="from" name="from" value="<%= from %>">
+        </div>
+        <div class="field">
+          <label for="to">A</label>
+          <input type="date" id="to" name="to" value="<%= to %>">
+        </div>
+        <div class="field" style="min-width:220px">
+          <label for="q">Cliente (nome/cognome/email)</label>
+          <input type="text" id="q" name="q" value="<%= q %>" placeholder="Es. mario.rossi@email.com">
+        </div>
+        <div class="field">
+          <label for="status">Stato</label>
+          <select id="status" name="status">
+            <option value="" <%= status.isBlank()?"selected":"" %>>Tutti</option>
+            <option value="PENDING" <%= "PENDING".equalsIgnoreCase(status)?"selected":"" %>>PENDING</option>
+            <option value="CONFIRMED" <%= "CONFIRMED".equalsIgnoreCase(status)?"selected":"" %>>CONFIRMED</option>
+            <option value="PROCESSING" <%= "PROCESSING".equalsIgnoreCase(status)?"selected":"" %>>PROCESSING</option>
+            <option value="COMPLETED" <%= "COMPLETED".equalsIgnoreCase(status)?"selected":"" %>>COMPLETED</option>
+            <option value="CANCELLED" <%= "CANCELLED".equalsIgnoreCase(status)?"selected":"" %>>CANCELLED</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pageSize">Per pagina</label>
+          <select id="pageSize" name="pageSize">
+            <option value="10"  <%= pageSize==10 ?"selected":"" %>>10</option>
+            <option value="20"  <%= pageSize==20 ?"selected":"" %>>20</option>
+            <option value="50"  <%= pageSize==50 ?"selected":"" %>>50</option>
+            <option value="100" <%= pageSize==100?"selected":"" %>>100</option>
+          </select>
+        </div>
+        <div class="field">
+          <button class="btn primary" type="submit">Filtra</button>
+        </div>
+        <div class="right">
+          <a class="btn" href="<%=ctx%>/admin/orders?<%= baseQS %>&export=csv">Esporta CSV</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- TABELLA -->
+    <div class="card">
+      <table class="table">
+        <thead>
         <tr>
-          <th>ID</th>
-          <th>Numero</th>
+          <th># Ordine</th>
+          <th>Data</th>
           <th>Cliente</th>
           <th>Totale</th>
           <th>Stato</th>
           <th>Pagamento</th>
-          <th>Data</th>
+          <th>Metodo</th>
           <th></th>
         </tr>
-      </thead>
-      <tbody>
-      <% if (orders.isEmpty()) { %>
-        <tr><td colspan="8" class="muted">Nessun ordine trovato con i filtri selezionati.</td></tr>
-      <% } else {
-           for (Map<String,Object> o : orders) {
-             java.sql.Timestamp ts = (java.sql.Timestamp) o.get("order_date");
-             Object totalObj = o.get("total_amount"); // importo ordine
-             String totalStr;
-             if (totalObj instanceof java.math.BigDecimal) {
-               totalStr = cf.format((java.math.BigDecimal) totalObj);
-             } else if (totalObj instanceof Number) {
-               totalStr = cf.format(((Number) totalObj).doubleValue());
-             } else {
-               totalStr = String.valueOf(totalObj);
-             }
+        </thead>
+        <tbody>
+        <% if (orders.isEmpty()) { %>
+          <tr><td colspan="8" class="muted">Nessun ordine trovato con i filtri correnti.</td></tr>
+        <% } %>
+        <%
+          for (Map<String,Object> r : orders) {
+            String onum = String.valueOf(r.get("order_number"));
+            Object oda  = r.get("order_date");
+            String date = (oda instanceof java.util.Date) ? df.format((java.util.Date) oda) : String.valueOf(oda);
+            String cust = String.valueOf(r.get("customer"));
+            BigDecimal tot = (BigDecimal) r.get("total_amount"); if (tot == null) tot = BigDecimal.ZERO;
+            String st   = String.valueOf(r.get("status"));
+            String pay  = String.valueOf(r.get("payment_status"));
+            String pm   = String.valueOf(r.get("payment_method"));
+            int oid     = (r.get("order_id") instanceof Number) ? ((Number) r.get("order_id")).intValue() : -1;
+        %>
+          <tr>
+            <td><strong><%= onum %></strong></td>
+            <td class="muted"><%= date %></td>
+            <td style="max-width:280px"><%= cust %></td>
+            <td>€ <%= tot %></td>
+            <td><span class="pill"><%= st %></span></td>
+            <td><span class="pill"><%= pay %></span></td>
+            <td><%= pm %></td>
+            <td><a class="pill" href="<%=ctx%>/admin/order?id=<%= oid %>">Dettagli</a></td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
 
-             String payStatus = String.valueOf(o.get("payment_status"));
-             Object pmObj = o.get("payment_method");
-             String payMethod = (pmObj == null) ? "" : String.valueOf(pmObj);
-      %>
-        <tr>
-          <td><%= o.get("order_id") %></td>
-          <td><%= esc(o.get("order_number")) %></td>
-          <td><%= esc(o.get("customer")) %></td>
-          <td><%= esc(totalStr) %></td>
-          <td><%= esc(o.get("status")) %></td>
-          <td>
-            <%= esc(payStatus) %>
-            <% if (!payMethod.isBlank() && !"null".equalsIgnoreCase(payMethod)) { %>
-              (<%= esc(payMethod) %>)
-            <% } %>
-          </td>
-          <td><%= ts==null ? "" : df.format(ts) %></td>
-          <td style="text-align:right">
-            <a class="btn" href="<%=ctx%>/admin/order?id=<%= o.get("order_id") %>">Dettagli</a>
-          </td>
-        </tr>
-      <% } } %>
-      </tbody>
-    </table>
+      <!-- PAGINAZIONE -->
+      <div class="pagination">
+        <% if (pageNo > 1) { %>
+          <a href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= (pageNo-1) %>">« Prec</a>
+        <% } else { %><span class="muted">« Prec</span><% } %>
 
-    <!-- PAGINAZIONE -->
-    <div class="pager">
-      <a class="btn line" href="<%=ctx%>/admin/orders?<%= baseQS %>&page=1"                        title="Prima">&laquo;</a>
-      <a class="btn line" href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= Math.max(1, pageNum-1) %>" title="Precedente">&lsaquo;</a>
-      <span class="muted">Pagina <strong><%= pageNum %></strong> / <%= Math.max(pages,1) %></span>
-      <a class="btn line" href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= Math.min(Math.max(pages,1), pageNum+1) %>" title="Successiva">&rsaquo;</a>
-      <a class="btn line" href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= Math.max(pages,1) %>"      title="Ultima">&raquo;</a>
+        <% for (int i = 1; i <= pages; i++) { %>
+          <% if (i == pageNo) { %>
+            <span class="active"><%= i %></span>
+          <% } else { %>
+            <a href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= i %>"><%= i %></a>
+          <% } %>
+        <% } %>
+
+        <% if (pageNo < pages) { %>
+          <a href="<%=ctx%>/admin/orders?<%= baseQS %>&page=<%= (pageNo+1) %>">Succ »</a>
+        <% } else { %><span class="muted">Succ »</span><% } %>
+      </div>
     </div>
+
   </div>
 </div>
 
-<jsp:include page="/views/footer.jsp"/>
+<jsp:include page="/views/footer.jsp" />
 </body>
 </html>

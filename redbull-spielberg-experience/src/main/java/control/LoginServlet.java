@@ -23,8 +23,11 @@ public class LoginServlet extends HttpServlet {
             throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
-        String email    = req.getParameter("email");
+
+        String emailRaw = req.getParameter("email");
         String password = req.getParameter("password");
+
+        String email = (emailRaw == null) ? null : emailRaw.trim().toLowerCase();
 
         if (email == null || password == null || email.isBlank() || password.isBlank()) {
             req.setAttribute("errorMessage", "Inserisci email e password.");
@@ -34,16 +37,30 @@ public class LoginServlet extends HttpServlet {
 
         try {
             User u = userDAO.findByEmail(email);
-            if (u == null || !u.isActive() || !PasswordUtil.matches(password, u.getPassword())) {
+
+            // Primo controllo: credenziali (per non rivelare se l'utente esiste)
+            if (u == null || !PasswordUtil.matches(password, u.getPassword())) {
                 req.setAttribute("errorMessage", "Credenziali non valide.");
                 req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
                 return;
             }
 
+            // Secondo controllo: stato dell'account
+            if (!u.isActive()) {
+                req.setAttribute("errorMessage", "Account disattivato. Contatta l’amministratore.");
+                req.getRequestDispatcher("/views/login.jsp").forward(req, resp);
+                return;
+            }
+
+            // Login OK -> session fixation protection
+            HttpSession old = req.getSession(false);
+            if (old != null) old.invalidate();
+
             HttpSession session = req.getSession(true);
             session.setAttribute("authUser", u);
             session.setAttribute("accessToken", "OK");
 
+            // Redirect alla home (o a 'next' se un giorno vorrai gestire un ritorno)
             resp.sendRedirect(req.getContextPath() + "/index.jsp");
         } catch (Exception e) {
             e.printStackTrace();

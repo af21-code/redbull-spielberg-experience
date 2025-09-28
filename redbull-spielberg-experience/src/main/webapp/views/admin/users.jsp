@@ -7,6 +7,9 @@
   String q = request.getParameter("q") == null ? "" : request.getParameter("q");
   String type = request.getParameter("type") == null ? "" : request.getParameter("type");
   boolean onlyInactive = "1".equals(request.getParameter("onlyInactive"));
+
+  String okMsg  = request.getParameter("ok");
+  String errMsg = request.getParameter("err");
 %>
 <!DOCTYPE html>
 <html lang="it">
@@ -38,6 +41,12 @@
       <button class="btn" type="submit">Filtra</button>
     </form>
   </div>
+
+  <% if (okMsg != null) { %>
+    <div class="alert success"><%= okMsg %></div>
+  <% } else if (errMsg != null) { %>
+    <div class="alert danger"><%= errMsg %></div>
+  <% } %>
 
   <div class="card">
     <table>
@@ -71,6 +80,7 @@
           <td><%= u.getEmail() %></td>
           <td>
             <form method="post" action="<%=ctx%>/admin/users/role" class="gap-6">
+              <input type="hidden" name="csrf" value="${csrfToken}">
               <input type="hidden" name="id" value="<%= u.getUserId() %>">
               <select name="role">
                 <%
@@ -92,6 +102,7 @@
           <td><%= u.getRegistrationDate()==null ? "—" : u.getRegistrationDate() %></td>
           <td class="right">
             <form method="post" action="<%=ctx%>/admin/users/toggle" style="display:inline">
+              <input type="hidden" name="csrf" value="${csrfToken}">
               <input type="hidden" name="id" value="<%= u.getUserId() %>">
               <input type="hidden" name="active" value="<%= active ? "0":"1" %>">
               <button class="btn <%= active ? "gray":"red" %>" type="submit"

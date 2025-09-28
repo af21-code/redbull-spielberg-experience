@@ -20,16 +20,31 @@
       </div>
       <p class="subtitle">Accedi al mondo RedBull</p>
 
-      <form class="login-form" action="${pageContext.request.contextPath}/login" method="post">
-        <label>Email</label>
-        <input class="input" type="email" name="email" placeholder="MaxVerstappen@example.com" required />
-        <label>Password</label>
-        <input class="input" type="password" name="password" placeholder="••••••••" required />
+      <form class="login-form need-validate" action="${pageContext.request.contextPath}/login" method="post" novalidate>
+        <!-- CSRF opzionale (login è whitelisted, ma lo includiamo per coerenza) -->
+        <input type="hidden" name="csrf" value="${csrfToken}"/>
+
+        <label for="login_email">Email</label>
+        <input id="login_email" class="input"
+               type="email" name="email"
+               placeholder="MaxVerstappen@example.com"
+               required
+               data-validate="required|email" />
+        <small data-error-for="login_email" class="form-error"></small>
+
+        <label for="login_password">Password</label>
+        <input id="login_password" class="input"
+               type="password" name="password"
+               placeholder="••••••••"
+               required
+               data-validate="required|password" />
+        <small data-error-for="login_password" class="form-error"></small>
+
         <button class="btn-primary" type="submit">Sign in</button>
       </form>
 
       <% if (request.getAttribute("errorMessage") != null) { %>
-        <div class="form-error"><%= request.getAttribute("errorMessage") %></div>
+        <div class="form-error" style="margin-top:10px;"><%= request.getAttribute("errorMessage") %></div>
       <% } %>
 
       <div class="divider"></div>
@@ -39,5 +54,7 @@
       </div>
     </div>
   </div>
+
+  <script src="${pageContext.request.contextPath}/scripts/validate.js"></script>
 </body>
 </html>

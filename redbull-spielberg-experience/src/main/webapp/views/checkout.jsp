@@ -13,7 +13,7 @@
   <meta charset="UTF-8">
   <title>Checkout</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
-  <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=1">
+  <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=2">
 </head>
 <body>
 <jsp:include page="header.jsp"/>
@@ -35,19 +35,27 @@
       </div>
 
       <% if (request.getAttribute("checkoutError") != null) { %>
+        <a id="srv-error-anchor"></a>
         <div class="srv-error"><%= request.getAttribute("checkoutError") %></div>
+        <script>
+          // porta in vista l'errore del server
+          setTimeout(() => {
+            const a = document.getElementById('srv-error-anchor');
+            if (a) a.scrollIntoView({behavior:'smooth', block:'center'});
+          }, 0);
+        </script>
       <% } %>
 
       <!-- action -> /checkout/confirm -->
-      <form id="checkout-form" method="post" action="<%=ctx%>/checkout/confirm" novalidate>
+      <form id="checkout-form" method="post" action="<%=ctx%>/checkout/confirm" novalidate autocomplete="off">
         <!-- idempotency key (dal servlet) -->
         <input type="hidden" name="idempotencyKey" value="${idempotencyKey}">
-        <!-- CSRF token (dal servlet) -->
+        <!-- CSRF token (dal servlet / filtro) -->
         <input type="hidden" name="csrf" value="${csrfToken}">
 
-        <!-- hidden fields to keep backend contract -->
-        <textarea name="shippingAddress" id="shippingAddress" hidden></textarea>
-        <textarea name="billingAddress"  id="billingAddress"  hidden></textarea>
+        <!-- HIDDEN fields per il backend (input, NON textarea) -->
+        <input type="hidden" name="shippingAddress" id="shippingAddress">
+        <input type="hidden" name="billingAddress"  id="billingAddress">
 
         <!-- STEP 1: ADDRESSES -->
         <section class="step-panel is-visible" data-step-panel="1" aria-label="Indirizzi">
@@ -185,7 +193,7 @@
             </label>
           </div>
 
-          <!-- OPTIONAL card UI (non inviamo i dati, è solo estetica) -->
+          <!-- OPTIONAL card UI (solo estetica) -->
           <div class="card-extra" data-card-extra>
             <div class="grid-3">
               <div class="field">
@@ -209,7 +217,7 @@
             <textarea name="notes" id="notes" rows="2" placeholder="Richieste particolari..."></textarea>
           </div>
 
-          <div class="form-error" id="form-error" aria-live="polite"></div>
+          <div class="form-error" id="form-error" aria-live="polite" style="visibility:hidden"></div>
 
           <div class="nav-row">
             <button class="btn ghost" type="button" data-back>Torna indietro</button>
@@ -240,6 +248,6 @@
 </div>
 
 <jsp:include page="footer.jsp"/>
-<script src="<%=ctx%>/scripts/checkout.js?v=1"></script>
+<script src="<%=ctx%>/scripts/checkout.js?v=2"></script>
 </body>
 </html>
