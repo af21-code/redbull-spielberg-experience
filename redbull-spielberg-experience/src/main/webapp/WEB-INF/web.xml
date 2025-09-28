@@ -44,7 +44,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- AuthFilter: protegge sezioni riservate (NON /cart) -->
+    <!-- AuthFilter: protegge sezioni riservate -->
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
@@ -59,7 +59,7 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
-        <url-pattern>/checkout</url-pattern>
+        <url-pattern>/checkout/*</url-pattern>
     </filter-mapping>
     <!-- Login obbligatorio anche per l'area admin -->
     <filter-mapping>
@@ -70,13 +70,6 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
-
-    <!-- Listener rimosso: la classe è annotata con @WebListener e viene rilevata automaticamente -->
-    <!--
-    <listener>
-        <listener-class>listener.SessionCartMergeListener</listener-class>
-    </listener>
-    -->
 
     <!-- ===== ADMIN DASHBOARD (mappo direttamente la JSP) ===== -->
     <servlet>

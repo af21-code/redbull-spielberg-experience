@@ -25,6 +25,10 @@ public class CheckoutServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        // Anti-cache per evitare ri-submit col back
+        resp.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        resp.setHeader("Pragma", "no-cache");
+
         HttpSession session = req.getSession();
         User auth = (User) session.getAttribute("authUser");
         if (auth == null) {
@@ -133,9 +137,16 @@ public class CheckoutServlet extends HttpServlet {
             CheckoutService svc = new CheckoutService();
             CheckoutService.Result res = svc.checkout(auth.getUserId(), idemForm, in, cart);
 
-            // Consuma idempotency + pulizia sessione
+            // Consuma idempotency + pulizia sessione carrello
             session.removeAttribute("checkoutIdem");
             session.removeAttribute("cartItems");
+            // (nel dubbio) pulizia di eventuali chiavi alternative usate altrove
+            session.removeAttribute("sessionCart");
+            session.removeAttribute("cart");
+            session.removeAttribute("cartCount");
+
+            // Ruota il CSRF (non riusare lo stesso token dopo un POST critico)
+            session.setAttribute("csrfToken", UUID.randomUUID().toString());
 
             // PRG: redirect alla pagina di successo con orderNumber come parametro
             String target = ctx + "/views/order_success.jsp?orderNumber=" +

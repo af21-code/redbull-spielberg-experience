@@ -18,10 +18,15 @@ import java.util.UUID;
 @WebFilter("/*")
 public class SecurityCsrfFilter implements Filter {
 
-    // Metodi considerati "safe" (niente verifica CSRF)
+    // Metodi "safe": niente verifica CSRF
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
 
-    // Endpoint da escludere (login/registrazione ecc. — adatta ai tuoi path reali se servono)
+    // Statici da saltare
+    private static final String[] STATIC_PREFIXES = {
+            "/styles/", "/scripts/", "/images/", "/sounds/", "/favicon"
+    };
+
+    // Endpoint liberi (login ecc.) — adatta se necessario
     private static final Set<String> WHITELIST = Set.of(
             "/views/login.jsp", "/login", "/auth/login", "/auth/logout", "/register"
     );
@@ -37,48 +42,55 @@ public class SecurityCsrfFilter implements Filter {
             chain.doFilter(request, response);
             return;
         }
-        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletRequest req  = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        String ctx = req.getContextPath();
-        String uri = req.getRequestURI();
-        String path = uri.substring(ctx.length()); // es: /checkout/confirm
+        String ctx  = req.getContextPath();            // es: /redbull-spielberg-experience
+        String uri  = req.getRequestURI();             // es: /redbull-spielberg-experience/cart/add
+        String path = uri.substring(ctx.length());     // es: /cart/add
 
         HttpSession session = req.getSession(true);
 
         // Genera token se mancante (requisito: token in sessione)
-        String token = (String) session.getAttribute("csrfToken");
-        if (token == null || token.isEmpty()) {
-            token = UUID.randomUUID().toString();
-            session.setAttribute("csrfToken", token);
+        String sessionToken = (String) session.getAttribute("csrfToken");
+        if (sessionToken == null || sessionToken.isEmpty()) {
+            sessionToken = UUID.randomUUID().toString();
+            session.setAttribute("csrfToken", sessionToken);
         }
 
-        // Rendilo disponibile alle JSP (EL ${csrfToken} o request.getAttribute)
-        req.setAttribute("csrfToken", token);
+        // Disponibile alle JSP (request scope)
+        req.setAttribute("csrfToken", sessionToken);
 
-        // Salta verifica per metodi "safe"
+        // Metodi safe -> passa
         String method = req.getMethod();
         if (SAFE_METHODS.contains(method)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Salta statici
-        if (path.startsWith("/styles/") || path.startsWith("/scripts/") ||
-            path.startsWith("/images/") || path.startsWith("/favicon")) {
-            chain.doFilter(request, response);
-            return;
+        // Statici -> passa
+        for (String prefix : STATIC_PREFIXES) {
+            if (path.startsWith(prefix)) {
+                chain.doFilter(request, response);
+                return;
+            }
         }
 
-        // Salta whitelist (adatta se necessario)
+        // Whitelist -> passa
         if (WHITELIST.contains(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Verifica token nei POST/PUT/DELETE
-        String formToken = req.getParameter("csrf");
-        if (formToken == null || !formToken.equals(token)) {
+        // Verifica: accetta sia parametro form "csrf" che header "X-CSRF-Token"
+        String formToken   = req.getParameter("csrf");
+        String headerToken = req.getHeader("X-CSRF-Token");
+
+        boolean ok =
+                (formToken != null && formToken.equals(sessionToken)) ||
+                (headerToken != null && headerToken.equals(sessionToken));
+
+        if (!ok) {
             resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             resp.setContentType("text/plain;charset=UTF-8");
             resp.getWriter().write("CSRF token non valido o mancante.");

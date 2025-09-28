@@ -1,6 +1,8 @@
 package service;
 
 import model.CartItem;
+import model.dao.CartDAO;
+import model.dao.impl.CartDAOImpl;
 import utils.DatabaseConnection;
 
 import java.sql.*;
@@ -128,6 +130,7 @@ public class CheckoutService {
         }
 
         if (it.getSlotId() == null) {
+          // MERCH: scalare stock (già validato sopra)
           try (PreparedStatement ps = c.prepareStatement(
               "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?")) {
             ps.setInt(1, it.getQuantity());
@@ -135,20 +138,23 @@ public class CheckoutService {
             ps.executeUpdate();
           }
         } else {
+          // SLOT: incrementa booked e aggiorna disponibilità in base al nuovo valore
           try (PreparedStatement ps = c.prepareStatement(
-              "UPDATE time_slots SET booked_capacity = booked_capacity + ? WHERE slot_id = ?")) {
+              "UPDATE time_slots " +
+              "SET booked_capacity = booked_capacity + ?, " +
+              "    is_available = CASE WHEN (booked_capacity + ?) >= max_capacity THEN 0 ELSE 1 END " +
+              "WHERE slot_id = ?")) {
             ps.setInt(1, it.getQuantity());
-            ps.setLong(2, it.getSlotId());
+            ps.setInt(2, it.getQuantity());
+            ps.setLong(3, it.getSlotId());
             ps.executeUpdate();
           }
         }
       }
 
-      // 4) Svuota carrello DB
-      try (PreparedStatement ps = c.prepareStatement("DELETE FROM cart WHERE user_id=?")) {
-        ps.setLong(1, userId);
-        ps.executeUpdate();
-      }
+      // 4) Svuota carrello DB tramite DAO (stessa Connection)
+      CartDAO cartDao = new CartDAOImpl(c);
+      cartDao.clearCart((int) userId);
 
       c.commit();
       return new Result(orderNumber);

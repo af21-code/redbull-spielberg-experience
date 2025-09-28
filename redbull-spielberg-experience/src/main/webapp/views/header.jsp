@@ -36,12 +36,22 @@
       for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
     }
   }
+
+  // --- CSRF: crea token in sessione se assente e rendilo disponibile ---
+  String csrfToken = (String) session.getAttribute("csrfToken");
+  if (csrfToken == null || csrfToken.isBlank()) {
+    csrfToken = java.util.UUID.randomUUID().toString();
+    session.setAttribute("csrfToken", csrfToken);
+  }
 %>
 
 <!-- CSS globali -->
 <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
 <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
 <link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=3">
+
+<!-- Espone il token CSRF anche come meta per gli script -->
+<meta name="csrf-token" content="<%= csrfToken %>">
 
 <!-- Fallback minimo per il bottone Logout + badge carrello -->
 <style>
@@ -71,6 +81,62 @@ header .menu-right .btn-cart .badge{
   background:#E30613; color:#fff; font-weight:800; font-size:.75rem;
 }
 </style>
+
+<!-- CSRF bootstrap + patch globale fetch() + XMLHttpRequest + auto-hidden nelle form POST -->
+<script>
+  (function () {
+    // Token disponibile globalmente
+    var token = document.querySelector('meta[name="csrf-token"]')?.content || "<%= csrfToken %>";
+    window.RBX = window.RBX || {};
+    window.RBX.csrfToken = token;
+
+    // Patch fetch: aggiunge X-CSRF-Token e credentials same-origin sulle non-safe
+    var _fetch = window.fetch;
+    window.fetch = function (input, init) {
+      init = init || {};
+      var method = (init.method || 'GET').toUpperCase();
+      if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(method)) {
+        var headers = init.headers instanceof Headers ? init.headers : new Headers(init.headers || {});
+        if (!headers.has('X-CSRF-Token') && token) headers.set('X-CSRF-Token', token);
+        init.headers = headers;
+        if (!init.credentials) init.credentials = 'same-origin';
+      }
+      return _fetch(input, init);
+    };
+
+    // Patch XMLHttpRequest: aggiunge X-CSRF-Token sulle non-safe
+    var _open = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      this._csrfMethod = (method || 'GET').toUpperCase();
+      return _open.apply(this, arguments);
+    };
+    var _send = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function (body) {
+      try {
+        if (this._csrfMethod && !/^(GET|HEAD|OPTIONS|TRACE)$/.test(this._csrfMethod) && token) {
+          this.setRequestHeader('X-CSRF-Token', token);
+        }
+      } catch (e) {}
+      return _send.apply(this, arguments);
+    };
+
+    // Auto-inietta <input type="hidden" name="csrf" ...> in tutte le form POST
+    document.addEventListener('submit', function (ev) {
+      var form = ev.target;
+      if (!form || form.nodeName !== 'FORM') return;
+      var method = (form.getAttribute('method') || 'GET').toUpperCase();
+      if (method === 'POST') {
+        if (!form.querySelector('input[name="csrf"]')) {
+          var inp = document.createElement('input');
+          inp.type = 'hidden';
+          inp.name = 'csrf';
+          inp.value = token || '';
+          form.appendChild(inp);
+        }
+      }
+    }, true);
+  })();
+</script>
 
 <header>
   <div class="container nav-container">
