@@ -11,96 +11,74 @@ import model.dao.impl.OrderDAOImpl;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Azioni admin su singolo ordine (POST):
- *  - /admin/order-action?action=tracking -> aggiorna corriere/tracking (imposta shipped_at se null)
- *  - /admin/order-action?action=complete -> segna come COMPLETED (e prova a valorizzare delivered_at se la colonna esiste)
- *  - /admin/order-action?action=cancel   -> annulla ordine (ripristina stock/slot, status=CANCELLED)
- *
- * La pagina di dettaglio (GET) resta su /admin/order, gestita da OrderDetailsAdminServlet.
- */
-@WebServlet(name = "AdminOrderServlet", urlPatterns = {"/admin/order-action"})
+@WebServlet(name = "AdminOrderServlet", urlPatterns = "/admin/order")
 public class AdminOrderServlet extends HttpServlet {
-
     private static final long serialVersionUID = 1L;
 
     private final OrderDAO orderDAO = new OrderDAOImpl();
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // --- Accesso solo ADMIN ---
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        // --- Solo ADMIN ---
         HttpSession session = req.getSession(false);
         User auth = (session == null) ? null : (User) session.getAttribute("authUser");
-        if (auth == null || auth.getUserType() == null || !"ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()))) {
-            resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
+        boolean isAdmin = auth != null && auth.getUserType() != null
+                && "ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()));
+        if (!isAdmin) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Area riservata agli amministratori.");
             return;
         }
 
-        // --- Verifica CSRF (soft: se token presente in sessione, deve combaciare col form) ---
-        String csrfSess = (session == null) ? null : (String) session.getAttribute("csrfToken");
-        String csrfForm = req.getParameter("csrf");
-        if (csrfSess != null && (csrfForm == null || !csrfSess.equals(csrfForm))) {
-            redirectWith(resp, req.getContextPath() + "/admin/orders", "err", "CSRF token non valido");
-            return;
-        }
-
-        String action  = nz(req.getParameter("action"));
-        int orderId    = parseInt(req.getParameter("id"), 0);
-
-        if (orderId <= 0) {
-            redirectWith(resp, req.getContextPath() + "/admin/orders", "err", "ID ordine non valido");
+        String ctx = req.getContextPath();
+        Integer orderId = parseInt(req.getParameter("id"));
+        if (orderId == null || orderId <= 0) {
+            redirectWithMsg(resp, ctx + "/admin/orders", null, "ID ordine mancante o non valido.");
             return;
         }
 
         try {
-            switch (action.toLowerCase()) {
-                case "tracking" -> {
-                    String carrier = nz(req.getParameter("carrier"));
-                    String code    = nz(req.getParameter("tracking_code"));
-                    if (carrier.isBlank() || code.isBlank()) {
-                        redirectBack(resp, req, orderId, "err", "Corriere e codice tracking sono obbligatori");
-                        return;
-                    }
-                    boolean ok = orderDAO.updateTracking(orderId, carrier, code);
-                    redirectBack(resp, req, orderId, ok ? "ok" : "err",
-                            ok ? "Tracking aggiornato" : "Nessuna riga aggiornata");
-                }
-                case "complete" -> {
-                    boolean ok = orderDAO.markCompleted(orderId);
-                    redirectBack(resp, req, orderId, ok ? "ok" : "err",
-                            ok ? "Ordine segnato come COMPLETATO" : "Nessuna riga aggiornata");
-                }
-                case "cancel" -> {
-                    boolean ok = orderDAO.cancelOrder(orderId);
-                    redirectBack(resp, req, orderId, ok ? "ok" : "err",
-                            ok ? "Ordine annullato" : "Impossibile annullare l'ordine");
-                }
-                default -> redirectBack(resp, req, orderId, "err", "Azione non riconosciuta");
+            Map<String,Object> header = orderDAO.findOrderHeader(orderId);
+            if (header == null) {
+                redirectWithMsg(resp, ctx + "/admin/orders", null, "Ordine non trovato.");
+                return;
             }
+            List<Map<String,Object>> items = orderDAO.findOrderItems(orderId);
+
+            req.setAttribute("order", header);
+            req.setAttribute("items", items);
+            req.setAttribute("isAdmin", true);
+
+            // Usiamo la stessa JSP di dettaglio
+            req.getRequestDispatcher("/views/order-details.jsp").forward(req, resp);
+
         } catch (Exception e) {
             e.printStackTrace();
-            redirectBack(resp, req, orderId, "err", "Errore: " + e.getMessage());
+            redirectWithMsg(resp, ctx + "/admin/orders", null, "Errore nel caricamento dell'ordine.");
         }
     }
 
-    // -------- Helpers --------
-
-    private static String nz(String s) { return (s == null) ? "" : s.trim(); }
-
-    private static int parseInt(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception ignored) { return def; }
+    // ---------------- helpers ----------------
+    private static Integer parseInt(String s) {
+        try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim()); }
+        catch (Exception e) { return null; }
     }
 
-    private void redirectBack(HttpServletResponse resp, HttpServletRequest req, int orderId,
-                              String key, String msg) throws IOException {
-        String base = req.getContextPath() + "/admin/order?id=" + orderId; // pagina dettaglio (GET)
-        redirectWith(resp, base, key, msg);
-    }
-
-    private void redirectWith(HttpServletResponse resp, String baseUrl, String key, String msg) throws IOException {
-        String val = URLEncoder.encode(msg, StandardCharsets.UTF_8);
-        String sep = baseUrl.contains("?") ? "&" : "?";
-        resp.sendRedirect(baseUrl + sep + key + "=" + val);
+    private static void redirectWithMsg(HttpServletResponse resp, String baseUrl, String ok, String err) throws IOException {
+        StringBuilder sb = new StringBuilder(baseUrl);
+        boolean first = !baseUrl.contains("?");
+        if (ok != null) {
+            sb.append(first ? "?" : "&")
+              .append("ok=").append(URLEncoder.encode(ok, StandardCharsets.UTF_8));
+            first = false;
+        }
+        if (err != null) {
+            sb.append(first ? "?" : "&")
+              .append("err=").append(URLEncoder.encode(err, StandardCharsets.UTF_8));
+        }
+        resp.sendRedirect(sb.toString());
     }
 }

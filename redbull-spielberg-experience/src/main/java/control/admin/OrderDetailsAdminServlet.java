@@ -14,9 +14,11 @@ import java.util.Map;
 
 /**
  * Dettaglio ordine per ADMIN (solo GET).
- * Le azioni (tracking / complete) sono gestite da AdminOrderServlet su /admin/order-action (POST).
+ * Le azioni (tracking / complete / cancel) sono gestite da AdminOrderServlet su /admin/order-action (POST).
+ *
+ * Nota: mapping su /admin/order-view per evitare collisioni con altre servlet.
  */
-@WebServlet(name = "OrderDetailsAdminServlet", urlPatterns = {"/admin/order"})
+@WebServlet(name = "OrderDetailsAdminServlet", urlPatterns = {"/admin/order-view"})
 public class OrderDetailsAdminServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -58,7 +60,7 @@ public class OrderDetailsAdminServlet extends HttpServlet {
             req.setAttribute("items", items);
             req.setAttribute("isAdmin", Boolean.TRUE);
 
-            // Usiamo la JSP unica che mostra azioni solo se isAdmin = true
+            // JSP unica che mostra azioni solo se isAdmin = true
             req.getRequestDispatcher("/views/order-details.jsp").forward(req, resp);
 
         } catch (Exception ex) {
