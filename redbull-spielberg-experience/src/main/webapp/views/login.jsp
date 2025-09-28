@@ -20,31 +20,23 @@
       </div>
       <p class="subtitle">Accedi al mondo RedBull</p>
 
-      <form class="login-form need-validate" action="${pageContext.request.contextPath}/login" method="post" novalidate>
-        <!-- CSRF opzionale (login è whitelisted, ma lo includiamo per coerenza) -->
+      <form class="login-form" id="login-form" action="${pageContext.request.contextPath}/login" method="post" novalidate>
+        <!-- CSRF opzionale (whitelist lato server, ma coerente con il resto del sito) -->
         <input type="hidden" name="csrf" value="${csrfToken}"/>
 
         <label for="login_email">Email</label>
-        <input id="login_email" class="input"
-               type="email" name="email"
-               placeholder="MaxVerstappen@example.com"
-               required
-               data-validate="required|email" />
-        <small data-error-for="login_email" class="form-error"></small>
+        <input class="input" id="login_email" type="email" name="email" placeholder="MaxVerstappen@example.com" required />
+        <div class="error-msg" aria-live="polite"></div>
 
         <label for="login_password">Password</label>
-        <input id="login_password" class="input"
-               type="password" name="password"
-               placeholder="••••••••"
-               required
-               data-validate="required|password" />
-        <small data-error-for="login_password" class="form-error"></small>
+        <input class="input" id="login_password" type="password" name="password" placeholder="••••••••" required />
+        <div class="error-msg" aria-live="polite"></div>
 
         <button class="btn-primary" type="submit">Sign in</button>
       </form>
 
       <% if (request.getAttribute("errorMessage") != null) { %>
-        <div class="form-error" style="margin-top:10px;"><%= request.getAttribute("errorMessage") %></div>
+        <div class="form-error"><%= request.getAttribute("errorMessage") %></div>
       <% } %>
 
       <div class="divider"></div>
@@ -55,6 +47,6 @@
     </div>
   </div>
 
-  <script src="${pageContext.request.contextPath}/scripts/validate.js"></script>
+  <script src="${pageContext.request.contextPath}/scripts/auth.js?v=1"></script>
 </body>
 </html>
