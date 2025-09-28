@@ -85,17 +85,20 @@ public class OrderDAOImpl implements OrderDAO {
                 ps.executeBatch();
             }
 
-            // Aggiorna capacità slot (se presenti) -> +1 per item con slot
+            // Aggiorna capacità slot (se presenti) -> + quantità per riga
             String updSlot = """
                UPDATE time_slots
-               SET booked_capacity = booked_capacity + 1,
-                   is_available = CASE WHEN (booked_capacity + 1) >= max_capacity THEN 0 ELSE 1 END
+               SET booked_capacity = LEAST(max_capacity, booked_capacity + ?),
+                   is_available = CASE WHEN (booked_capacity + ?) >= max_capacity THEN 0 ELSE 1 END
                WHERE slot_id = ?
             """;
             try (PreparedStatement ps = con.prepareStatement(updSlot)) {
                 for (CartItem it : cart) {
                     if (it.getSlotId() != null) {
-                        ps.setInt(1, it.getSlotId());
+                        int q = Math.max(1, it.getQuantity());
+                        ps.setInt(1, q);
+                        ps.setInt(2, q);
+                        ps.setInt(3, it.getSlotId());
                         ps.addBatch();
                     }
                 }
@@ -111,7 +114,7 @@ public class OrderDAOImpl implements OrderDAO {
             try (PreparedStatement ps = con.prepareStatement(updStock)) {
                 for (CartItem it : cart) {
                     if ("MERCHANDISE".equalsIgnoreCase(it.getProductType())) {
-                        ps.setInt(1, it.getQuantity());
+                        ps.setInt(1, Math.max(1, it.getQuantity()));
                         ps.setInt(2, it.getProductId());
                         ps.addBatch();
                     }
@@ -450,28 +453,34 @@ public class OrderDAOImpl implements OrderDAO {
         }
     }
 
-    /** Annulla ordine: ripristina stock MERCHANDISE, libera capacità slot, imposta stato CANCELLED. */
+    /** Annulla ordine: ripristina stock MERCHANDISE, libera capacità slot in base a SUM(quantità), imposta stato CANCELLED. */
     @Override
     public boolean cancelOrder(int orderId) throws Exception {
-        try (Connection con = DatabaseConnection.getInstance().getConnection()) {
+        Connection con = DatabaseConnection.getInstance().getConnection();
+        boolean success = false;
+        try {
             con.setAutoCommit(false);
 
-            // 1) Blocco riga ordine e verifica stato
-            String checkSql = "SELECT status FROM orders WHERE order_id=? FOR UPDATE";
+            // 1) Blocco riga ordine e verifica stato / spedizione
+            String checkSql = "SELECT status, shipped_at FROM orders WHERE order_id=? FOR UPDATE";
             String status = null;
+            Timestamp shippedAt = null;
             try (PreparedStatement ps = con.prepareStatement(checkSql)) {
                 ps.setInt(1, orderId);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) status = rs.getString(1);
+                    if (rs.next()) {
+                        status = rs.getString("status");
+                        shippedAt = rs.getTimestamp("shipped_at");
+                    }
                 }
             }
             if (status == null) { con.rollback(); return false; }
-            if ("CANCELLED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+            if ("CANCELLED".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status) || shippedAt != null) {
                 con.rollback();
                 return false;
             }
 
-            // 2) Ripristina stock per MERCHANDISE (somma le quantità degli item dell'ordine)
+            // 2) Ripristina stock per MERCHANDISE
             String restockSql = """
                 UPDATE products p
                 JOIN order_items oi ON oi.product_id = p.product_id
@@ -480,12 +489,12 @@ public class OrderDAOImpl implements OrderDAO {
             """;
             try (PreparedStatement ps = con.prepareStatement(restockSql)) {
                 ps.setInt(1, orderId);
-                ps.executeUpdate(); // anche 0 è ok (se non ci sono merch)
+                ps.executeUpdate();
             }
 
-            // 3) Libera capacità slot: calcoliamo quante righe per ciascuno slot
+            // 3) Libera capacità slot in base alla somma delle quantità
             String slotCountsSql = """
-                SELECT slot_id, COUNT(*) AS cnt
+                SELECT slot_id, SUM(quantity) AS qty
                 FROM order_items
                 WHERE order_id=? AND slot_id IS NOT NULL
                 GROUP BY slot_id
@@ -496,15 +505,15 @@ public class OrderDAOImpl implements OrderDAO {
                     String updSlot = """
                         UPDATE time_slots
                         SET booked_capacity = GREATEST(0, booked_capacity - ?),
-                            is_available   = CASE WHEN (booked_capacity - ?) >= max_capacity THEN 0 ELSE 1 END
+                            is_available   = CASE WHEN (booked_capacity - ?) < max_capacity THEN 1 ELSE 0 END
                         WHERE slot_id = ?
                     """;
                     try (PreparedStatement up = con.prepareStatement(updSlot)) {
                         while (rs.next()) {
                             int slotId = rs.getInt("slot_id");
-                            int cnt    = rs.getInt("cnt");
-                            up.setInt(1, cnt);
-                            up.setInt(2, cnt);
+                            int qty    = Math.max(1, rs.getInt("qty"));
+                            up.setInt(1, qty);
+                            up.setInt(2, qty);
                             up.setInt(3, slotId);
                             up.addBatch();
                         }
@@ -522,11 +531,13 @@ public class OrderDAOImpl implements OrderDAO {
             }
 
             con.commit();
-            return updated > 0;
+            success = updated > 0;
+            return success;
         } catch (Exception ex) {
-            // best-effort rollback
-            try { DatabaseConnection.getInstance().getConnection().rollback(); } catch (Exception ignore) {}
+            try { if (con != null) con.rollback(); } catch (Exception ignore) {}
             throw ex;
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception ignore) {}
         }
     }
 }

@@ -30,6 +30,7 @@
   String notes      = (String) o.get("notes");
   java.sql.Timestamp orderDate = (java.sql.Timestamp) o.get("order_date");
   java.sql.Date eta            = (java.sql.Date) o.get("estimated_delivery");
+  java.sql.Timestamp shippedAt = (java.sql.Timestamp) o.get("shipped_at");
 
   String buyerFirst = String.valueOf(o.get("buyer_first_name"));
   String buyerLast  = String.valueOf(o.get("buyer_last_name"));
@@ -58,6 +59,12 @@
 
   // Back link dinamico
   String backHref = isAdmin ? (ctx + "/admin/orders") : (ctx + "/orders");
+
+  // Annullabile lato cliente?
+  boolean cancellable = (!isAdmin)
+          && !"COMPLETED".equalsIgnoreCase(status)
+          && !"CANCELLED".equalsIgnoreCase(status)
+          && shippedAt == null;
 %>
 
 <!DOCTYPE html>
@@ -192,7 +199,7 @@
 
       </div>
 
-      <!-- Colonna destra: Riepilogo / Tracking / Dati acquirente / Indirizzi / Azioni admin -->
+      <!-- Colonna destra -->
       <div class="col-right">
 
         <div class="card">
@@ -226,6 +233,19 @@
             <div>Fatturazione</div><div><pre class="muted" style="white-space:pre-wrap;margin:0"><%= billAddr==null?"—":billAddr %></pre></div>
           </div>
         </div>
+
+        <% if (!isAdmin && cancellable) { %>
+          <div class="card" style="margin-top:18px">
+            <h3 class="section-title">Azioni ordine</h3>
+            <form method="post" action="<%=ctx%>/order/cancel"
+                  onsubmit="return confirm('Annullare definitivamente questo ordine? Verranno ripristinati lo stock e le capienze slot.');">
+              <input type="hidden" name="id" value="<%= o.get("order_id") %>">
+              <% if (csrf != null && !csrf.isEmpty()) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
+              <button class="btn warn block" type="submit">Annulla ordine</button>
+            </form>
+            <p class="hint">L’ordine è annullabile finché non è stato spedito o completato.</p>
+          </div>
+        <% } %>
 
         <% if (isAdmin) { %>
           <div class="card" style="margin-top:18px">

@@ -73,11 +73,12 @@ public interface OrderDAO {
     boolean markCompleted(int orderId) throws Exception;
 
     /**
-     * Annulla l'ordine:
-     * - se lo stato è già CANCELLED o COMPLETED, non fa nulla (ritorna false);
+     * Annulla l'ordine (idempotente):
+     * - non annulla se già CANCELLED o COMPLETED o se shipped_at NON è NULL (già spedito);
      * - ripristina stock per i prodotti MERCHANDISE;
-     * - decrementa la booked_capacity degli slot interessati (in base al numero di item per slot);
+     * - decrementa la booked_capacity degli slot interessati di SUM(quantità);
      * - imposta lo stato a CANCELLED.
+     * Ritorna true se è stato aggiornato lo stato a CANCELLED.
      */
     boolean cancelOrder(int orderId) throws Exception;
 }
