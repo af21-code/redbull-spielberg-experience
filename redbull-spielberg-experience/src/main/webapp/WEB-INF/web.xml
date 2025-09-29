@@ -24,6 +24,8 @@
         <res-auth>Container</res-auth>
     </resource-ref>
 
+    <!-- ========= Filtri ========= -->
+
     <!-- Filtro UTF-8 su tutte le richieste -->
     <filter>
         <filter-name>UTF8Filter</filter-name>
@@ -71,7 +73,9 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- ===== ADMIN DASHBOARD (Servlet che calcola i KPI) ===== -->
+    <!-- ========= Servlet ========= -->
+
+    <!-- ADMIN DASHBOARD: calcola KPI e inoltra a /views/admin/dashboard.jsp -->
     <servlet>
         <servlet-name>AdminDashboardServlet</servlet-name>
         <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
@@ -82,11 +86,11 @@
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
 
-    <!-- ===== Admin Users (mappato via XML) ===== -->
+    <!-- Admin Users -->
     <servlet>
         <servlet-name>UserAdminServlet</servlet-name>
         <servlet-class>control.admin.UserAdminServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>2</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>UserAdminServlet</servlet-name>
@@ -97,7 +101,18 @@
         <url-pattern>/admin/users/*</url-pattern>
     </servlet-mapping>
 
-    <!-- Pagine di errore -->
+    <!-- Admin Stats (JSON per grafici / storico) -->
+    <servlet>
+        <servlet-name>AdminStatsServlet</servlet-name>
+        <servlet-class>control.admin.AdminStatsServlet</servlet-class>
+        <load-on-startup>3</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminStatsServlet</servlet-name>
+        <url-pattern>/admin/stats</url-pattern>
+    </servlet-mapping>
+
+    <!-- ========= Pagine di errore ========= -->
     <error-page>
         <error-code>404</error-code>
         <location>/views/errors/404.jsp</location>
@@ -111,11 +126,12 @@
         <location>/views/errors/500.jsp</location>
     </error-page>
 
-    <!-- Config JSP: forziamo UTF-8 -->
+    <!-- ========= Config JSP ========= -->
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
             <page-encoding>UTF-8</page-encoding>
         </jsp-property-group>
     </jsp-config>
+
 </web-app>

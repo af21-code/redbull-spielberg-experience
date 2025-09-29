@@ -1,12 +1,40 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, java.math.BigDecimal, model.CartItem" %>
+<%@ page import="java.util.*, java.math.BigDecimal, model.CartItem, java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
+
+<%!
+  // ---- Helper per risolvere il path immagine (con fallback su vehicle_code) ----
+  private static String resolveImg(String ctx, String imageUrl, String vehicleCode) {
+    if (imageUrl != null && !imageUrl.isBlank()) {
+      String u = imageUrl.trim();
+      String l = u.toLowerCase(Locale.ROOT);
+      if (l.startsWith("http://") || l.startsWith("https://")) return u; // URL esterno
+      if (u.startsWith("/")) return ctx + u;                              // assoluto in app
+      return ctx + "/" + u;                                               // relativo
+    }
+    String v = (vehicleCode == null) ? "" : vehicleCode.trim().toLowerCase(Locale.ROOT);
+    if ("rb21".equals(v) || "f1".equals(v)) return ctx + "/images/vehicles/rb21.jpg";
+    if ("f2".equals(v))                      return ctx + "/images/vehicles/f2.jpg";
+    return ctx + "/images/vehicles/placeholder-vehicle.jpg";
+  }
+%>
+
 <%
   String ctx = request.getContextPath();
+
+  // Carrello dal session scope (come nel tuo file originale)
   @SuppressWarnings("unchecked")
   List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
+
+  // Formattazione prezzi (IT)
+  DecimalFormatSymbols sy = new DecimalFormatSymbols(Locale.ITALY);
+  sy.setDecimalSeparator(',');
+  sy.setGroupingSeparator('.');
+  DecimalFormat money = new DecimalFormat("#,##0.00", sy);
+
   BigDecimal total = BigDecimal.ZERO;
   if (items != null) for (CartItem it : items) total = total.add(it.getTotal());
 %>
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -14,6 +42,14 @@
   <title>Checkout</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=2">
+  <style>
+    /* Piccolo ritocco per le thumb nel riepilogo (non tocca il resto del CSS) */
+    .summary-line{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .summary-line .sum-left{display:flex; align-items:center; gap:10px; min-width:0}
+    .sum-thumb{width:64px; height:48px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,.15)}
+    .sum-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px}
+    @media (max-width: 600px){ .sum-name{max-width:200px} }
+  </style>
 </head>
 <body>
 <jsp:include page="header.jsp"/>
@@ -232,15 +268,24 @@
       <h2>Riepilogo</h2>
       <div>
         <% if (items != null) {
-             for (CartItem it : items) { %>
+             for (CartItem it : items) {
+               String img = resolveImg(ctx, it.getImageUrl(), it.getVehicleCode());
+               int shownQty = "EXPERIENCE".equalsIgnoreCase(it.getProductType()) ? 1 : it.getQuantity();
+        %>
           <div class="summary-line">
-            <span><%= it.getProductName() %> × <%= it.getQuantity() %></span>
-            <span>€ <%= it.getTotal() %></span>
+            <span class="sum-left">
+              <img class="sum-thumb"
+                   src="<%= img %>"
+                   alt="<%= it.getProductName() %>"
+                   onerror="this.onerror=null;this.src='<%= ctx %>/images/vehicles/placeholder-vehicle.jpg'">
+              <span class="sum-name"><strong><%= it.getProductName() %></strong> × <%= shownQty %></span>
+            </span>
+            <span>€ <%= money.format(it.getTotal()) %></span>
           </div>
         <% } } %>
         <hr class="sep">
         <div class="summary-line total">
-          <span>Totale</span><span>€ <%= total %></span>
+          <span>Totale</span><span>€ <%= money.format(total) %></span>
         </div>
       </div>
     </div>
