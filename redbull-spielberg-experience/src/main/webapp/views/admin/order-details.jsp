@@ -1,6 +1,33 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, java.math.BigDecimal, java.text.SimpleDateFormat" %>
 
+<%!
+  private String normImg(String p, String ctx){
+    if (p == null || p.isBlank()) return null;
+    String s = p.trim();
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) return s;
+    if (s.startsWith("/")) return ctx + s;
+    return ctx + "/" + s;
+  }
+  private String resolveImg(String imageUrl, String vehicleCode, String productType, String ctx){
+    String db = normImg(imageUrl, ctx);
+    if (db != null) return db;
+
+    boolean isExp = productType != null && "EXPERIENCE".equalsIgnoreCase(productType);
+    String v = vehicleCode == null ? "" : vehicleCode.trim().toLowerCase(java.util.Locale.ITALY);
+
+    if (isExp) {
+      if ("rb21".equals(v) || "f1".equals(v))         return ctx + "/images/vehicles/rb21.jpg";
+      if ("f2".equals(v))                             return ctx + "/images/vehicles/f2.jpg";
+      if ("nascar".equals(v) || "stockcar".equals(v)) return ctx + "/images/vehicles/placeholder-vehicle.jpg";
+      return ctx + "/images/vehicles/placeholder-vehicle.jpg";
+    } else {
+      return ctx + "/images/placeholder.jpg";
+      // Oppure esterno: "https://via.placeholder.com/400x300?text=Red+Bull";
+    }
+  }
+%>
+
 <%
   String ctx = request.getContextPath();
 
@@ -137,15 +164,20 @@
               BigDecimal up = (BigDecimal) r.get("unit_price"); if (up==null) up = BigDecimal.ZERO;
               BigDecimal tp = (BigDecimal) r.get("total_price"); if (tp==null) tp = up.multiply(BigDecimal.valueOf(qty));
               String img = (String) r.get("image_url");
-              String imgSrc = (img!=null && !img.isBlank()) ? (ctx+"/"+img) : "https://via.placeholder.com/400x300?text=Red+Bull";
               String driver = (String) r.get("driver_name");
               String driverNum = (String) r.get("driver_number");
               String comp   = (String) r.get("companion_name");
               String veh    = (String) r.get("vehicle_code");
+              String ptype  = r.get("product_type")==null ? null : String.valueOf(r.get("product_type"));
               java.sql.Date ev = (java.sql.Date) r.get("event_date");
+
+              String imgSrc = resolveImg(img, veh, ptype, ctx);
           %>
             <div class="item">
-              <img class="thumb" src="<%= imgSrc %>" alt="<%= name %>">
+              <img class="thumb"
+                   src="<%= imgSrc %>"
+                   alt="<%= name %>"
+                   onerror="this.onerror=null;this.src='<%=ctx%>/images/vehicles/placeholder-vehicle.jpg';">
               <div>
                 <div><strong><%= name %></strong></div>
                 <div class="small muted">Q.tà <%= qty %> × € <%= up %></div>
@@ -211,7 +243,7 @@
           <div class="card" style="margin-top:18px">
             <h3 class="section-title">Azioni amministratore</h3>
 
-            <!-- NOTA: endpoint azioni cambiato in /admin/order-action -->
+            <!-- NOTA: endpoint azioni è /admin/order-action -->
             <form method="post" action="<%=ctx%>/admin/order-action" style="margin-bottom:10px">
               <input type="hidden" name="id" value="<%= o.get("order_id") %>">
               <input type="hidden" name="action" value="tracking">

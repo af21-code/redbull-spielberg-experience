@@ -2,6 +2,43 @@
 <%@ page import="java.util.*, java.math.BigDecimal, java.time.format.DateTimeFormatter" %>
 <%@ page import="model.CartItem" %>
 <%@ page import="java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
+
+<%!
+  // Normalizza path immagine: se relativa la prefigge con il context path, se assoluta la lascia intatta
+  private String normImg(String p, String ctx){
+    if (p == null || p.isBlank()) return null;
+    String s = p.trim();
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) return s;
+    if (s.startsWith("/")) return ctx + s;
+    return ctx + "/" + s;
+  }
+
+  /**
+   * Risolve l'immagine da mostrare:
+   * 1) se su DB c'è image_url -> usa quella (normalizzata).
+   * 2) se productType = EXPERIENCE -> mappa vehicleCode su /images/vehicles/.
+   * 3) altrimenti usa un placeholder generale.
+   */
+  private String resolveImg(String imageUrl, String vehicleCode, String productType, String ctx){
+    String db = normImg(imageUrl, ctx);
+    if (db != null) return db;
+
+    boolean isExp = productType != null && "EXPERIENCE".equalsIgnoreCase(productType);
+    String v = vehicleCode == null ? "" : vehicleCode.trim().toLowerCase(java.util.Locale.ITALY);
+
+    if (isExp) {
+      if ("rb21".equals(v) || "f1".equals(v))         return ctx + "/images/vehicles/rb21.jpg";
+      if ("f2".equals(v))                             return ctx + "/images/vehicles/f2.jpg";
+      if ("nascar".equals(v) || "stockcar".equals(v)) return ctx + "/images/vehicles/placeholder-vehicle.jpg";
+      return ctx + "/images/vehicles/placeholder-vehicle.jpg";
+    } else {
+      // Placeholder generico (se non lo hai, puoi lasciar cadere su quello esterno)
+      return ctx + "/images/placeholder.jpg";
+      // Oppure: return "https://via.placeholder.com/400x300?text=Red+Bull";
+    }
+  }
+%>
+
 <%
   // Context & helpers
   String ctx = request.getContextPath();
@@ -56,13 +93,15 @@
       <%
         for (CartItem it : items) {
           total = total.add(it.getTotal());
-          String img = (it.getImageUrl() != null && !it.getImageUrl().isBlank())
-              ? (ctx + "/" + it.getImageUrl())
-              : "https://via.placeholder.com/400x300?text=Red+Bull";
+
+          String img = resolveImg(it.getImageUrl(), it.getVehicleCode(), it.getProductType(), ctx);
       %>
         <tr>
           <td>
-            <img class="cart-img" src="<%= img %>" alt="<%= it.getProductName() %>">
+            <img class="cart-img"
+                 src="<%= img %>"
+                 alt="<%= it.getProductName() %>"
+                 onerror="this.onerror=null;this.src='<%=ctx%>/images/vehicles/placeholder-vehicle.jpg';">
             &nbsp; <strong><%= it.getProductName() %></strong>
 
             <% if (it.getSlotId() != null) { %>
