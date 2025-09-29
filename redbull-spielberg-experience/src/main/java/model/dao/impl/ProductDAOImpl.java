@@ -4,7 +4,6 @@ import model.Product;
 import model.dao.ProductDAO;
 import utils.DatabaseConnection;
 
-import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;

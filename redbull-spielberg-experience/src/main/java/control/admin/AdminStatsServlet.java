@@ -67,9 +67,11 @@ public class AdminStatsServlet extends HttpServlet {
             Kpi kpi = loadKpi(con, from, to);
             Map<LocalDate, DayRow> series = loadSeries(con, from, to);
 
-            // completa giorni mancanti
+            // completa giorni mancanti (senza lambda inutilizzato)
             for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
-                series.computeIfAbsent(d, x -> new DayRow(0, BigDecimal.ZERO));
+                if (!series.containsKey(d)) {
+                    series.put(d, new DayRow(0, BigDecimal.ZERO));
+                }
             }
 
             // costruisci JSON

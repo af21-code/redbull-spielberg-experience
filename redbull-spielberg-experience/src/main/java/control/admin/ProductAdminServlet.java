@@ -20,7 +20,8 @@ import java.util.List;
         "/admin/products/delete"
 })
 public class ProductAdminServlet extends HttpServlet {
-    private final ProductDAO productDAO = new ProductDAOImpl();
+	private static final long serialVersionUID = 1L;
+	private final ProductDAO productDAO = new ProductDAOImpl();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

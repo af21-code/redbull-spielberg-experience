@@ -7,7 +7,8 @@ import java.io.IOException;
 
 @WebServlet(name = "Rb21Servlet", urlPatterns = {"/rb21"})
 public class Rb21Servlet extends HttpServlet {
-    @Override
+	private static final long serialVersionUID = 1L;
+	@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.getRequestDispatcher("/views/rb21.jsp").forward(req, resp);

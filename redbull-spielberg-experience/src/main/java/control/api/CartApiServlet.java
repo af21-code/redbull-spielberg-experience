@@ -17,7 +17,8 @@ import java.io.PrintWriter;
  */
 @WebServlet("/api/cart/*")
 public class CartApiServlet extends HttpServlet {
-
+	
+	private static final long serialVersionUID = 1L;
     private SessionCart getOrCreateCart(HttpSession session) {
         SessionCart sc = (SessionCart) session.getAttribute("sessionCart");
         if (sc == null) {
