@@ -6,17 +6,17 @@
 
     <display-name>redbull-spielberg-experience</display-name>
 
-    <!-- Pagina di benvenuto -->
+    <!-- Welcome -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Sessioni -->
+    <!-- Session -->
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
 
-    <!-- JNDI DataSource reference (usato da utils.DatabaseConnection) -->
+    <!-- JNDI DataSource -->
     <resource-ref>
         <description>Red Bull Spielberg DB</description>
         <res-ref-name>jdbc/redbull</res-ref-name>
@@ -24,9 +24,7 @@
         <res-auth>Container</res-auth>
     </resource-ref>
 
-    <!-- ========= Filtri ========= -->
-
-    <!-- Filtro UTF-8 su tutte le richieste -->
+    <!-- =================== Filtri =================== -->
     <filter>
         <filter-name>UTF8Filter</filter-name>
         <filter-class>filter.UTF8Filter</filter-class>
@@ -36,7 +34,6 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- Badge carrello: calcola cartCount per l'header -->
     <filter>
         <filter-name>CartBadgeFilter</filter-name>
         <filter-class>filter.CartBadgeFilter</filter-class>
@@ -46,7 +43,6 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- AuthFilter: protegge sezioni riservate -->
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
@@ -63,7 +59,6 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/checkout/*</url-pattern>
     </filter-mapping>
-    <!-- Login obbligatorio anche per l'area admin -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/admin</url-pattern>
@@ -73,9 +68,7 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- ========= Servlet ========= -->
-
-    <!-- ADMIN DASHBOARD: calcola KPI e inoltra a /views/admin/dashboard.jsp -->
+    <!-- =================== Servlet Admin =================== -->
     <servlet>
         <servlet-name>AdminDashboardServlet</servlet-name>
         <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
@@ -86,7 +79,6 @@
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
 
-    <!-- Admin Users -->
     <servlet>
         <servlet-name>UserAdminServlet</servlet-name>
         <servlet-class>control.admin.UserAdminServlet</servlet-class>
@@ -101,7 +93,6 @@
         <url-pattern>/admin/users/*</url-pattern>
     </servlet-mapping>
 
-    <!-- Admin Stats (JSON per grafici / storico) -->
     <servlet>
         <servlet-name>AdminStatsServlet</servlet-name>
         <servlet-class>control.admin.AdminStatsServlet</servlet-class>
@@ -112,7 +103,33 @@
         <url-pattern>/admin/stats</url-pattern>
     </servlet-mapping>
 
-    <!-- ========= Pagine di errore ========= -->
+    <!-- Booking Availability (JSON) -->
+    <servlet>
+        <servlet-name>BookingAvailabilityServlet</servlet-name>
+        <servlet-class>control.BookingAvailabilityServlet</servlet-class>
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BookingAvailabilityServlet</servlet-name>
+        <url-pattern>/booking/availability</url-pattern>
+    </servlet-mapping>
+
+    <!-- =========== Gestione Slot (UNICA servlet) =========== -->
+    <servlet>
+        <servlet-name>AdminSlotsServlet</servlet-name>
+        <servlet-class>control.admin.AdminSlotsServlet</servlet-class>
+        <load-on-startup>5</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>AdminSlotsServlet</servlet-name>
+        <url-pattern>/admin/slots</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AdminSlotsServlet</servlet-name>
+        <url-pattern>/admin/slots/generate</url-pattern>
+    </servlet-mapping>
+
+    <!-- =================== Error pages =================== -->
     <error-page>
         <error-code>404</error-code>
         <location>/views/errors/404.jsp</location>
@@ -126,12 +143,11 @@
         <location>/views/errors/500.jsp</location>
     </error-page>
 
-    <!-- ========= Config JSP ========= -->
+    <!-- =================== JSP config =================== -->
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>
             <page-encoding>UTF-8</page-encoding>
         </jsp-property-group>
     </jsp-config>
-
 </web-app>
