@@ -71,33 +71,20 @@ public class ProductDAOImpl implements ProductDAO {
         return results;
     }
 
-    // ========= Admin =========
+    // ========= Admin (lista legacy senza paging) =========
     @Override
     public List<Product> adminFindAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
         StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
 
-        if (categoryId != null) {
-            sb.append(" AND category_id = ? ");
-            params.add(categoryId);
-        }
-        if (q != null && !q.isBlank()) {
-            sb.append(" AND LOWER(name) LIKE ? ");
-            params.add("%" + q.toLowerCase().trim() + "%");
-        }
-        if (onlyInactive != null && onlyInactive) {
-            sb.append(" AND is_active = 0 ");
-        }
-
+        appendFilters(sb, params, categoryId, q, onlyInactive);
         // Prima i record aggiornati di recente; quelli senza updated_at in coda
         sb.append(" ORDER BY (updated_at IS NULL), updated_at DESC, created_at DESC ");
 
         List<Product> results = new ArrayList<>();
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sb.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
+            bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) results.add(mapRow(rs));
             }
@@ -120,7 +107,6 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public int insert(Product p) throws Exception {
-        // 11 placeholder per i campi (created_at/updated_at sono NOW())
         String sql = """
             INSERT INTO products
               (category_id, name, description, short_description, price,
@@ -130,7 +116,7 @@ public class ProductDAOImpl implements ProductDAO {
         """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            bindUpsert(ps, p); // imposta gli 11 parametri
+            bindUpsert(ps, p);
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) return rs.getInt(1);
@@ -141,7 +127,6 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public void update(Product p) throws Exception {
-        // 11 placeholder + product_id in WHERE
         String sql = """
             UPDATE products SET
               category_id=?, name=?, description=?, short_description=?, price=?,
@@ -151,8 +136,8 @@ public class ProductDAOImpl implements ProductDAO {
         """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            int idx = bindUpsert(ps, p);   // prossimo indice libero dopo i 11 campi
-            ps.setInt(idx, p.getProductId()); // 12° parametro = product_id
+            int idx = bindUpsert(ps, p);
+            ps.setInt(idx, p.getProductId());
             ps.executeUpdate();
         }
     }
@@ -184,7 +169,100 @@ public class ProductDAOImpl implements ProductDAO {
         }
     }
 
-    // ========= Helpers =========
+    // ========= Admin: paginazione + ordinamento =========
+    @Override
+    public int adminCountAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
+        StringBuilder sb = new StringBuilder("SELECT COUNT(*) FROM products WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+        appendFilters(sb, params, categoryId, q, onlyInactive);
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public List<Product> adminFindAllPaged(Integer categoryId, String q, Boolean onlyInactive,
+                                           String sortBy, String sortDir,
+                                           int offset, int limit) throws Exception {
+
+        String orderBy = toSafeOrderBy(sortBy, sortDir);
+
+        StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+        appendFilters(sb, params, categoryId, q, onlyInactive);
+
+        sb.append(" ").append(orderBy).append(" LIMIT ? OFFSET ? ");
+
+        List<Product> results = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+            int i = bindParams(ps, params);
+            ps.setInt(i++, limit);
+            ps.setInt(i, Math.max(0, offset));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapRow(rs));
+            }
+        }
+        return results;
+    }
+
+    // ========= Helpers SQL =========
+    private static void appendFilters(StringBuilder sb, List<Object> params,
+                                      Integer categoryId, String q, Boolean onlyInactive) {
+        if (categoryId != null) {
+            sb.append(" AND category_id = ? ");
+            params.add(categoryId);
+        }
+        if (q != null && !q.isBlank()) {
+            sb.append(" AND LOWER(name) LIKE ? ");
+            params.add("%" + q.toLowerCase().trim() + "%");
+        }
+        if (onlyInactive != null && onlyInactive) {
+            sb.append(" AND is_active = 0 ");
+        }
+    }
+
+    /** Restituisce l'ORDER BY con colonne whiteliste per evitare SQL injection. */
+    private static String toSafeOrderBy(String sortBy, String sortDir) {
+        String col;
+        if (sortBy == null) col = "updated_at";
+        else {
+            switch (sortBy) {
+                case "product_id":
+                case "name":
+                case "price":
+                case "created_at":
+                case "updated_at":
+                case "is_active":
+                case "is_featured":
+                case "stock_quantity":
+                    col = sortBy;
+                    break;
+                default:
+                    col = "updated_at";
+            }
+        }
+        String dir = "DESC";
+        if (sortDir != null && sortDir.equalsIgnoreCase("asc")) dir = "ASC";
+        return "ORDER BY " + col + " " + dir + ", product_id " + dir;
+    }
+
+    /** Bind in ordine tutti i parametri della lista; ritorna il prossimo indice libero. */
+    private static int bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
+        int i = 1;
+        for (Object p : params) {
+            ps.setObject(i++, p);
+        }
+        return i;
+    }
+
+    // ========= Helpers mappatura =========
     private int bindUpsert(PreparedStatement ps, Product p) throws SQLException {
         int i = 1;
         // category_id

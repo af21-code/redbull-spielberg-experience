@@ -3,6 +3,7 @@ package control.admin;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 
@@ -10,6 +11,7 @@ import java.io.IOException;
 
 @WebServlet(urlPatterns = "/admin/products/action")
 public class AdminProductActionServlet extends HttpServlet {
+
     private static final long serialVersionUID = 1L;
 
     private boolean isAdmin(HttpSession session) {
@@ -19,7 +21,9 @@ public class AdminProductActionServlet extends HttpServlet {
         try {
             Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
             return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) { return false; }
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private boolean checkCsrf(HttpServletRequest req) {
@@ -40,45 +44,73 @@ public class AdminProductActionServlet extends HttpServlet {
             return;
         }
         if (!checkCsrf(req)) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "CSRF non valido");
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "CSRF token mancante/non valido");
             return;
         }
 
-        String action = req.getParameter("do");
+        String action = req.getParameter("action");
         String idStr  = req.getParameter("id");
+        if (action == null || action.isBlank() || idStr == null || idStr.isBlank()) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parametri mancanti");
+            return;
+        }
 
         int id;
-        try { id = Integer.parseInt(idStr); }
-        catch (Exception e) {
+        try {
+            id = Integer.parseInt(idStr);
+        } catch (NumberFormatException nfe) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID non valido");
             return;
         }
 
         ProductDAO dao = new ProductDAOImpl();
+        String redirectBase = req.getContextPath() + "/admin/products";
+
         try {
-            switch (action == null ? "" : action) {
+            switch (action) {
                 case "toggleActive": {
-                    boolean active = "1".equals(req.getParameter("val")) || "true".equalsIgnoreCase(req.getParameter("val"));
-                    dao.setActive(id, active);
-                    break;
+                    Product p = dao.adminFindById(id);
+                    if (p == null) throw new IllegalStateException("Prodotto non trovato");
+                    dao.setActive(id, !Boolean.TRUE.equals(p.getActive()));
+                    resp.sendRedirect(redirectBase + "?ok=Stato%20aggiornato");
+                    return;
                 }
                 case "toggleFeatured": {
-                    boolean featured = "1".equals(req.getParameter("val")) || "true".equalsIgnoreCase(req.getParameter("val"));
-                    dao.setFeatured(id, featured);
-                    break;
+                    Product p = dao.adminFindById(id);
+                    if (p == null) throw new IllegalStateException("Prodotto non trovato");
+                    dao.setFeatured(id, !Boolean.TRUE.equals(p.getFeatured()));
+                    resp.sendRedirect(redirectBase + "?ok=Featured%20aggiornato");
+                    return;
                 }
                 case "delete": {
                     dao.softDelete(id);
-                    break;
+                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20disattivato");
+                    return;
+                }
+                case "activate": {
+                    dao.setActive(id, true);
+                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20attivato");
+                    return;
+                }
+                case "deactivate": {
+                    dao.setActive(id, false);
+                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20disattivato");
+                    return;
                 }
                 default:
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Azione non valida");
-                    return;
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Azione non supportata");
             }
-            resp.sendRedirect(req.getContextPath() + "/admin/products?ok=Azione%20eseguita");
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendRedirect(req.getContextPath() + "/admin/products?err=" + e.getMessage());
+            resp.sendRedirect(redirectBase + "?err=" + urlEncode("Errore: " + e.getMessage()));
+        }
+    }
+
+    private String urlEncode(String s) {
+        try {
+            return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            return s;
         }
     }
 }
