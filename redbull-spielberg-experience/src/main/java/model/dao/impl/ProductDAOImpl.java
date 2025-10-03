@@ -21,7 +21,7 @@ public class ProductDAOImpl implements ProductDAO {
         return DatabaseConnection.getInstance().getConnection();
     }
 
-    // --------- Public / Shop ----------
+    // ========= Public / Shop =========
     @Override
     public List<Product> findActiveMerchandise(Integer categoryId) throws Exception {
         String sql = BASE_SELECT +
@@ -71,7 +71,7 @@ public class ProductDAOImpl implements ProductDAO {
         return results;
     }
 
-    // --------- Admin ----------
+    // ========= Admin =========
     @Override
     public List<Product> adminFindAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
         StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
@@ -88,7 +88,8 @@ public class ProductDAOImpl implements ProductDAO {
         if (onlyInactive != null && onlyInactive) {
             sb.append(" AND is_active = 0 ");
         }
-     
+
+        // Prima i record aggiornati di recente; quelli senza updated_at in coda
         sb.append(" ORDER BY (updated_at IS NULL), updated_at DESC, created_at DESC ");
 
         List<Product> results = new ArrayList<>();
@@ -119,6 +120,7 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public int insert(Product p) throws Exception {
+        // 11 placeholder per i campi (created_at/updated_at sono NOW())
         String sql = """
             INSERT INTO products
               (category_id, name, description, short_description, price,
@@ -128,7 +130,7 @@ public class ProductDAOImpl implements ProductDAO {
         """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            bindUpsert(ps, p, true);
+            bindUpsert(ps, p); // imposta gli 11 parametri
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) return rs.getInt(1);
@@ -139,6 +141,7 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public void update(Product p) throws Exception {
+        // 11 placeholder + product_id in WHERE
         String sql = """
             UPDATE products SET
               category_id=?, name=?, description=?, short_description=?, price=?,
@@ -148,8 +151,8 @@ public class ProductDAOImpl implements ProductDAO {
         """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            int idx = bindUpsert(ps, p, false);
-            ps.setInt(idx, p.getProductId());
+            int idx = bindUpsert(ps, p);   // prossimo indice libero dopo i 11 campi
+            ps.setInt(idx, p.getProductId()); // 12° parametro = product_id
             ps.executeUpdate();
         }
     }
@@ -181,11 +184,12 @@ public class ProductDAOImpl implements ProductDAO {
         }
     }
 
-    // --- Helpers ---
-    private int bindUpsert(PreparedStatement ps, Product p, boolean isInsert) throws SQLException {
+    // ========= Helpers =========
+    private int bindUpsert(PreparedStatement ps, Product p) throws SQLException {
         int i = 1;
         // category_id
         if (p.getCategoryId() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, p.getCategoryId());
+
         ps.setString(i++, p.getName());
         ps.setString(i++, p.getDescription());
         ps.setString(i++, p.getShortDescription());
@@ -193,7 +197,11 @@ public class ProductDAOImpl implements ProductDAO {
 
         // product_type / experience_type
         ps.setString(i++, p.getProductType() == null ? null : p.getProductType().name());
-        if (p.getExperienceType() == null) ps.setNull(i++, Types.VARCHAR); else ps.setString(i++, p.getExperienceType().name());
+        if (p.getExperienceType() == null) {
+            ps.setNull(i++, Types.VARCHAR);
+        } else {
+            ps.setString(i++, p.getExperienceType().name());
+        }
 
         // stock_quantity
         if (p.getStockQuantity() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, p.getStockQuantity());
@@ -204,7 +212,7 @@ public class ProductDAOImpl implements ProductDAO {
         ps.setBoolean(i++, Boolean.TRUE.equals(p.getFeatured()));
         ps.setBoolean(i++, Boolean.TRUE.equals(p.getActive()));
 
-        return i;
+        return i; // prossimo indice libero (serve per UPDATE)
     }
 
     private Product mapRow(ResultSet rs) throws SQLException {
@@ -216,11 +224,9 @@ public class ProductDAOImpl implements ProductDAO {
         p.setShortDescription(rs.getString("short_description"));
         p.setPrice(rs.getBigDecimal("price"));
 
-        String productType = rs.getString("product_type");
-        if (productType != null) p.setProductType(Product.ProductType.valueOf(productType));
-
-        String experienceType = rs.getString("experience_type");
-        if (experienceType != null) p.setExperienceType(Product.ExperienceType.valueOf(experienceType));
+        // enum safe
+        p.setProductType(safeProductType(rs.getString("product_type")));
+        p.setExperienceType(safeExperienceType(rs.getString("experience_type")));
 
         Integer stock = (Integer) rs.getObject("stock_quantity");
         p.setStockQuantity(stock);
@@ -228,11 +234,23 @@ public class ProductDAOImpl implements ProductDAO {
         p.setImageUrl(rs.getString("image_url"));
         p.setFeatured(rs.getBoolean("is_featured"));
         p.setActive(rs.getBoolean("is_active"));
-        // Se usi LocalDateTime nei campi:
+
         Timestamp cAt = rs.getTimestamp("created_at");
         Timestamp uAt = rs.getTimestamp("updated_at");
         if (cAt != null) p.setCreatedAt(cAt.toLocalDateTime());
         if (uAt != null) p.setUpdatedAt(uAt.toLocalDateTime());
         return p;
+    }
+
+    private static Product.ProductType safeProductType(String s) {
+        if (s == null) return null;
+        try { return Product.ProductType.valueOf(s); }
+        catch (IllegalArgumentException e) { return null; }
+    }
+
+    private static Product.ExperienceType safeExperienceType(String s) {
+        if (s == null) return null;
+        try { return Product.ExperienceType.valueOf(s); }
+        catch (IllegalArgumentException e) { return null; }
     }
 }
