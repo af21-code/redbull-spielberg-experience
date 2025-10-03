@@ -1,10 +1,25 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, java.math.BigDecimal, java.text.SimpleDateFormat, model.Order" %>
+<%!
+  // Escape HTML semplice
+  private static String esc(Object o) {
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            .replace("\"","&quot;").replace("'","&#39;");
+  }
+%>
 <%
   String ctx = request.getContextPath();
-  @SuppressWarnings("unchecked")
-  List<Order> orders = (List<Order>) request.getAttribute("orders");
-  if (orders == null) orders = Collections.emptyList();
+
+  // Cast sicuro: accetta solo elementi realmente di tipo Order (no unchecked warnings)
+  Object ordAttr = request.getAttribute("orders");
+  List<Order> orders = new ArrayList<>();
+  if (ordAttr instanceof List<?>) {
+    for (Object x : (List<?>) ordAttr) {
+      if (x instanceof Order) orders.add((Order) x);
+    }
+  }
 
   SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 %>
@@ -12,6 +27,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>I miei ordini</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <style>
@@ -54,20 +70,18 @@
         <%
           for (Order o : orders) {
             String onum  = o.getOrderNumber();
-            java.util.Date od = (o.getOrderDate() instanceof java.util.Date)
-                                ? (java.util.Date) o.getOrderDate()
-                                : null;
+            java.util.Date od = (o.getOrderDate() instanceof java.util.Date) ? (java.util.Date) o.getOrderDate() : null;
             String date  = (od == null) ? "—" : df.format(od);
             BigDecimal tot = o.getTotalAmount() == null ? BigDecimal.ZERO : o.getTotalAmount();
             String st   = o.getStatus();
             String pay  = o.getPaymentStatus();
         %>
           <tr>
-            <td><strong><%= onum %></strong></td>
+            <td><strong><%= esc(onum) %></strong></td>
             <td class="muted"><%= date %></td>
             <td>€ <%= tot %></td>
-            <td><span class="pill"><%= st %></span></td>
-            <td><span class="pill"><%= pay %></span></td>
+            <td><span class="pill"><%= esc(st) %></span></td>
+            <td><span class="pill"><%= esc(pay) %></span></td>
             <td><a class="btn" href="<%=ctx%>/order?id=<%= o.getOrderId() %>">Dettagli</a></td>
           </tr>
         <% } %>

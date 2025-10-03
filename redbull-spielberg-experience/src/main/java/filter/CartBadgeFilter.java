@@ -41,8 +41,7 @@ public class CartBadgeFilter implements Filter {
   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
       throws IOException, ServletException {
 
-    HttpServletRequest  r = (HttpServletRequest) req;
-    HttpServletResponse s = (HttpServletResponse) res;
+    HttpServletRequest r = (HttpServletRequest) req;
 
     // Salta statici e API booking pubbliche (più snelle e sicure)
     if (isStatic(r) || isPublicBookingApi(r)) {

@@ -1,5 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, model.User" %>
+<%!
+  private static String esc(Object o) {
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            .replace("\"","&quot;").replace("'","&#39;");
+  }
+%>
 <%
   String ctx = request.getContextPath();
   @SuppressWarnings("unchecked")
@@ -15,6 +23,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Admin · Utenti</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=ctx%>/styles/admin.css?v=1">
@@ -26,7 +35,7 @@
   <div class="top">
     <h1 class="mt-0">Utenti</h1>
     <form method="get" action="<%=ctx%>/admin/users" class="filters">
-      <input type="search" name="q" placeholder="Cerca nome/email…" value="<%= q %>">
+      <input type="search" name="q" placeholder="Cerca nome/email…" value="<%= esc(q) %>">
       <select name="type" aria-label="Ruolo">
         <option value="">Tutti i ruoli</option>
         <option value="VISITOR"    <%= "VISITOR".equals(type)?"selected":"" %>>Visitor</option>
@@ -43,9 +52,9 @@
   </div>
 
   <% if (okMsg != null) { %>
-    <div class="alert success"><%= okMsg %></div>
+    <div class="alert success"><%= esc(okMsg) %></div>
   <% } else if (errMsg != null) { %>
-    <div class="alert danger"><%= errMsg %></div>
+    <div class="alert danger"><%= esc(errMsg) %></div>
   <% } %>
 
   <div class="card">
@@ -76,8 +85,8 @@
       %>
         <tr>
           <td><%= u.getUserId() %></td>
-          <td><%= (u.getFirstName()==null?"":u.getFirstName()) %> <%= (u.getLastName()==null?"":u.getLastName()) %></td>
-          <td><%= u.getEmail() %></td>
+          <td><%= esc(u.getFirstName()) %> <%= esc(u.getLastName()) %></td>
+          <td><%= esc(u.getEmail()) %></td>
           <td>
             <form method="post" action="<%=ctx%>/admin/users/role" class="gap-6">
               <input type="hidden" name="csrf" value="${csrfToken}">
@@ -99,7 +108,7 @@
               <%= active ? "Attivo" : "Disattivo" %>
             </span>
           </td>
-          <td><%= u.getRegistrationDate()==null ? "—" : u.getRegistrationDate() %></td>
+          <td><%= u.getRegistrationDate()==null ? "—" : esc(u.getRegistrationDate()) %></td>
           <td class="right">
             <form method="post" action="<%=ctx%>/admin/users/toggle" style="display:inline">
               <input type="hidden" name="csrf" value="${csrfToken}">

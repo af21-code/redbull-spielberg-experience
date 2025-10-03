@@ -1,72 +1,137 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, model.Product" %>
+<%@ page import="java.util.*, java.math.BigDecimal" %>
+<%@ page import="model.Product" %>
+<%@ page import="model.Product.ProductType, model.Product.ExperienceType" %>
+<%!
+  // Escape HTML semplice
+  private static String esc(Object o){
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            .replace("\"","&quot;").replace("'","&#39;");
+  }
+
+  // Cast helper senza unchecked warning
+  private static List<Product> asProducts(Object obj){
+    List<Product> out = new ArrayList<>();
+    if (obj instanceof List<?>){
+      for (Object x : (List<?>) obj) if (x instanceof Product) out.add((Product) x);
+    }
+    return out;
+  }
+%>
 <%
   String ctx = request.getContextPath();
-  List<Product> list = (List<Product>) request.getAttribute("products");
+
+  // Recupero lista prodotti in modo typesafe
+  List<Product> products = asProducts(request.getAttribute("products"));
+  if (products == null) products = Collections.emptyList();
+
+  String q = request.getParameter("q") == null ? "" : request.getParameter("q");
+  String type = request.getParameter("type") == null ? "" : request.getParameter("type");
 %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <title>Admin · Prodotti</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=ctx%>/styles/admin.css?v=1">
+  <style>
+    .wrap{padding:30px 18px 80px;background:linear-gradient(135deg,#001e36 0%,#000b2b 100%);min-height:60vh;color:#fff}
+    .container{max-width:1200px;margin:0 auto}
+    .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .filters input,.filters select{background:#001E36;color:#fff;border:1px solid #0a3565;border-radius:10px;padding:8px 10px}
+    .btn{background:#444;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
+    .btn.primary{background:#E30613}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.15);vertical-align:top}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid rgba(255,255,255,.3);border-radius:999px}
+  </style>
 </head>
 <body>
-<jsp:include page="../header.jsp"/>
-<div class="wrap">
-  <div class="top">
-    <form method="get" action="<%=ctx%>/admin/products" style="display:flex;gap:8px;flex-wrap:wrap">
-      <input type="text" name="q" placeholder="Cerca nome…" value="<%= request.getParameter("q")==null?"":request.getParameter("q") %>">
-      <input type="number" name="categoryId" placeholder="Categoria (id)" value="<%= request.getParameter("categoryId")==null?"":request.getParameter("categoryId") %>" min="1">
-      <label style="display:flex;gap:6px;align-items:center" class="muted">
-        <input type="checkbox" name="onlyInactive" value="1" <%= "1".equals(request.getParameter("onlyInactive"))?"checked":"" %>> Solo non attivi
-      </label>
-      <button class="btn" type="submit">Filtra</button>
-    </form>
-    <a class="btn red" href="<%=ctx%>/admin/products/edit">+ Nuovo prodotto</a>
-  </div>
+<jsp:include page="/views/header.jsp" />
 
-  <div class="card">
-    <table>
-      <thead>
+<div class="wrap">
+  <div class="container">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Prodotti (Admin)</h2>
+      <a class="btn primary" href="<%=ctx%>/admin/products/new">+ Nuovo prodotto</a>
+    </div>
+
+    <div class="card filters" style="margin-top:14px">
+      <form method="get" action="<%=ctx%>/admin/products" class="row" style="align-items:flex-end">
+        <div>
+          <label>Search</label>
+          <input type="text" name="q" value="<%= esc(q) %>" placeholder="Nome/descrizione">
+        </div>
+        <div>
+          <label>Tipo</label>
+          <select name="type">
+            <option value="" <%= type.isBlank()?"selected":"" %>>Tutti</option>
+            <option value="MERCHANDISE" <%= "MERCHANDISE".equals(type)?"selected":"" %>>MERCHANDISE</option>
+            <option value="EXPERIENCE"  <%= "EXPERIENCE".equals(type) ?"selected":"" %>>EXPERIENCE</option>
+          </select>
+        </div>
+        <div><button class="btn primary">Filtra</button></div>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <table>
+        <thead>
         <tr>
-          <th>ID</th><th>Nome</th><th>Tipo</th><th>Stock</th><th>Attivo</th><th>Featured</th><th>Prezzo</th><th></th>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Tipo</th>
+          <th>Experience</th>
+          <th>Prezzo</th>
+          <th>Stock</th>
+          <th>Active</th>
+          <th>Feat.</th>
+          <th></th>
         </tr>
-      </thead>
-      <tbody>
-      <% if (list!=null) for (Product p : list) { %>
-        <tr>
-          <td><%= p.getProductId() %></td>
-          <td><%= p.getName() %></td>
-          <td><%= p.getProductType() %> <%= p.getExperienceType()==null?"":"("+p.getExperienceType()+")" %></td>
-          <td><%= p.getStockQuantity()==null?"—":p.getStockQuantity() %></td>
-          <td><%= Boolean.TRUE.equals(p.getActive())?"✅":"❌" %></td>
-          <td><%= Boolean.TRUE.equals(p.getFeatured())?"⭐":"—" %></td>
-          <td>€ <%= p.getPrice() %></td>
-          <td style="display:flex;gap:6px;justify-content:flex-end">
-            <a class="btn gray" href="<%=ctx%>/admin/products/edit?id=<%=p.getProductId()%>">Modifica</a>
-            <form method="post" action="<%=ctx%>/admin/products/toggle">
-              <input type="hidden" name="id" value="<%=p.getProductId()%>">
-              <input type="hidden" name="active" value="<%= Boolean.TRUE.equals(p.getActive())? "0":"1" %>">
-              <button class="btn" type="submit"><%= Boolean.TRUE.equals(p.getActive())? "Disattiva":"Attiva" %></button>
-            </form>
-            <form method="post" action="<%=ctx%>/admin/products/feature">
-              <input type="hidden" name="id" value="<%=p.getProductId()%>">
-              <input type="hidden" name="featured" value="<%= Boolean.TRUE.equals(p.getFeatured())? "0":"1" %>">
-              <button class="btn" type="submit"><%= Boolean.TRUE.equals(p.getFeatured())? "Unstar":"Star" %></button>
-            </form>
-            <form method="post" action="<%=ctx%>/admin/products/delete" onsubmit="return confirm('Confermi la disattivazione?');">
-              <input type="hidden" name="id" value="<%=p.getProductId()%>">
-              <button class="btn red" type="submit">Elimina</button>
-            </form>
-          </td>
-        </tr>
-      <% } %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+        <% if (products.isEmpty()) { %>
+          <tr><td colspan="9" style="opacity:.8">Nessun prodotto trovato.</td></tr>
+        <% } %>
+        <%
+          for (Product p : products) {
+            // ID come Number per compatibilità (Integer oggi, Long domani)
+            Number idNum = p.getProductId();
+            String idStr = idNum == null ? "" : String.valueOf(idNum);
+
+            String name = p.getName();
+            ProductType pt = p.getProductType();
+            ExperienceType et = p.getExperienceType();
+            BigDecimal price = p.getPrice();
+            Integer stock = p.getStockQuantity();
+            Boolean active = p.getActive();
+            Boolean feat = p.getFeatured();
+        %>
+          <tr>
+            <td><%= idStr.isEmpty() ? "—" : idStr %></td>
+            <td><strong><%= esc(name) %></strong></td>
+            <td><span class="pill"><%= (pt==null?"—":pt.name()) %></span></td>
+            <td><%= (et==null?"—":et.name()) %></td>
+            <td>€ <%= price == null ? "0" : price %></td>
+            <td><%= stock == null ? "—" : stock %></td>
+            <td><%= Boolean.TRUE.equals(active) ? "Sì" : "No" %></td>
+            <td><%= Boolean.TRUE.equals(feat)   ? "Sì" : "No" %></td>
+            <td>
+              <a class="pill" href="<%=ctx%>/admin/products/edit?id=<%= esc(idStr) %>">Modifica</a>
+            </td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
-<jsp:include page="../footer.jsp"/>
+
+<jsp:include page="/views/footer.jsp" />
 </body>
 </html>

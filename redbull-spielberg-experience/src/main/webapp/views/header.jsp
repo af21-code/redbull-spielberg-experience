@@ -9,7 +9,7 @@
   // Attivi per la navbar
   boolean exploreActive = uri.endsWith("/index.jsp");
   boolean rb21Active    = uri.contains("/rb21");
-  boolean trackActive   = uri.contains("#track"); // solo ancoraggio
+  boolean trackActive   = uri.contains("#track"); // (ancora mai vero lato server, lasciato per coerenza)
   boolean shopActive    = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
   boolean ordersActive  = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
   boolean cartActive    = uri.contains("/cart");
@@ -29,11 +29,16 @@
   Integer cartCountObj = (Integer) request.getAttribute("cartCount");
   int cartCount = (cartCountObj != null) ? cartCountObj : 0;
 
-  // 2) fallback dalla sessione se nullo/zero
+  // 2) fallback dalla sessione se nullo/zero — senza cast non-checkato
   if (cartCount <= 0) {
-    List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
-    if (sessionCart != null) {
-      for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
+    Object cartObj = session.getAttribute("cartItems");
+    if (cartObj instanceof java.util.List<?>) {
+      for (Object itObj : (java.util.List<?>) cartObj) {
+        if (itObj instanceof CartItem) {
+          CartItem it = (CartItem) itObj;
+          cartCount += Math.max(1, it.getQuantity());
+        }
+      }
     }
   }
 
@@ -64,13 +69,12 @@ header .menu-right .Btn{
   transition:background .2s, transform .15s, box-shadow .2s, border-color .2s;
 }
 header .menu-right .Btn .sign{ display:grid; place-items:center; width:20px; height:20px; }
-header .menu-right .Btn .sign svg{ width:100%; height:100%; transition:transform .2s; }
+header .menu-right .Btn .sign img{ width:100%; height:100%; display:block; }
 header .menu-right .Btn .text{ font-weight:700; letter-spacing:.2px; }
 header .menu-right .Btn:hover{
   background:var(--bgH); transform:translateY(-1px);
   box-shadow:0 10px 24px var(--ring); border-color:rgba(227,6,19,.55);
 }
-header .menu-right .Btn:hover .sign svg{ transform:translateX(2px); }
 header .menu-right .Btn:active{ transform:translateY(0); box-shadow:none; }
 
 /* Badge quantità carrello */
@@ -85,12 +89,10 @@ header .menu-right .btn-cart .badge{
 <!-- CSRF bootstrap + patch globale fetch() + XMLHttpRequest + auto-hidden nelle form POST -->
 <script>
   (function () {
-    // Token disponibile globalmente
     var token = document.querySelector('meta[name="csrf-token"]')?.content || "<%= csrfToken %>";
     window.RBX = window.RBX || {};
     window.RBX.csrfToken = token;
 
-    // Patch fetch: aggiunge X-CSRF-Token e credentials same-origin sulle non-safe
     var _fetch = window.fetch;
     window.fetch = function (input, init) {
       init = init || {};
@@ -104,7 +106,6 @@ header .menu-right .btn-cart .badge{
       return _fetch(input, init);
     };
 
-    // Patch XMLHttpRequest: aggiunge X-CSRF-Token sulle non-safe
     var _open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, url) {
       this._csrfMethod = (method || 'GET').toUpperCase();
@@ -120,7 +121,6 @@ header .menu-right .btn-cart .badge{
       return _send.apply(this, arguments);
     };
 
-    // Auto-inietta <input type="hidden" name="csrf" ...> in tutte le form POST
     document.addEventListener('submit', function (ev) {
       var form = ev.target;
       if (!form || form.nodeName !== 'FORM') return;
@@ -162,7 +162,6 @@ header .menu-right .btn-cart .badge{
           <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
         <% } %>
 
-        <!-- Carrello sempre visibile -->
         <li>
           <a href="<%=ctx%>/cart/view" class="btn-cart <%= cartActive ? "active" : "" %>">
             Carrello
@@ -177,9 +176,10 @@ header .menu-right .btn-cart .badge{
             <form action="<%=ctx%>/logout" method="get" style="display:inline;">
               <button class="Btn" type="submit" title="Logout" aria-label="Logout">
                 <div class="sign" aria-hidden="true">
-                  <svg viewBox="0 0 512 512" focusable="false">
-                    <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"/>
-                  </svg>
+                  <!-- Icona logout via data-URI SVG (niente tag SVG inline => niente warning JSP) -->
+                  <img
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-8c-1.1 0-2 .9-2 2v4h2V5h8v14h-8v-4h-2v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E"
+                    width="20" height="20" alt="" draggable="false">
                 </div>
                 <span class="text">Logout</span>
               </button>

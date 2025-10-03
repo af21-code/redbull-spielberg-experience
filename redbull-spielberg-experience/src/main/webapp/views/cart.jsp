@@ -2,9 +2,15 @@
 <%@ page import="java.util.*, java.math.BigDecimal, java.time.format.DateTimeFormatter" %>
 <%@ page import="model.CartItem" %>
 <%@ page import="java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
-
 <%!
-  // Normalizza path immagine: se relativa la prefigge con il context path, se assoluta la lascia intatta
+  // Escape semplice
+  private static String esc(Object o){
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            .replace("\"","&quot;").replace("'","&#39;");
+  }
+  // Normalizza path immagine
   private String normImg(String p, String ctx){
     if (p == null || p.isBlank()) return null;
     String s = p.trim();
@@ -12,13 +18,7 @@
     if (s.startsWith("/")) return ctx + s;
     return ctx + "/" + s;
   }
-
-  /**
-   * Risolve l'immagine da mostrare:
-   * 1) se su DB c'è image_url -> usa quella (normalizzata).
-   * 2) se productType = EXPERIENCE -> mappa vehicleCode su /images/vehicles/.
-   * 3) altrimenti usa un placeholder generale.
-   */
+  // Resolve immagine con fallback
   private String resolveImg(String imageUrl, String vehicleCode, String productType, String ctx){
     String db = normImg(imageUrl, ctx);
     if (db != null) return db;
@@ -32,9 +32,7 @@
       if ("nascar".equals(v) || "stockcar".equals(v)) return ctx + "/images/vehicles/placeholder-vehicle.jpg";
       return ctx + "/images/vehicles/placeholder-vehicle.jpg";
     } else {
-      // Placeholder generico (se non lo hai, puoi lasciar cadere su quello esterno)
       return ctx + "/images/placeholder.jpg";
-      // Oppure: return "https://via.placeholder.com/400x300?text=Red+Bull";
     }
   }
 %>
@@ -44,14 +42,23 @@
   String ctx = request.getContextPath();
   DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-  // Formattazione prezzi con separatore italiano
+  // Formattazione € IT
   DecimalFormatSymbols sy = new DecimalFormatSymbols(Locale.ITALY);
   sy.setDecimalSeparator(',');
   sy.setGroupingSeparator('.');
   DecimalFormat money = new DecimalFormat("#,##0.00", sy);
 
-  @SuppressWarnings("unchecked")
-  List<CartItem> items = (List<CartItem>) request.getAttribute("cartItems");
+  // Recupera cartItems da request o fallback session, filtrando i tipi (niente unchecked)
+  List<CartItem> items = new ArrayList<>();
+  Object reqAttr = request.getAttribute("cartItems");
+  Object sesAttr = (reqAttr == null) ? session.getAttribute("cartItems") : null;
+  if (reqAttr instanceof List<?>) {
+    for (Object x : (List<?>) reqAttr) if (x instanceof CartItem) items.add((CartItem) x);
+  } else if (sesAttr instanceof List<?>) {
+    for (Object x : (List<?>) sesAttr) if (x instanceof CartItem) items.add((CartItem) x);
+  }
+
+  String csrf = (String) session.getAttribute("csrfToken"); // header.jsp lo crea se assente
 %>
 <!DOCTYPE html>
 <html lang="it">
@@ -69,7 +76,7 @@
 
 <div class="cart-wrap" aria-live="polite">
   <%
-    if (items == null || items.isEmpty()) {
+    if (items.isEmpty()) {
   %>
     <p class="empty">Il tuo carrello è vuoto.
       <a class="btn" href="<%=ctx%>/shop" style="margin-left:8px;">Vai allo shop</a>
@@ -100,28 +107,28 @@
           <td>
             <img class="cart-img"
                  src="<%= img %>"
-                 alt="<%= it.getProductName() %>"
+                 alt="<%= esc(it.getProductName()) %>"
                  onerror="this.onerror=null;this.src='<%=ctx%>/images/vehicles/placeholder-vehicle.jpg';">
-            &nbsp; <strong><%= it.getProductName() %></strong>
+            &nbsp; <strong><%= esc(it.getProductName()) %></strong>
 
             <% if (it.getSlotId() != null) { %>
               <br/><small>Slot: <%= it.getSlotId() %></small>
             <% } %>
             <% if (it.getDriverName() != null && !it.getDriverName().isBlank()) { %>
-              <br/><small>Pilota: <%= it.getDriverName() %></small>
+              <br/><small>Pilota: <%= esc(it.getDriverName()) %></small>
             <% } %>
             <% if (it.getCompanionName() != null && !it.getCompanionName().isBlank()) { %>
-              <br/><small>Accompagnatore: <%= it.getCompanionName() %></small>
+              <br/><small>Accompagnatore: <%= esc(it.getCompanionName()) %></small>
             <% } %>
             <% if (it.getVehicleCode() != null && !it.getVehicleCode().isBlank()) { %>
-              <br/><small>Veicolo: <%= it.getVehicleCode() %></small>
+              <br/><small>Veicolo: <%= esc(it.getVehicleCode()) %></small>
             <% } %>
             <% if (it.getEventDate() != null) { %>
               <br/><small>Data: <%= it.getEventDate().format(dateFmt) %></small>
             <% } %>
           </td>
 
-          <td><%= it.getProductType() %></td>
+          <td><%= esc(it.getProductType()) %></td>
           <td>€ <%= money.format(it.getUnitPrice()) %></td>
 
           <td>
@@ -132,8 +139,9 @@
             <%
               } else {
             %>
-                <!-- SOLO questo form è gestito via JS (AJAX soft) -->
+                <!-- POST aggiornamento quantità (CSRF incluso) -->
                 <form action="<%= ctx %>/cart/update" method="post" class="inline-form js-update-qty" novalidate>
+                  <% if (csrf != null) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
                   <input type="hidden" name="productId" value="<%= it.getProductId() %>">
                   <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
                   <input class="qty-input" type="number" name="quantity" min="1" value="<%= it.getQuantity() %>">
@@ -147,8 +155,9 @@
           <td>€ <%= money.format(it.getTotal()) %></td>
 
           <td>
-            <!-- Submit normale: raggiunge /cart/remove -->
+            <!-- Rimuovi -->
             <form action="<%= ctx %>/cart/remove" method="post" class="inline-form">
+              <% if (csrf != null) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
               <input type="hidden" name="productId" value="<%= it.getProductId() %>">
               <input type="hidden" name="slotId" value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
               <button class="btn secondary" type="submit">Rimuovi</button>
@@ -164,8 +173,9 @@
     <div class="summary">
       <span class="total">Totale: € <%= money.format(total) %></span>
 
-      <!-- Submit normale: raggiunge /cart/clear -->
+      <!-- Svuota -->
       <form action="<%= ctx %>/cart/clear" method="post">
+        <% if (csrf != null) { %><input type="hidden" name="csrf" value="<%= csrf %>"><% } %>
         <button class="btn secondary" type="submit">Svuota</button>
       </form>
 
