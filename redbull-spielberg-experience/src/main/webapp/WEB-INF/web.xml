@@ -6,17 +6,14 @@
 
     <display-name>redbull-spielberg-experience</display-name>
 
-    <!-- Welcome -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Session -->
     <session-config>
         <session-timeout>30</session-timeout>
     </session-config>
 
-    <!-- JNDI DataSource -->
     <resource-ref>
         <description>Red Bull Spielberg DB</description>
         <res-ref-name>jdbc/redbull</res-ref-name>
@@ -24,7 +21,7 @@
         <res-auth>Container</res-auth>
     </resource-ref>
 
-    <!-- =================== Filtri =================== -->
+    <!-- ========================= Filtri ========================= -->
     <filter>
         <filter-name>UTF8Filter</filter-name>
         <filter-class>filter.UTF8Filter</filter-class>
@@ -43,6 +40,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- Login richiesto per le aree protette -->
     <filter>
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
@@ -68,7 +66,21 @@
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
 
-    <!-- =================== Servlet Admin =================== -->
+    <!-- Solo ADMIN su /admin/* -->
+    <filter>
+        <filter-name>AdminOnlyFilter</filter-name>
+        <filter-class>filter.AdminOnlyFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AdminOnlyFilter</filter-name>
+        <url-pattern>/admin</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AdminOnlyFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+
+    <!-- ========================= Servlets Admin ========================= -->
     <servlet>
         <servlet-name>AdminDashboardServlet</servlet-name>
         <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
@@ -103,22 +115,11 @@
         <url-pattern>/admin/stats</url-pattern>
     </servlet-mapping>
 
-    <!-- Booking Availability (JSON) -->
-    <servlet>
-        <servlet-name>BookingAvailabilityServlet</servlet-name>
-        <servlet-class>control.BookingAvailabilityServlet</servlet-class>
-        <load-on-startup>4</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>BookingAvailabilityServlet</servlet-name>
-        <url-pattern>/booking/availability</url-pattern>
-    </servlet-mapping>
-
-    <!-- =========== Gestione Slot (UNICA servlet) =========== -->
+    <!-- ✅ NUOVO: AdminSlotsServlet con mapping esplicito -->
     <servlet>
         <servlet-name>AdminSlotsServlet</servlet-name>
         <servlet-class>control.admin.AdminSlotsServlet</servlet-class>
-        <load-on-startup>5</load-on-startup>
+        <load-on-startup>4</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>AdminSlotsServlet</servlet-name>
@@ -129,7 +130,9 @@
         <url-pattern>/admin/slots/generate</url-pattern>
     </servlet-mapping>
 
-    <!-- =================== Error pages =================== -->
+    <!-- Booking availability/slots sono già annotati, nessun mapping qui -->
+
+    <!-- ========================= Error pages ========================= -->
     <error-page>
         <error-code>404</error-code>
         <location>/views/errors/404.jsp</location>
@@ -143,7 +146,6 @@
         <location>/views/errors/500.jsp</location>
     </error-page>
 
-    <!-- =================== JSP config =================== -->
     <jsp-config>
         <jsp-property-group>
             <url-pattern>*.jsp</url-pattern>

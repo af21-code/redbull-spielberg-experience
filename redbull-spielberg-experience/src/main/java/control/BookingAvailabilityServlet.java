@@ -1,6 +1,7 @@
 package control;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@WebServlet("/booking/availability")
 public class BookingAvailabilityServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -63,20 +65,14 @@ public class BookingAvailabilityServlet extends HttpServlet {
                 remainingByDay.put(d, 0);
             }
 
-            // Query aggregata per giorno
-            String sql = """
-                SELECT slot_date AS d,
-                       COALESCE(SUM(CASE
-                           WHEN (max_capacity - booked_capacity) > 0
-                               THEN (max_capacity - booked_capacity)
-                           ELSE 0 END), 0) AS remaining
-                FROM time_slots
-                WHERE product_id = ?
-                  AND slot_date >= ?
-                  AND slot_date < ?
-                GROUP BY d
-                ORDER BY d
-                """;
+            String sql =
+                "SELECT slot_date AS d, " +
+                "       COALESCE(SUM(CASE WHEN (max_capacity - booked_capacity) > 0 " +
+                "           THEN (max_capacity - booked_capacity) ELSE 0 END), 0) AS remaining " +
+                "FROM time_slots " +
+                "WHERE product_id = ? AND slot_date >= ? AND slot_date < ? " +
+                "GROUP BY d ORDER BY d";
+
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setInt(1, productId);
                 ps.setDate(2, Date.valueOf(start));
@@ -90,7 +86,7 @@ public class BookingAvailabilityServlet extends HttpServlet {
                 }
             }
 
-            // Costruzione JSON
+            // JSON
             StringBuilder sb = new StringBuilder(256);
             sb.append("{\"days\":[");
             boolean first = true;

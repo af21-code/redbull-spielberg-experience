@@ -24,11 +24,13 @@ import java.util.List;
  *
  * GET  /admin/slots           -> mostra form
  * POST /admin/slots/generate  -> genera slot nel DB
+ *
+ * NB: Nessuna @WebServlet qui. I mapping sono nel web.xml.
  */
 public class AdminSlotsServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private DataSource jndiDataSource; // opzionale
+    private DataSource jndiDataSource; // opzionale via JNDI
 
     @Override
     public void init() throws ServletException {
@@ -37,21 +39,25 @@ public class AdminSlotsServlet extends HttpServlet {
             InitialContext ic = new InitialContext();
             this.jndiDataSource = (DataSource) ic.lookup("java:comp/env/jdbc/redbull");
         } catch (NamingException ignore) {
-            this.jndiDataSource = null;
+            this.jndiDataSource = null; // fallback su utils.DatabaseConnection
         }
     }
 
+    // Mostra la pagina /views/admin/slots.jsp
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.getRequestDispatcher("/views/admin/slots.jsp").forward(req, resp);
     }
 
+    // Gestisce la generazione degli slot: POST -> /admin/slots/generate
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // --- lettura parametri ---
+        req.setCharacterEncoding("UTF-8"); // sicurezza su encoding parametri
+
+        // --- Lettura parametri ---
         String pidStr   = nz(req.getParameter("productId"));
         String startStr = nz(req.getParameter("start"));
         String daysStr  = nz(req.getParameter("days"));
@@ -81,7 +87,7 @@ public class AdminSlotsServlet extends HttpServlet {
         int capacity = 8;
         try { if (!capStr.isEmpty()) capacity = Math.max(1, Integer.parseInt(capStr)); } catch (Exception ignore) {}
 
-        // parse orari
+        // Parse orari (HH:mm)
         List<LocalTime> times = new ArrayList<>();
         for (String t : timesStr.split(",")) {
             String s = t.trim();
@@ -89,12 +95,12 @@ public class AdminSlotsServlet extends HttpServlet {
             try { times.add(LocalTime.parse(s)); } catch (Exception ignore) {}
         }
         if (times.isEmpty()) {
-            flash(req, "Nessun orario valido. Usa formato HH:mm, es. 09:00,11:00,14:00.");
+            flash(req, "Nessun orario valido. Usa formato HH:mm (es. 09:00,11:00,14:00).");
             req.getRequestDispatcher("/views/admin/slots.jsp").forward(req, resp);
             return;
         }
 
-        // --- esecuzione ---
+        // --- Esecuzione ---
         int inserted = 0;
         int skipped  = 0;
 
@@ -116,6 +122,7 @@ public class AdminSlotsServlet extends HttpServlet {
                         psCheck.setInt(1, productId);
                         psCheck.setDate(2, sqlDate);
                         psCheck.setTime(3, Time.valueOf(lt));
+
                         try (ResultSet rs = psCheck.executeQuery()) {
                             if (rs.next()) {
                                 skipped++;
@@ -131,13 +138,14 @@ public class AdminSlotsServlet extends HttpServlet {
                         }
                     }
                 }
+
                 con.commit();
             } catch (Exception e) {
                 con.rollback();
                 throw e;
             }
 
-            // feedback alla pagina
+            // Feedback alla pagina
             req.setAttribute("result_ok", true);
             req.setAttribute("result_msg", "Generazione completata: inseriti " + inserted + " slot, saltati (già presenti) " + skipped + ".");
             req.setAttribute("echo_productId", productId);
@@ -156,7 +164,7 @@ public class AdminSlotsServlet extends HttpServlet {
         }
     }
 
-    // ====== infra ======
+    // ====== Infra ======
 
     private Connection obtainConnection() throws Exception {
         if (jndiDataSource != null) return jndiDataSource.getConnection();

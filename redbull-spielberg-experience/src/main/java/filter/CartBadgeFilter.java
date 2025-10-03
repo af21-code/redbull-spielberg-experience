@@ -13,11 +13,29 @@ import java.util.List;
 
 /**
  * Calcola il numero articoli nel carrello e lo espone come request attribute "cartCount".
- * - Se esiste "cartItems" in sessione (guest o post-azione), usa quello.
- * - Altrimenti, se utente loggato, legge dal DB (CartDAO).
+ * Ora ignora esplicitamente le API pubbliche di booking (availability/slots) per evitare
+ * qualsiasi side-effect su sessione/DB che può interferire con le chiamate AJAX anonime.
  */
 @WebFilter("/*")
 public class CartBadgeFilter implements Filter {
+
+  private static boolean isStatic(HttpServletRequest r) {
+    String uri = r.getRequestURI();
+    String ctx = r.getContextPath();
+    if (uri == null) return true;
+    if (uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png") ||
+        uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif") ||
+        uri.endsWith(".svg") || uri.endsWith(".ico") || uri.endsWith(".webp")) return true;
+    return uri.startsWith(ctx + "/images")
+        || uri.startsWith(ctx + "/styles")
+        || uri.startsWith(ctx + "/scripts")
+        || uri.startsWith(ctx + "/sounds");
+  }
+
+  private static boolean isPublicBookingApi(HttpServletRequest r) {
+    String path = r.getRequestURI().substring(r.getContextPath().length());
+    return "/booking/availability".equals(path) || "/booking/slots".equals(path);
+  }
 
   @Override
   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -26,15 +44,8 @@ public class CartBadgeFilter implements Filter {
     HttpServletRequest  r = (HttpServletRequest) req;
     HttpServletResponse s = (HttpServletResponse) res;
 
-    // Evita lavoro per risorse statiche
-    String uri = r.getRequestURI();
-    if (uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png") ||
-        uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif") ||
-        uri.endsWith(".svg") || uri.endsWith(".ico") || uri.endsWith(".webp") ||
-        uri.startsWith(r.getContextPath() + "/images") ||
-        uri.startsWith(r.getContextPath() + "/styles") ||
-        uri.startsWith(r.getContextPath() + "/scripts") ||
-        uri.startsWith(r.getContextPath() + "/sounds")) {
+    // Salta statici e API booking pubbliche (più snelle e sicure)
+    if (isStatic(r) || isPublicBookingApi(r)) {
       chain.doFilter(req, res);
       return;
     }

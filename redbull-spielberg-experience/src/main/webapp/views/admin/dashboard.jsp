@@ -75,7 +75,7 @@
         <!-- ✅ Box azioni rapide visibile -->
         <div class="card quick-actions" style="margin-top:8px">
           <div class="gap-6">
-            <a class="btn" href="<%=ctx%>/admin/slots">Gestisci slot (date & capienza)</a>
+            <a class="btn" href="<%=ctx%>/admin/slots">Gestisci slot (date e capienza)</a>
             <a class="btn gray" href="<%=ctx%>/admin/products">Prodotti</a>
             <a class="btn outline" href="<%=ctx%>/admin/orders">Ordini</a>
           </div>

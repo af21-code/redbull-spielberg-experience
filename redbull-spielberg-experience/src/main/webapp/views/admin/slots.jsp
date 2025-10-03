@@ -18,12 +18,19 @@
   String defTimes    = "09:00,11:00,14:00,16:00";
   String defDays     = "90";
   String defCapacity = "8";
+
+  // CSRF token: prova da request (settato dal filtro) e fallback da sessione
+  String csrfToken = (String) request.getAttribute("csrfToken");
+  if (csrfToken == null || csrfToken.isBlank()) {
+    csrfToken = (String) session.getAttribute("csrfToken");
+  }
 %>
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <title>Admin · Gestione Slot</title>
+  <meta name="csrf-token" content="<%= (csrfToken!=null? csrfToken : "") %>"><!-- utile se in futuro usi fetch -->
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=ctx%>/styles/admin.css?v=3">
   <style>
@@ -62,7 +69,11 @@
         <% } %>
 
         <div class="card form-card" style="margin-top:12px">
-          <form method="post" action="<%=ctx%>/admin/slots/generate" novalidate>
+          <!-- IMPORTANTISSIMO: encodeURL per riscrivere JSESSIONID se i cookie non si attaccano -->
+          <form method="post" action="<%= response.encodeURL(ctx + "/admin/slots/generate") %>" novalidate>
+            <!-- CSRF obbligatorio per POST (nome 'csrf' come richiesto dal filtro) -->
+            <input type="hidden" name="csrf" value="<%= (csrfToken!=null? csrfToken : "") %>">
+
             <div class="grid-2">
               <div>
                 <label>Product ID (experience) *</label>
