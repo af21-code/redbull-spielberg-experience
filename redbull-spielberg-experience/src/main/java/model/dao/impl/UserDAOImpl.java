@@ -16,7 +16,7 @@ public class UserDAOImpl implements UserDAO {
         final String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
         try (Connection con = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, email);
+            ps.setString(1, email == null ? null : email.trim().toLowerCase());
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -30,7 +30,7 @@ public class UserDAOImpl implements UserDAO {
                            "FROM users WHERE email = ? LIMIT 1";
         try (Connection con = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, email);
+            ps.setString(1, email == null ? null : email.trim().toLowerCase());
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -56,7 +56,7 @@ public class UserDAOImpl implements UserDAO {
         try (Connection con = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setString(1, user.getEmail());
+            ps.setString(1, user.getEmail() == null ? null : user.getEmail().trim().toLowerCase());
             ps.setString(2, user.getPassword()); // già hashata da PasswordUtil.hash(...)
             ps.setString(3, user.getFirstName());
             ps.setString(4, user.getLastName());

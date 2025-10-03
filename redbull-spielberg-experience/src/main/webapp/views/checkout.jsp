@@ -2,6 +2,14 @@
 <%@ page import="java.util.*, java.math.BigDecimal, model.CartItem, java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
 
 <%!
+  // ---- Helper: escape HTML sicuro senza dipendenze ----
+  private static String esc(Object o) {
+    if (o == null) return "";
+    String s = String.valueOf(o);
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            .replace("\"","&quot;").replace("'","&#39;");
+  }
+
   // ---- Helper per risolvere il path immagine (con fallback su vehicle_code) ----
   private static String resolveImg(String ctx, String imageUrl, String vehicleCode) {
     if (imageUrl != null && !imageUrl.isBlank()) {
@@ -39,6 +47,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Checkout</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=2">
@@ -70,9 +79,12 @@
         </div>
       </div>
 
-      <% if (request.getAttribute("checkoutError") != null) { %>
+      <%
+        Object ce = request.getAttribute("checkoutError");
+        if (ce != null) {
+      %>
         <a id="srv-error-anchor"></a>
-        <div class="srv-error"><%= request.getAttribute("checkoutError") %></div>
+        <div class="srv-error"><%= esc(ce) %></div>
         <script>
           // porta in vista l'errore del server
           setTimeout(() => {
@@ -276,9 +288,9 @@
             <span class="sum-left">
               <img class="sum-thumb"
                    src="<%= img %>"
-                   alt="<%= it.getProductName() %>"
+                   alt="<%= esc(it.getProductName()) %>"
                    onerror="this.onerror=null;this.src='<%= ctx %>/images/vehicles/placeholder-vehicle.jpg'">
-              <span class="sum-name"><strong><%= it.getProductName() %></strong> × <%= shownQty %></span>
+              <span class="sum-name"><strong><%= esc(it.getProductName()) %></strong> × <%= shownQty %></span>
             </span>
             <span>€ <%= money.format(it.getTotal()) %></span>
           </div>
