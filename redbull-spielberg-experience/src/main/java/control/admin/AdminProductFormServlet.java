@@ -9,9 +9,8 @@ import model.dao.impl.ProductDAOImpl;
 
 import java.io.IOException;
 
-@WebServlet(urlPatterns = {"/admin/products/new", "/admin/products/edit"})
+@WebServlet(urlPatterns = "/admin/products/edit")
 public class AdminProductFormServlet extends HttpServlet {
-
     private static final long serialVersionUID = 1L;
 
     private boolean isAdmin(HttpSession session) {
@@ -30,68 +29,40 @@ public class AdminProductFormServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        HttpSession session = req.getSession(false);
-        if (!isAdmin(session)) {
+        HttpSession s = req.getSession(false);
+        if (!isAdmin(s)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
-        // Espongo il token CSRF al JSP (in aggiunta al meta di header.jsp)
-        String csrf = (String) (session != null ? session.getAttribute("csrfToken") : null);
-        if (csrf == null || csrf.isBlank()) {
-            csrf = java.util.UUID.randomUUID().toString();
-            if (session != null) session.setAttribute("csrfToken", csrf);
-        }
-        req.setAttribute("csrfToken", csrf);
+        String idStr = req.getParameter("id");
+        Product p;
 
-        String servletPath = req.getServletPath(); // /admin/products/new oppure /admin/products/edit
-        ProductDAO dao = new ProductDAOImpl();
-
-        try {
-            if (servletPath.endsWith("/new")) {
-                // Nuovo prodotto: preparo un bean vuoto con alcuni default
-                Product p = new Product();
-                p.setActive(true);
-                p.setFeatured(false);
-                p.setPrice(java.math.BigDecimal.ZERO);
-                req.setAttribute("product", p);
-            } else {
-                // Edit: carico da DB tramite ?id=...
-                String idStr = req.getParameter("id");
-                if (idStr == null || idStr.isBlank()) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/products?err=ID%20mancante");
-                    return;
-                }
-                int id;
-                try {
-                    id = Integer.parseInt(idStr.trim());
-                } catch (NumberFormatException e) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/products?err=ID%20non%20valido");
-                    return;
-                }
-                Product p = dao.adminFindById(id);
+        if (idStr != null && !idStr.isBlank()) {
+            // ===== EDIT =====
+            try {
+                int id = Integer.parseInt(idStr.trim());
+                ProductDAO dao = new ProductDAOImpl();
+                p = dao.adminFindById(id);
                 if (p == null) {
-                    resp.sendRedirect(req.getContextPath() + "/admin/products?err=Prodotto%20inesistente");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Prodotto non trovato");
                     return;
                 }
-                req.setAttribute("product", p);
+            } catch (NumberFormatException e) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID non valido");
+                return;
+            } catch (Exception e) {
+                throw new ServletException("Errore nel caricamento del prodotto", e);
             }
-
-            // Forward al form JSP
-            req.getRequestDispatcher("/views/admin/product-form.jsp").forward(req, resp);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            resp.sendRedirect(req.getContextPath() + "/admin/products?err=" +
-                    urlEncode("Errore nel caricamento del form: " + e.getMessage()));
+        } else {
+            // ===== NEW =====
+            p = new Product();
+            p.setActive(true);
+            p.setFeatured(false);
+            p.setStockQuantity(null); // per EXPERIENCE verrà ignorato
         }
-    }
 
-    private String urlEncode(String s) {
-        try {
-            return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            return s;
-        }
+        req.setAttribute("product", p);
+        req.getRequestDispatcher("/views/admin/product-form.jsp").forward(req, resp);
     }
 }

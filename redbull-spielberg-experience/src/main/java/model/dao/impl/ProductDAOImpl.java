@@ -7,6 +7,7 @@ import utils.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ProductDAOImpl implements ProductDAO {
 
@@ -16,6 +17,18 @@ public class ProductDAOImpl implements ProductDAO {
                is_featured, is_active, created_at, updated_at
         FROM products
     """;
+
+    private static final Map<String, String> SORT_MAP = Map.ofEntries(
+        Map.entry("name", "name"),
+        Map.entry("price", "price"),
+        Map.entry("stock", "stock_quantity"),
+        Map.entry("active", "is_active"),
+        Map.entry("featured", "is_featured"),
+        Map.entry("created", "created_at"),
+        Map.entry("updated", "updated_at"),
+        Map.entry("ptype", "product_type"),
+        Map.entry("etype", "experience_type")
+    );
 
     private Connection getConnection() throws Exception {
         return DatabaseConnection.getInstance().getConnection();
@@ -71,7 +84,7 @@ public class ProductDAOImpl implements ProductDAO {
         return results;
     }
 
-    // ========= Admin (lista legacy senza paging) =========
+    // ========= Admin - senza paginazione (compat) =========
     @Override
     public List<Product> adminFindAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
         StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
@@ -90,6 +103,51 @@ public class ProductDAOImpl implements ProductDAO {
             }
         }
         return results;
+    }
+
+    // ========= Admin - con paginazione e ordinamento =========
+    @Override
+    public List<Product> adminFindAllPaged(Integer categoryId, String q, Boolean onlyInactive,
+                                           String sort, String dir, int limit, int offset) throws Exception {
+        StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+        appendFilters(sb, params, categoryId, q, onlyInactive);
+
+        String sortCol = SORT_MAP.getOrDefault(safeLower(sort), "updated_at");
+        String sortDir = "asc".equalsIgnoreCase(dir) ? "ASC" : "DESC";
+
+        sb.append(" ORDER BY ").append(sortCol).append(' ').append(sortDir)
+          .append(", created_at DESC ");
+
+        sb.append(" LIMIT ? OFFSET ? ");
+        params.add(limit);
+        params.add(offset);
+
+        List<Product> results = new ArrayList<>();
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapRow(rs));
+            }
+        }
+        return results;
+    }
+
+    @Override
+    public int adminCount(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
+        StringBuilder sb = new StringBuilder("SELECT COUNT(*) FROM products WHERE 1=1 ");
+        List<Object> params = new ArrayList<>();
+        appendFilters(sb, params, categoryId, q, onlyInactive);
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+            bindParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
     }
 
     @Override
@@ -169,50 +227,8 @@ public class ProductDAOImpl implements ProductDAO {
         }
     }
 
-    // ========= Admin: paginazione + ordinamento =========
-    @Override
-    public int adminCountAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception {
-        StringBuilder sb = new StringBuilder("SELECT COUNT(*) FROM products WHERE 1=1 ");
-        List<Object> params = new ArrayList<>();
-        appendFilters(sb, params, categoryId, q, onlyInactive);
+    // ========= Helpers =========
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sb.toString())) {
-            bindParams(ps, params);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        }
-        return 0;
-    }
-
-    @Override
-    public List<Product> adminFindAllPaged(Integer categoryId, String q, Boolean onlyInactive,
-                                           String sortBy, String sortDir,
-                                           int offset, int limit) throws Exception {
-
-        String orderBy = toSafeOrderBy(sortBy, sortDir);
-
-        StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
-        List<Object> params = new ArrayList<>();
-        appendFilters(sb, params, categoryId, q, onlyInactive);
-
-        sb.append(" ").append(orderBy).append(" LIMIT ? OFFSET ? ");
-
-        List<Product> results = new ArrayList<>();
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sb.toString())) {
-            int i = bindParams(ps, params);
-            ps.setInt(i++, limit);
-            ps.setInt(i, Math.max(0, offset));
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) results.add(mapRow(rs));
-            }
-        }
-        return results;
-    }
-
-    // ========= Helpers SQL =========
     private static void appendFilters(StringBuilder sb, List<Object> params,
                                       Integer categoryId, String q, Boolean onlyInactive) {
         if (categoryId != null) {
@@ -228,46 +244,22 @@ public class ProductDAOImpl implements ProductDAO {
         }
     }
 
-    /** Restituisce l'ORDER BY con colonne whiteliste per evitare SQL injection. */
-    private static String toSafeOrderBy(String sortBy, String sortDir) {
-        String col;
-        if (sortBy == null) col = "updated_at";
-        else {
-            switch (sortBy) {
-                case "product_id":
-                case "name":
-                case "price":
-                case "created_at":
-                case "updated_at":
-                case "is_active":
-                case "is_featured":
-                case "stock_quantity":
-                    col = sortBy;
-                    break;
-                default:
-                    col = "updated_at";
-            }
+    private static void bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            Object v = params.get(i);
+            if (v == null) ps.setNull(i + 1, Types.NULL);
+            else if (v instanceof Integer) ps.setInt(i + 1, (Integer) v);
+            else if (v instanceof String) ps.setString(i + 1, (String) v);
+            else ps.setObject(i + 1, v);
         }
-        String dir = "DESC";
-        if (sortDir != null && sortDir.equalsIgnoreCase("asc")) dir = "ASC";
-        return "ORDER BY " + col + " " + dir + ", product_id " + dir;
     }
 
-    /** Bind in ordine tutti i parametri della lista; ritorna il prossimo indice libero. */
-    private static int bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
-        int i = 1;
-        for (Object p : params) {
-            ps.setObject(i++, p);
-        }
-        return i;
-    }
+    private static String safeLower(String s) { return s == null ? "" : s.toLowerCase(); }
 
-    // ========= Helpers mappatura =========
     private int bindUpsert(PreparedStatement ps, Product p) throws SQLException {
         int i = 1;
         // category_id
         if (p.getCategoryId() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, p.getCategoryId());
-
         ps.setString(i++, p.getName());
         ps.setString(i++, p.getDescription());
         ps.setString(i++, p.getShortDescription());
@@ -290,7 +282,7 @@ public class ProductDAOImpl implements ProductDAO {
         ps.setBoolean(i++, Boolean.TRUE.equals(p.getFeatured()));
         ps.setBoolean(i++, Boolean.TRUE.equals(p.getActive()));
 
-        return i; // prossimo indice libero (serve per UPDATE)
+        return i;
     }
 
     private Product mapRow(ResultSet rs) throws SQLException {
@@ -302,7 +294,6 @@ public class ProductDAOImpl implements ProductDAO {
         p.setShortDescription(rs.getString("short_description"));
         p.setPrice(rs.getBigDecimal("price"));
 
-        // enum safe
         p.setProductType(safeProductType(rs.getString("product_type")));
         p.setExperienceType(safeExperienceType(rs.getString("experience_type")));
 

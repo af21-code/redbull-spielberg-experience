@@ -26,32 +26,18 @@ public class AdminProductsServlet extends HttpServlet {
 
     private Integer parseIntNullable(String s) {
         try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim()); }
-        catch (Exception e) { return null; }
+        catch (NumberFormatException e) { return null; }
     }
 
-    private int clamp(int v, int min, int max) {
-        return Math.max(min, Math.min(max, v));
-    }
-
-    private String safeSortBy(String s) {
-        if (s == null) return "updated_at";
-        switch (s) {
-            case "product_id":
-            case "name":
-            case "price":
-            case "created_at":
-            case "updated_at":
-            case "is_active":
-            case "is_featured":
-            case "stock_quantity":
-                return s;
-            default:
-                return "updated_at";
+    private int parsePositiveOrDefault(String s, int def, int min, int max) {
+        try {
+            int v = Integer.parseInt(s);
+            if (v < min) v = min;
+            if (v > max) v = max;
+            return v;
+        } catch (Exception e) {
+            return def;
         }
-    }
-
-    private String safeSortDir(String s) {
-        return (s != null && s.equalsIgnoreCase("asc")) ? "asc" : "desc";
     }
 
     @Override
@@ -64,49 +50,30 @@ public class AdminProductsServlet extends HttpServlet {
             return;
         }
 
-        // --- Filtri ---
         String q = req.getParameter("q");
         Integer categoryId = parseIntNullable(req.getParameter("categoryId"));
-
-        Boolean onlyInactive = null;
         String onlyInactiveStr = req.getParameter("onlyInactive");
+        Boolean onlyInactive = null;
         if (onlyInactiveStr != null && !onlyInactiveStr.isBlank()) {
-            onlyInactive = "1".equals(onlyInactiveStr)
-                        || "true".equalsIgnoreCase(onlyInactiveStr)
-                        || "on".equalsIgnoreCase(onlyInactiveStr);
+            onlyInactive = "1".equals(onlyInactiveStr) || "true".equalsIgnoreCase(onlyInactiveStr) || "on".equalsIgnoreCase(onlyInactiveStr);
         }
 
-        // --- Paging + sorting ---
-        int pageSize = 12;
-        Integer psParam = parseIntNullable(req.getParameter("pageSize"));
-        if (psParam != null) pageSize = clamp(psParam, 5, 200);
-
-        int page = 1;
-        Integer pParam = parseIntNullable(req.getParameter("page"));
-        if (pParam != null) page = Math.max(1, pParam);
-
-        String sortBy  = safeSortBy(req.getParameter("sortBy"));
-        String sortDir = safeSortDir(req.getParameter("sortDir"));
-
-        int offset = (page - 1) * pageSize;
+        // --- paginazione & sort
+        int pageSize = parsePositiveOrDefault(req.getParameter("pageSize"), 12, 5, 100);
+        int page = parsePositiveOrDefault(req.getParameter("page"), 1, 1, Integer.MAX_VALUE);
+        String sort = req.getParameter("sort"); // name, price, stock, active, featured, created, updated, ptype, etype
+        String dir  = req.getParameter("dir");  // asc|desc
 
         try {
             ProductDAO dao = new ProductDAOImpl();
 
-            int total = dao.adminCountAll(categoryId, q, onlyInactive);
+            int total = dao.adminCount(categoryId, q, onlyInactive);
             int totalPages = Math.max(1, (int) Math.ceil(total / (double) pageSize));
-            if (page > totalPages) {
-                page = totalPages;
-                offset = (page - 1) * pageSize;
-            }
+            if (page > totalPages) page = totalPages;
+            int offset = (page - 1) * pageSize;
 
-            List<Product> products = dao.adminFindAllPaged(
-                    categoryId, q, onlyInactive,
-                    sortBy, sortDir,
-                    offset, pageSize
-            );
+            List<Product> products = dao.adminFindAllPaged(categoryId, q, onlyInactive, sort, dir, pageSize, offset);
 
-            // Attributi per la JSP
             req.setAttribute("products", products);
             req.setAttribute("q", q == null ? "" : q);
             req.setAttribute("categoryId", categoryId);
@@ -116,8 +83,8 @@ public class AdminProductsServlet extends HttpServlet {
             req.setAttribute("pageSize", pageSize);
             req.setAttribute("total", total);
             req.setAttribute("totalPages", totalPages);
-            req.setAttribute("sortBy", sortBy);
-            req.setAttribute("sortDir", sortDir);
+            req.setAttribute("sort", sort == null ? "" : sort);
+            req.setAttribute("dir",  dir == null ? "" : dir);
 
             req.getRequestDispatcher("/views/admin/products.jsp").forward(req, resp);
         } catch (Exception e) {

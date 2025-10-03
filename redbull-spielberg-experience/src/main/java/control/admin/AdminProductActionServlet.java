@@ -3,7 +3,6 @@ package control.admin;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 
@@ -11,9 +10,9 @@ import java.io.IOException;
 
 @WebServlet(urlPatterns = "/admin/products/action")
 public class AdminProductActionServlet extends HttpServlet {
-
     private static final long serialVersionUID = 1L;
 
+    // --- helpers ---
     private boolean isAdmin(HttpSession session) {
         if (session == null) return false;
         Object authUser = session.getAttribute("authUser");
@@ -21,9 +20,7 @@ public class AdminProductActionServlet extends HttpServlet {
         try {
             Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
             return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) {
-            return false;
-        }
+        } catch (Exception ignored) { return false; }
     }
 
     private boolean checkCsrf(HttpServletRequest req) {
@@ -32,6 +29,11 @@ public class AdminProductActionServlet extends HttpServlet {
         String token = (String) s.getAttribute("csrfToken");
         String provided = req.getParameter("csrf");
         return token != null && token.equals(provided);
+    }
+
+    private Integer parseInt(String s) {
+        try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim()); }
+        catch (NumberFormatException e) { return null; }
     }
 
     @Override
@@ -49,68 +51,63 @@ public class AdminProductActionServlet extends HttpServlet {
         }
 
         String action = req.getParameter("action");
-        String idStr  = req.getParameter("id");
-        if (action == null || action.isBlank() || idStr == null || idStr.isBlank()) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parametri mancanti");
+        Integer id = parseInt(req.getParameter("id"));
+        if (id == null || action == null || action.isBlank()) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Parametri non validi");
             return;
         }
 
-        int id;
+        String okMsg;
         try {
-            id = Integer.parseInt(idStr);
-        } catch (NumberFormatException nfe) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID non valido");
-            return;
-        }
+            ProductDAO dao = new ProductDAOImpl();
 
-        ProductDAO dao = new ProductDAOImpl();
-        String redirectBase = req.getContextPath() + "/admin/products";
-
-        try {
             switch (action) {
-                case "toggleActive": {
-                    Product p = dao.adminFindById(id);
-                    if (p == null) throw new IllegalStateException("Prodotto non trovato");
-                    dao.setActive(id, !Boolean.TRUE.equals(p.getActive()));
-                    resp.sendRedirect(redirectBase + "?ok=Stato%20aggiornato");
-                    return;
+                case "setActive" -> {
+                    boolean active = "1".equals(req.getParameter("active")) ||
+                                     "true".equalsIgnoreCase(req.getParameter("active")) ||
+                                     "on".equalsIgnoreCase(req.getParameter("active"));
+                    dao.setActive(id, active);
+                    okMsg = active ? "Prodotto attivato" : "Prodotto disattivato";
                 }
-                case "toggleFeatured": {
-                    Product p = dao.adminFindById(id);
-                    if (p == null) throw new IllegalStateException("Prodotto non trovato");
-                    dao.setFeatured(id, !Boolean.TRUE.equals(p.getFeatured()));
-                    resp.sendRedirect(redirectBase + "?ok=Featured%20aggiornato");
-                    return;
+                case "setFeatured" -> {
+                    boolean featured = "1".equals(req.getParameter("featured")) ||
+                                       "true".equalsIgnoreCase(req.getParameter("featured")) ||
+                                       "on".equalsIgnoreCase(req.getParameter("featured"));
+                    dao.setFeatured(id, featured);
+                    okMsg = featured ? "Prodotto evidenziato" : "Prodotto non più evidenziato";
                 }
-                case "delete": {
+                case "delete" -> {
                     dao.softDelete(id);
-                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20disattivato");
-                    return;
+                    okMsg = "Prodotto disattivato (soft delete)";
                 }
-                case "activate": {
-                    dao.setActive(id, true);
-                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20attivato");
-                    return;
-                }
-                case "deactivate": {
-                    dao.setActive(id, false);
-                    resp.sendRedirect(redirectBase + "?ok=Prodotto%20disattivato");
-                    return;
-                }
-                default:
+                default -> {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Azione non supportata");
+                    return;
+                }
             }
+
+            // Torna alla lista mantenendo eventuale filtro q/category/onlyInactive
+            String ctx = req.getContextPath();
+            String q = safe(req.getParameter("q"));
+            String categoryId = safe(req.getParameter("categoryId"));
+            String onlyInactive = safe(req.getParameter("onlyInactive"));
+
+            StringBuilder redir = new StringBuilder(ctx)
+                    .append("/admin/products?ok=").append(url(okMsg));
+            if (!q.isEmpty()) redir.append("&q=").append(url(q));
+            if (!categoryId.isEmpty()) redir.append("&categoryId=").append(url(categoryId));
+            if (!onlyInactive.isEmpty()) redir.append("&onlyInactive=").append(url(onlyInactive));
+
+            resp.sendRedirect(redir.toString());
         } catch (Exception e) {
             e.printStackTrace();
-            resp.sendRedirect(redirectBase + "?err=" + urlEncode("Errore: " + e.getMessage()));
+            resp.sendRedirect(req.getContextPath() + "/admin/products?err=" + url("Errore: " + e.getMessage()));
         }
     }
 
-    private String urlEncode(String s) {
-        try {
-            return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8.name());
-        } catch (Exception e) {
-            return s;
-        }
+    private static String safe(String s) { return s == null ? "" : s; }
+    private static String url(String s) {
+        try { return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8); }
+        catch (Exception e) { return ""; }
     }
 }
