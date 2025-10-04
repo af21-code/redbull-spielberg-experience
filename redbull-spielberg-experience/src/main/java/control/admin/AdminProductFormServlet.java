@@ -4,10 +4,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Product;
+import model.Category;
 import model.dao.ProductDAO;
+import model.dao.CategoryDAO;
 import model.dao.impl.ProductDAOImpl;
+import model.dao.impl.CategoryDAOImpl;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet(urlPatterns = "/admin/products/edit")
 public class AdminProductFormServlet extends HttpServlet {
@@ -60,6 +64,18 @@ public class AdminProductFormServlet extends HttpServlet {
             p.setActive(true);
             p.setFeatured(false);
             p.setStockQuantity(null); // per EXPERIENCE verrà ignorato
+        }
+
+        // Carica categorie per la tendina (ordiniamo per nome asc)
+        try {
+            CategoryDAO cdao = new CategoryDAOImpl();
+            // riuso del metodo paginato: q=null, onlyInactive=false, sort=name, dir=asc, limit=1000, offset=0
+            List<Category> categories = cdao.adminFindAllPaged(null, false, "name", "asc", 1000, 0);
+            req.setAttribute("categories", categories);
+        } catch (Exception e) {
+            // non blocchiamo il form: in casi estremi la tendina sarà vuota
+            e.printStackTrace();
+            req.setAttribute("categories", java.util.Collections.emptyList());
         }
 
         req.setAttribute("product", p);

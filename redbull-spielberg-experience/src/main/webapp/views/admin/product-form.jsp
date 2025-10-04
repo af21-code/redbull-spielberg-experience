@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="model.Product" %>
+<%@ page import="java.util.*, model.Product, model.Category" %>
 <%!
   private static String esc(Object o) {
     if (o == null) return "";
@@ -14,14 +14,24 @@
   Product p = (Product) request.getAttribute("product");
   if (p == null) { p = new Product(); p.setActive(true); p.setFeatured(false); }
 
+  // categorie per la select
+  Object catsObj = request.getAttribute("categories");
+  List<Category> categories = new ArrayList<>();
+  if (catsObj instanceof List<?>) {
+    for (Object x : (List<?>) catsObj) if (x instanceof Category) categories.add((Category) x);
+  }
+
   String err = (String) request.getAttribute("err");
   String csrf = (String) request.getAttribute("csrfToken");
   if (csrf == null || csrf.isBlank()) csrf = (String) session.getAttribute("csrfToken");
 
   boolean isEdit = (p.getProductId() != null);
 
+  // comodi per i confronti senza dipendere dalle costanti enum a compile-time
   String expName = (p.getExperienceType() == null ? "" : p.getExperienceType().name());
   String prodName = (p.getProductType() == null ? "" : p.getProductType().name());
+
+  Integer curCatId = p.getCategoryId();
 %>
 <!DOCTYPE html>
 <html lang="it">
@@ -44,8 +54,6 @@
     .muted{opacity:.85}
     .error{background:#b33939;border-color:#b33939;border-radius:10px;padding:10px 12px;margin:0 0 12px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .hint{font-size:.9rem;opacity:.85;margin-top:6px}
-    .thumb{border-radius:10px;border:1px solid rgba(255,255,255,.2);max-height:120px}
   </style>
 </head>
 <body>
@@ -56,7 +64,10 @@
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <h2 style="margin:0"><%= isEdit ? "Modifica prodotto" : "Nuovo prodotto" %></h2>
-        <a href="<%=ctx%>/admin/products" class="btn">← Torna ai prodotti</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="<%=ctx%>/admin/products" class="btn">← Prodotti</a>
+          <a href="<%=ctx%>/admin/categories" class="btn">Categorie</a>
+        </div>
       </div>
       <% if (err != null) { %>
         <p class="error"><%= esc(err) %></p>
@@ -64,7 +75,6 @@
     </div>
 
     <div class="card">
-      <!-- enctype multipart per upload -->
       <form method="post" action="<%=ctx%>/admin/products/save" enctype="multipart/form-data">
         <% if (csrf != null && !csrf.isBlank()) { %>
           <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
@@ -79,9 +89,17 @@
             <input id="name" name="name" type="text" required value="<%= esc(p.getName()) %>">
           </div>
           <div>
-            <label for="categoryId">Categoria (ID)</label>
-            <input id="categoryId" name="categoryId" type="number" min="1"
-                   value="<%= p.getCategoryId()==null ? "" : String.valueOf(p.getCategoryId()) %>">
+            <label for="categoryId">Categoria</label>
+            <select id="categoryId" name="categoryId">
+              <option value="">— Nessuna —</option>
+              <% for (Category c : categories) {
+                   Integer cid = c.getCategoryId();
+                   String sel = (curCatId != null && cid != null && curCatId.equals(cid)) ? "selected" : "";
+              %>
+                <option value="<%= cid %>" <%= sel %>><%= esc(c.getName()) %></option>
+              <% } %>
+            </select>
+            <div class="muted" style="margin-top:6px;font-size:.9rem">Gestisci le categorie dalla pagina “Categorie”.</div>
           </div>
         </div>
 
@@ -126,18 +144,12 @@
                    value="<%= esc(p.getShortDescription()) %>">
           </div>
           <div>
-            <label for="imageUrl">Immagine (URL) oppure carica un file</label>
-            <input id="imageUrl" name="imageUrl" type="text" placeholder="https://…"
-                   value="<%= esc(p.getImageUrl()) %>">
-            <div class="hint">Se carichi un file, verrà usato al posto dell’URL.</div>
-            <div style="margin-top:8px">
-              <input type="file" name="imageFile" accept="image/jpeg,image/png,image/webp" />
+            <label for="imageUrl">Immagine (URL)</label>
+            <input id="imageUrl" name="imageUrl" type="text" value="<%= esc(p.getImageUrl()) %>">
+            <div class="muted" style="margin-top:6px;font-size:.9rem">
+              In alternativa puoi caricare un file sotto (se presente, ha priorità).
             </div>
-            <% if (p.getImageUrl()!=null && !p.getImageUrl().isBlank()) { %>
-              <div class="hint" style="margin-top:8px">
-                <img src="<%= esc(p.getImageUrl()) %>" alt="preview" class="thumb">
-              </div>
-            <% } %>
+            <input type="file" name="imageFile" accept=".jpg,.jpeg,.png,.webp" style="margin-top:8px">
           </div>
         </div>
 
@@ -172,11 +184,12 @@
     var typeSel = document.getElementById('productType');
     var stockWrap = document.getElementById('stockWrap');
     function toggleStock(){
-      var merch = (typeSel && typeSel.value) === 'MERCHANDISE';
+      var v = (typeSel && typeSel.value) || '';
+      var merch = v === 'MERCHANDISE';
       if (stockWrap){
         stockWrap.style.display = merch ? '' : 'none';
         var inp = document.getElementById('stockQuantity');
-        if (inp && !merch) inp.value = '';
+        if (inp) { if (!merch) inp.value = ''; }
       }
     }
     if (typeSel){

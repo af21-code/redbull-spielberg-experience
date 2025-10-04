@@ -6,14 +6,17 @@
 -- ------------------------------------------------------------
 
 DROP TABLE IF EXISTS products;
+-- Categorie (minime per matchare l’UI e i DAO)
 DROP TABLE IF EXISTS categories;
 
--- Categorie (minime per matchare l’UI: 1=Merch, 2=Experience)
 CREATE TABLE categories (
   category_id   INT AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(100) NOT NULL UNIQUE,
   slug          VARCHAR(120) UNIQUE,
-  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  description   TEXT NULL,
+  is_active     TINYINT(1) NOT NULL DEFAULT 1,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Prodotti

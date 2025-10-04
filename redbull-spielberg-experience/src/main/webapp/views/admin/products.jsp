@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, model.Product" %>
+<%@ page import="java.util.*, model.Product, model.Category" %>
 <%!
   private static String esc(Object o){
     if (o == null) return "";
@@ -37,14 +37,21 @@
   String ok = request.getParameter("ok");
   String err = request.getParameter("err");
 
-  // Lista
+  // Prodotti
   Object obj = request.getAttribute("products");
   List<Product> products = new ArrayList<>();
   if (obj instanceof List<?>) {
     for (Object x : (List<?>) obj) if (x instanceof Product) products.add((Product) x);
   }
 
-  // Builder query preserved
+  // Categorie (per filtro dinamico)
+  Object cobj = request.getAttribute("allCategories");
+  List<Category> cats = new ArrayList<>();
+  if (cobj instanceof List<?>) {
+    for (Object x : (List<?>) cobj) if (x instanceof Category) cats.add((Category) x);
+  }
+
+  // Query string “preservata”
   String baseQuery = "q="+java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8)
                    + (categoryIdStr.isEmpty() ? "" : "&categoryId="+esc(categoryIdStr))
                    + (onlyInactive ? "&onlyInactive=1" : "")
@@ -101,12 +108,23 @@
     <!-- Filtri -->
     <form class="filters" method="get" action="<%=ctx%>/admin/products" style="margin-bottom:12px">
       <input type="text" name="q" placeholder="Cerca per nome…" value="<%=esc(q)%>">
+
+      <!-- 🔹 Categorie dinamiche -->
       <select name="categoryId">
         <option value="">Tutte le categorie</option>
-        <option value="1" <%= sel("1", categoryIdStr) %>>Merch</option>
-        <option value="2" <%= sel("2", categoryIdStr) %>>Experience</option>
-        <!-- adatta ai tuoi ID reali -->
+        <%
+          if (!cats.isEmpty()) {
+            for (Category c : cats) {
+        %>
+          <option value="<%= c.getCategoryId() %>" <%= sel(String.valueOf(c.getCategoryId()), categoryIdStr) %>>
+            <%= esc(c.getName()) %>
+          </option>
+        <%
+            }
+          }
+        %>
       </select>
+
       <label style="display:inline-flex;gap:6px;align-items:center">
         <input type="checkbox" name="onlyInactive" value="1" <%= onlyInactive ? "checked" : "" %>>
         Solo non attivi

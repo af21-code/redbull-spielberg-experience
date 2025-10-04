@@ -7,6 +7,10 @@ import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 
+import model.Category;
+import model.dao.CategoryDAO;
+import model.dao.impl.CategoryDAOImpl;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -55,7 +59,9 @@ public class AdminProductsServlet extends HttpServlet {
         String onlyInactiveStr = req.getParameter("onlyInactive");
         Boolean onlyInactive = null;
         if (onlyInactiveStr != null && !onlyInactiveStr.isBlank()) {
-            onlyInactive = "1".equals(onlyInactiveStr) || "true".equalsIgnoreCase(onlyInactiveStr) || "on".equalsIgnoreCase(onlyInactiveStr);
+            onlyInactive = "1".equals(onlyInactiveStr)
+                    || "true".equalsIgnoreCase(onlyInactiveStr)
+                    || "on".equalsIgnoreCase(onlyInactiveStr);
         }
 
         // --- paginazione & sort
@@ -65,16 +71,23 @@ public class AdminProductsServlet extends HttpServlet {
         String dir  = req.getParameter("dir");  // asc|desc
 
         try {
-            ProductDAO dao = new ProductDAOImpl();
+            ProductDAO pdao = new ProductDAOImpl();
 
-            int total = dao.adminCount(categoryId, q, onlyInactive);
+            int total = pdao.adminCount(categoryId, q, onlyInactive);
             int totalPages = Math.max(1, (int) Math.ceil(total / (double) pageSize));
             if (page > totalPages) page = totalPages;
             int offset = (page - 1) * pageSize;
 
-            List<Product> products = dao.adminFindAllPaged(categoryId, q, onlyInactive, sort, dir, pageSize, offset);
+            List<Product> products = pdao.adminFindAllPaged(categoryId, q, onlyInactive, sort, dir, pageSize, offset);
+
+            // 🔹 Carica le categorie per il filtro dinamico
+            CategoryDAO cdao = new CategoryDAOImpl();
+            // Firma attesa: adminFindAllPaged(String q, Boolean onlyInactive, String sort, String dir, int limit, int offset)
+            List<Category> allCategories = cdao.adminFindAllPaged(null, null, "name", "asc", 1000, 0);
 
             req.setAttribute("products", products);
+            req.setAttribute("allCategories", allCategories);
+
             req.setAttribute("q", q == null ? "" : q);
             req.setAttribute("categoryId", categoryId);
             req.setAttribute("onlyInactive", onlyInactive != null && onlyInactive);
