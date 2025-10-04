@@ -20,7 +20,6 @@
 
   boolean isEdit = (p.getProductId() != null);
 
-  // comodi per i confronti senza dipendere dalle costanti enum a compile-time
   String expName = (p.getExperienceType() == null ? "" : p.getExperienceType().name());
   String prodName = (p.getProductType() == null ? "" : p.getProductType().name());
 %>
@@ -45,6 +44,8 @@
     .muted{opacity:.85}
     .error{background:#b33939;border-color:#b33939;border-radius:10px;padding:10px 12px;margin:0 0 12px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .hint{font-size:.9rem;opacity:.85;margin-top:6px}
+    .thumb{border-radius:10px;border:1px solid rgba(255,255,255,.2);max-height:120px}
   </style>
 </head>
 <body>
@@ -63,7 +64,8 @@
     </div>
 
     <div class="card">
-      <form method="post" action="<%=ctx%>/admin/products/save">
+      <!-- enctype multipart per upload -->
+      <form method="post" action="<%=ctx%>/admin/products/save" enctype="multipart/form-data">
         <% if (csrf != null && !csrf.isBlank()) { %>
           <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
         <% } %>
@@ -96,7 +98,6 @@
             <label for="experienceType">Experience type (opzionale)</label>
             <select id="experienceType" name="experienceType">
               <option value="">— nessuno —</option>
-              <!-- Confronto su stringa per evitare dipendenza dalle costanti enum -->
               <option value="F1"       <%= "F1".equals(expName)       ? "selected" : "" %>>F1</option>
               <option value="F2"       <%= "F2".equals(expName)       ? "selected" : "" %>>F2</option>
               <option value="NASCAR"   <%= "NASCAR".equals(expName)   ? "selected" : "" %>>NASCAR</option>
@@ -125,8 +126,18 @@
                    value="<%= esc(p.getShortDescription()) %>">
           </div>
           <div>
-            <label for="imageUrl">Immagine (URL)</label>
-            <input id="imageUrl" name="imageUrl" type="text" value="<%= esc(p.getImageUrl()) %>">
+            <label for="imageUrl">Immagine (URL) oppure carica un file</label>
+            <input id="imageUrl" name="imageUrl" type="text" placeholder="https://…"
+                   value="<%= esc(p.getImageUrl()) %>">
+            <div class="hint">Se carichi un file, verrà usato al posto dell’URL.</div>
+            <div style="margin-top:8px">
+              <input type="file" name="imageFile" accept="image/jpeg,image/png,image/webp" />
+            </div>
+            <% if (p.getImageUrl()!=null && !p.getImageUrl().isBlank()) { %>
+              <div class="hint" style="margin-top:8px">
+                <img src="<%= esc(p.getImageUrl()) %>" alt="preview" class="thumb">
+              </div>
+            <% } %>
           </div>
         </div>
 
@@ -161,12 +172,11 @@
     var typeSel = document.getElementById('productType');
     var stockWrap = document.getElementById('stockWrap');
     function toggleStock(){
-      var v = (typeSel && typeSel.value) || '';
-      var merch = v === 'MERCHANDISE';
+      var merch = (typeSel && typeSel.value) === 'MERCHANDISE';
       if (stockWrap){
         stockWrap.style.display = merch ? '' : 'none';
         var inp = document.getElementById('stockQuantity');
-        if (inp) { if (!merch) inp.value = ''; }
+        if (inp && !merch) inp.value = '';
       }
     }
     if (typeSel){
