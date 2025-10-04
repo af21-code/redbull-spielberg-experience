@@ -5,15 +5,16 @@ import model.Product;
 
 public interface ProductDAO {
 
-    // --- Public/Shop (già esistenti) ---
+    // --- Public/Shop ---
     List<Product> findActiveMerchandise(Integer categoryId) throws Exception;
     Product findById(int productId) throws Exception;
     List<Product> findAll(Integer categoryId) throws Exception;
 
-    // --- Admin: gestione catalogo ---
+    // --- Admin: gestione catalogo (compat senza paginazione) ---
     /** Tutti i prodotti (anche non attivi), con filtro opzionale per categoria e/o testo nel nome. */
     List<Product> adminFindAll(Integer categoryId, String q, Boolean onlyInactive) throws Exception;
 
+    // --- Admin: paginazione & sort ---
     /** Versione con paginazione e ordinamento. */
     List<Product> adminFindAllPaged(Integer categoryId, String q, Boolean onlyInactive,
                                     String sort, String dir, int limit, int offset) throws Exception;

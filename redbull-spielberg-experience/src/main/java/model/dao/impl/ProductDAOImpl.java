@@ -7,6 +7,7 @@ import utils.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ProductDAOImpl implements ProductDAO {
@@ -18,6 +19,7 @@ public class ProductDAOImpl implements ProductDAO {
         FROM products
     """;
 
+    // whitelist colonne ordinabili
     private static final Map<String, String> SORT_MAP = Map.ofEntries(
         Map.entry("name", "name"),
         Map.entry("price", "price"),
@@ -91,7 +93,7 @@ public class ProductDAOImpl implements ProductDAO {
         List<Object> params = new ArrayList<>();
 
         appendFilters(sb, params, categoryId, q, onlyInactive);
-        // Prima i record aggiornati di recente; quelli senza updated_at in coda
+        // prima i record aggiornati; poi creati
         sb.append(" ORDER BY (updated_at IS NULL), updated_at DESC, created_at DESC ");
 
         List<Product> results = new ArrayList<>();
@@ -237,7 +239,7 @@ public class ProductDAOImpl implements ProductDAO {
         }
         if (q != null && !q.isBlank()) {
             sb.append(" AND LOWER(name) LIKE ? ");
-            params.add("%" + q.toLowerCase().trim() + "%");
+            params.add("%" + q.toLowerCase(Locale.ITALIAN).trim() + "%");
         }
         if (onlyInactive != null && onlyInactive) {
             sb.append(" AND is_active = 0 ");
@@ -247,14 +249,23 @@ public class ProductDAOImpl implements ProductDAO {
     private static void bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object v = params.get(i);
-            if (v == null) ps.setNull(i + 1, Types.NULL);
-            else if (v instanceof Integer) ps.setInt(i + 1, (Integer) v);
-            else if (v instanceof String) ps.setString(i + 1, (String) v);
-            else ps.setObject(i + 1, v);
+            if (v == null) {
+                ps.setNull(i + 1, Types.NULL);
+            } else if (v instanceof Integer) {
+                ps.setInt(i + 1, (Integer) v);
+            } else if (v instanceof String) {
+                ps.setString(i + 1, (String) v);
+            } else if (v instanceof Boolean) {
+                ps.setBoolean(i + 1, (Boolean) v);
+            } else {
+                ps.setObject(i + 1, v);
+            }
         }
     }
 
-    private static String safeLower(String s) { return s == null ? "" : s.toLowerCase(); }
+    private static String safeLower(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.ITALIAN);
+    }
 
     private int bindUpsert(PreparedStatement ps, Product p) throws SQLException {
         int i = 1;

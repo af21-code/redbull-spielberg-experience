@@ -36,6 +36,20 @@ public class AdminProductActionServlet extends HttpServlet {
         catch (NumberFormatException e) { return null; }
     }
 
+    private boolean parseBool(String s) {
+        if (s == null) return false;
+        String v = s.trim();
+        return "1".equals(v) || "true".equalsIgnoreCase(v) || "on".equalsIgnoreCase(v)
+            || "yes".equalsIgnoreCase(v) || "si".equalsIgnoreCase(v);
+    }
+
+    private static String safe(String s) { return s == null ? "" : s; }
+
+    private static String url(String s) {
+        try { return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8); }
+        catch (Exception e) { return ""; }
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -63,16 +77,12 @@ public class AdminProductActionServlet extends HttpServlet {
 
             switch (action) {
                 case "setActive" -> {
-                    boolean active = "1".equals(req.getParameter("active")) ||
-                                     "true".equalsIgnoreCase(req.getParameter("active")) ||
-                                     "on".equalsIgnoreCase(req.getParameter("active"));
+                    boolean active = parseBool(req.getParameter("active"));
                     dao.setActive(id, active);
                     okMsg = active ? "Prodotto attivato" : "Prodotto disattivato";
                 }
                 case "setFeatured" -> {
-                    boolean featured = "1".equals(req.getParameter("featured")) ||
-                                       "true".equalsIgnoreCase(req.getParameter("featured")) ||
-                                       "on".equalsIgnoreCase(req.getParameter("featured"));
+                    boolean featured = parseBool(req.getParameter("featured"));
                     dao.setFeatured(id, featured);
                     okMsg = featured ? "Prodotto evidenziato" : "Prodotto non più evidenziato";
                 }
@@ -86,28 +96,34 @@ public class AdminProductActionServlet extends HttpServlet {
                 }
             }
 
-            // Torna alla lista mantenendo eventuale filtro q/category/onlyInactive
+            // Torna alla lista mantenendo filtri, paginazione e ordinamento
             String ctx = req.getContextPath();
+            StringBuilder redir = new StringBuilder(ctx)
+                    .append("/admin/products?ok=").append(url(okMsg));
+
+            // filtri
             String q = safe(req.getParameter("q"));
             String categoryId = safe(req.getParameter("categoryId"));
             String onlyInactive = safe(req.getParameter("onlyInactive"));
-
-            StringBuilder redir = new StringBuilder(ctx)
-                    .append("/admin/products?ok=").append(url(okMsg));
             if (!q.isEmpty()) redir.append("&q=").append(url(q));
             if (!categoryId.isEmpty()) redir.append("&categoryId=").append(url(categoryId));
             if (!onlyInactive.isEmpty()) redir.append("&onlyInactive=").append(url(onlyInactive));
+
+            // paginazione & sort (già presenti come hidden nella JSP)
+            String page     = safe(req.getParameter("page"));
+            String pageSize = safe(req.getParameter("pageSize"));
+            String sort     = safe(req.getParameter("sort"));
+            String dir      = safe(req.getParameter("dir"));
+
+            if (!page.isEmpty())     redir.append("&page=").append(url(page));
+            if (!pageSize.isEmpty()) redir.append("&pageSize=").append(url(pageSize));
+            if (!sort.isEmpty())     redir.append("&sort=").append(url(sort));
+            if (!dir.isEmpty())      redir.append("&dir=").append(url(dir));
 
             resp.sendRedirect(redir.toString());
         } catch (Exception e) {
             e.printStackTrace();
             resp.sendRedirect(req.getContextPath() + "/admin/products?err=" + url("Errore: " + e.getMessage()));
         }
-    }
-
-    private static String safe(String s) { return s == null ? "" : s; }
-    private static String url(String s) {
-        try { return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8); }
-        catch (Exception e) { return ""; }
     }
 }
