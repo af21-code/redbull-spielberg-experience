@@ -1,7 +1,6 @@
 package filter;
 
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.*;
 
 import model.CartItem;
@@ -11,12 +10,6 @@ import model.dao.impl.CartDAOImpl;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Calcola il numero articoli nel carrello e lo espone come request attribute "cartCount".
- * Ora ignora esplicitamente le API pubbliche di booking (availability/slots) per evitare
- * qualsiasi side-effect su sessione/DB che può interferire con le chiamate AJAX anonime.
- */
-@WebFilter("/*")
 public class CartBadgeFilter implements Filter {
 
   private static boolean isStatic(HttpServletRequest r) {
@@ -43,41 +36,29 @@ public class CartBadgeFilter implements Filter {
 
     HttpServletRequest r = (HttpServletRequest) req;
 
-    // Salta statici e API booking pubbliche (più snelle e sicure)
     if (isStatic(r) || isPublicBookingApi(r)) {
       chain.doFilter(req, res);
       return;
     }
 
     int cartCount = 0;
-
     HttpSession session = r.getSession(false);
     if (session != null) {
-      // 1) Se in sessione c'è già la lista, usa quella
       @SuppressWarnings("unchecked")
       List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
       if (sessionCart != null && !sessionCart.isEmpty()) {
-        for (CartItem it : sessionCart) {
-          cartCount += Math.max(1, it.getQuantity());
-        }
+        for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
       } else {
-        // 2) Se utente loggato ma cartItems non presente, prendi dal DB
         Object authUser = session.getAttribute("authUser");
         if (authUser != null) {
           Integer userId = null;
-          try {
-            userId = (Integer) authUser.getClass().getMethod("getUserId").invoke(authUser);
-          } catch (Exception ignored) { /* niente */ }
-
+          try { userId = (Integer) authUser.getClass().getMethod("getUserId").invoke(authUser); } catch (Exception ignored) {}
           if (userId != null) {
             try {
-              CartDAO dao = new CartDAOImpl(); // usa connection interna
+              CartDAO dao = new CartDAOImpl();
               List<CartItem> dbItems = dao.findByUser(userId);
-              for (CartItem it : dbItems) {
-                cartCount += Math.max(1, it.getQuantity());
-              }
+              for (CartItem it : dbItems) cartCount += Math.max(1, it.getQuantity());
             } catch (Exception e) {
-              // Non rompere la pagina per errori badge
               e.printStackTrace();
             }
           }
@@ -85,9 +66,7 @@ public class CartBadgeFilter implements Filter {
       }
     }
 
-    // Esponi il conteggio per l'header
     r.setAttribute("cartCount", cartCount);
-
     chain.doFilter(req, res);
   }
 }

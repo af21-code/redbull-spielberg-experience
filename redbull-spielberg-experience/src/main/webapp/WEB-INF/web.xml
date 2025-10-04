@@ -4,152 +4,175 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
          version="5.0">
 
-    <display-name>redbull-spielberg-experience</display-name>
+  <display-name>redbull-spielberg-experience</display-name>
 
-    <welcome-file-list>
-        <welcome-file>index.jsp</welcome-file>
-    </welcome-file-list>
+  <welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
+  </welcome-file-list>
 
-    <session-config>
-        <session-timeout>30</session-timeout>
-    </session-config>
+  <session-config>
+    <session-timeout>30</session-timeout>
+  </session-config>
 
-    <resource-ref>
-        <description>Red Bull Spielberg DB</description>
-        <res-ref-name>jdbc/redbull</res-ref-name>
-        <res-type>javax.sql.DataSource</res-type>
-        <res-auth>Container</res-auth>
-    </resource-ref>
+  <resource-ref>
+    <description>Red Bull Spielberg DB</description>
+    <res-ref-name>jdbc/redbull</res-ref-name>
+    <res-type>javax.sql.DataSource</res-type>
+    <res-auth>Container</res-auth>
+  </resource-ref>
 
-    <!-- ========================= Filtri ========================= -->
-    <filter>
-        <filter-name>UTF8Filter</filter-name>
-        <filter-class>filter.UTF8Filter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>UTF8Filter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+  <!-- ========================= Filters (ordine di esecuzione) ========================= -->
 
-    <filter>
-        <filter-name>CartBadgeFilter</filter-name>
-        <filter-class>filter.CartBadgeFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>CartBadgeFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+  <!-- 1) Forza UTF-8 su request/response -->
+  <filter>
+    <filter-name>UTF8Filter</filter-name>
+    <filter-class>filter.UTF8Filter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>UTF8Filter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 
-    <!-- Login richiesto per le aree protette -->
-    <filter>
-        <filter-name>AuthFilter</filter-name>
-        <filter-class>filter.AuthFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/orders</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/order</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/checkout/*</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/admin</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/admin/*</url-pattern>
-    </filter-mapping>
+  <!-- 2) CSRF: genera token sempre, valida sui metodi non-safe -->
+  <filter>
+    <filter-name>SecurityCsrfFilter</filter-name>
+    <filter-class>filter.SecurityCsrfFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>SecurityCsrfFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 
-    <!-- Solo ADMIN su /admin/* -->
-    <filter>
-        <filter-name>AdminOnlyFilter</filter-name>
-        <filter-class>filter.AdminOnlyFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>AdminOnlyFilter</filter-name>
-        <url-pattern>/admin</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AdminOnlyFilter</filter-name>
-        <url-pattern>/admin/*</url-pattern>
-    </filter-mapping>
+  <!-- 3) Merge carrello dopo login (ignora statici e API booking pubbliche) -->
+  <filter>
+    <filter-name>CartSyncFilter</filter-name>
+    <filter-class>filter.CartSyncFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CartSyncFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 
-    <!-- ========================= Servlets Admin ========================= -->
-    <servlet>
-        <servlet-name>AdminDashboardServlet</servlet-name>
-        <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AdminDashboardServlet</servlet-name>
-        <url-pattern>/admin</url-pattern>
-    </servlet-mapping>
+  <!-- 4) Calcolo badge carrello (leggero) -->
+  <filter>
+    <filter-name>CartBadgeFilter</filter-name>
+    <filter-class>filter.CartBadgeFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>CartBadgeFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
 
-    <servlet>
-        <servlet-name>UserAdminServlet</servlet-name>
-        <servlet-class>control.admin.UserAdminServlet</servlet-class>
-        <load-on-startup>2</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>UserAdminServlet</servlet-name>
-        <url-pattern>/admin/users</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>UserAdminServlet</servlet-name>
-        <url-pattern>/admin/users/*</url-pattern>
-    </servlet-mapping>
+  <!-- 5) Richiede login su aree protette -->
+  <filter>
+    <filter-name>AuthFilter</filter-name>
+    <filter-class>filter.AuthFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/orders</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/order</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/checkout/*</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/admin</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/admin/*</url-pattern>
+  </filter-mapping>
 
-    <servlet>
-        <servlet-name>AdminStatsServlet</servlet-name>
-        <servlet-class>control.admin.AdminStatsServlet</servlet-class>
-        <load-on-startup>3</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AdminStatsServlet</servlet-name>
-        <url-pattern>/admin/stats</url-pattern>
-    </servlet-mapping>
+  <!-- 6) Consente accesso a /admin solo ad ADMIN -->
+  <filter>
+    <filter-name>AdminOnlyFilter</filter-name>
+    <filter-class>filter.AdminOnlyFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>AdminOnlyFilter</filter-name>
+    <url-pattern>/admin</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AdminOnlyFilter</filter-name>
+    <url-pattern>/admin/*</url-pattern>
+  </filter-mapping>
 
-    <!-- ✅ NUOVO: AdminSlotsServlet con mapping esplicito -->
-    <servlet>
-        <servlet-name>AdminSlotsServlet</servlet-name>
-        <servlet-class>control.admin.AdminSlotsServlet</servlet-class>
-        <load-on-startup>4</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>AdminSlotsServlet</servlet-name>
-        <url-pattern>/admin/slots</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>AdminSlotsServlet</servlet-name>
-        <url-pattern>/admin/slots/generate</url-pattern>
-    </servlet-mapping>
+  <!-- ========================= Servlets Admin (solo quelle non annotate) ========================= -->
+  <servlet>
+    <servlet-name>AdminDashboardServlet</servlet-name>
+    <servlet-class>control.admin.AdminDashboardServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminDashboardServlet</servlet-name>
+    <url-pattern>/admin</url-pattern>
+  </servlet-mapping>
 
-    <!-- Booking availability/slots sono già annotati, nessun mapping qui -->
+  <servlet>
+    <servlet-name>UserAdminServlet</servlet-name>
+    <servlet-class>control.admin.UserAdminServlet</servlet-class>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UserAdminServlet</servlet-name>
+    <url-pattern>/admin/users</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>UserAdminServlet</servlet-name>
+    <url-pattern>/admin/users/*</url-pattern>
+  </servlet-mapping>
 
-    <!-- ========================= Error pages ========================= -->
-    <error-page>
-        <error-code>404</error-code>
-        <location>/views/errors/404.jsp</location>
-    </error-page>
-    <error-page>
-        <error-code>500</error-code>
-        <location>/views/errors/500.jsp</location>
-    </error-page>
-    <error-page>
-        <exception-type>java.lang.Throwable</exception-type>
-        <location>/views/errors/500.jsp</location>
-    </error-page>
+  <servlet>
+    <servlet-name>AdminStatsServlet</servlet-name>
+    <servlet-class>control.admin.AdminStatsServlet</servlet-class>
+    <load-on-startup>3</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminStatsServlet</servlet-name>
+    <url-pattern>/admin/stats</url-pattern>
+  </servlet-mapping>
 
-    <jsp-config>
-        <jsp-property-group>
-            <url-pattern>*.jsp</url-pattern>
-            <page-encoding>UTF-8</page-encoding>
-        </jsp-property-group>
-    </jsp-config>
+  <servlet>
+    <servlet-name>AdminSlotsServlet</servlet-name>
+    <servlet-class>control.admin.AdminSlotsServlet</servlet-class>
+    <load-on-startup>4</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminSlotsServlet</servlet-name>
+    <url-pattern>/admin/slots</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AdminSlotsServlet</servlet-name>
+    <url-pattern>/admin/slots/generate</url-pattern>
+  </servlet-mapping>
+
+  <!-- NB: i servlet dei prodotti/categorie sono già annotati con @WebServlet.
+       Non duplichiamo qui per evitare conflitti di mapping. -->
+
+  <!-- ========================= Error pages ========================= -->
+  <error-page>
+    <error-code>404</error-code>
+    <location>/views/errors/404.jsp</location>
+  </error-page>
+  <error-page>
+    <error-code>500</error-code>
+    <location>/views/errors/500.jsp</location>
+  </error-page>
+  <error-page>
+    <exception-type>java.lang.Throwable</exception-type>
+    <location>/views/errors/500.jsp</location>
+  </error-page>
+
+  <jsp-config>
+    <jsp-property-group>
+      <url-pattern>*.jsp</url-pattern>
+      <page-encoding>UTF-8</page-encoding>
+    </jsp-property-group>
+  </jsp-config>
 </web-app>

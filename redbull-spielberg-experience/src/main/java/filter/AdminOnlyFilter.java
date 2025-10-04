@@ -1,12 +1,9 @@
-// src/main/java/filter/AdminOnlyFilter.java
 package filter;
 
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 
-@WebFilter(urlPatterns = {"/admin", "/admin/*"})
 public class AdminOnlyFilter implements Filter {
   @Override
   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
