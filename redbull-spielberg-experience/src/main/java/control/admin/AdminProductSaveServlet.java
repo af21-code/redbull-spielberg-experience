@@ -7,7 +7,8 @@ import jakarta.servlet.http.*;
 import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
-// import utils.FileStorage;
+import utils.FileStorage;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -24,19 +25,7 @@ public class AdminProductSaveServlet extends HttpServlet {
     private static final Set<String> ALLOWED_CT = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
 
     // ===== helpers =====
-    private boolean isAdmin(HttpSession session) {
-        if (session == null)
-            return false;
-        Object authUser = session.getAttribute("authUser");
-        if (authUser == null)
-            return false;
-        try {
-            Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
-            return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
+    // ===== helpers =====
 
     /** Se usi SecurityCsrfFilter è ridondante ma innocuo. */
     private boolean checkCsrf(HttpServletRequest req) {
@@ -135,7 +124,7 @@ public class AdminProductSaveServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = req.getSession(false);
-        if (!isAdmin(session)) {
+        if (!SecurityUtils.isAdmin(session)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -208,16 +197,10 @@ public class AdminProductSaveServlet extends HttpServlet {
             } catch (IllegalStateException ignored) {
             }
             if (file != null && file.getSize() > 0) {
-                String ct = nz(file.getContentType()).toLowerCase();
-                if (!ALLOWED_CT.contains(ct)) {
-                    backWithError(req, resp, "Formato immagine non supportato (usa JPG/PNG/WEBP).");
-                    return;
-                }
-                // String publicUrl = FileStorage.saveProductImage(
-                // getServletContext(), file.getInputStream(),
-                // getSubmittedFileName(file), file.getContentType()
-                // );
-                // imageUrl = publicUrl; // priorità al file caricato
+                String contentType = file.getContentType();
+                // Convert to Base64
+                // Note: user MUST update DB schema to LONGTEXT for image_url
+                imageUrl = FileStorage.convertToBase64(file.getInputStream(), contentType);
             }
         } catch (Exception e) {
             e.printStackTrace();

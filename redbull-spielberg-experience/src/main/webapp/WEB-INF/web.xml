@@ -152,6 +152,24 @@
     <url-pattern>/admin/slots/generate</url-pattern>
   </servlet-mapping>
 
+  <servlet>
+    <servlet-name>AdminCategoriesServlet</servlet-name>
+    <servlet-class>control.admin.AdminCategoriesServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminCategoriesServlet</servlet-name>
+    <url-pattern>/admin/categories</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>AdminCategoryFormServlet</servlet-name>
+    <servlet-class>control.admin.AdminCategoryFormServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminCategoryFormServlet</servlet-name>
+    <url-pattern>/admin/categories/edit</url-pattern>
+  </servlet-mapping>
+
   <!-- NB: i servlet dei prodotti/categorie sono già annotati con @WebServlet.
        Non duplichiamo qui per evitare conflitti di mapping. -->
 

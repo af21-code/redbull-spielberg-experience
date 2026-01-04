@@ -7,6 +7,7 @@ import jakarta.servlet.http.*;
 import model.User;
 import model.dao.OrderDAO;
 import model.dao.impl.OrderDAOImpl;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -24,11 +25,9 @@ public class AdminOrderServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // --- Solo ADMIN ---
+        // --- Solo ADMIN ---
         HttpSession session = req.getSession(false);
-        User auth = (session == null) ? null : (User) session.getAttribute("authUser");
-        boolean isAdmin = auth != null && auth.getUserType() != null
-                && "ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()));
-        if (!isAdmin) {
+        if (!SecurityUtils.isAdmin(session)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Area riservata agli amministratori.");
             return;
         }
@@ -41,12 +40,12 @@ public class AdminOrderServlet extends HttpServlet {
         }
 
         try {
-            Map<String,Object> header = orderDAO.findOrderHeader(orderId);
+            Map<String, Object> header = orderDAO.findOrderHeader(orderId);
             if (header == null) {
                 redirectWithMsg(resp, ctx + "/admin/orders", null, "Ordine non trovato.");
                 return;
             }
-            List<Map<String,Object>> items = orderDAO.findOrderItems(orderId);
+            List<Map<String, Object>> items = orderDAO.findOrderItems(orderId);
 
             req.setAttribute("order", header);
             req.setAttribute("items", items);
@@ -63,21 +62,25 @@ public class AdminOrderServlet extends HttpServlet {
 
     // ---------------- helpers ----------------
     private static Integer parseInt(String s) {
-        try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim()); }
-        catch (Exception e) { return null; }
+        try {
+            return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    private static void redirectWithMsg(HttpServletResponse resp, String baseUrl, String ok, String err) throws IOException {
+    private static void redirectWithMsg(HttpServletResponse resp, String baseUrl, String ok, String err)
+            throws IOException {
         StringBuilder sb = new StringBuilder(baseUrl);
         boolean first = !baseUrl.contains("?");
         if (ok != null) {
             sb.append(first ? "?" : "&")
-              .append("ok=").append(URLEncoder.encode(ok, StandardCharsets.UTF_8));
+                    .append("ok=").append(URLEncoder.encode(ok, StandardCharsets.UTF_8));
             first = false;
         }
         if (err != null) {
             sb.append(first ? "?" : "&")
-              .append("err=").append(URLEncoder.encode(err, StandardCharsets.UTF_8));
+                    .append("err=").append(URLEncoder.encode(err, StandardCharsets.UTF_8));
         }
         resp.sendRedirect(sb.toString());
     }

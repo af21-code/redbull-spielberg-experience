@@ -7,6 +7,7 @@ import jakarta.servlet.http.*;
 import model.User;
 import model.dao.OrderDAO;
 import model.dao.impl.OrderDAOImpl;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -14,13 +15,17 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Azioni admin su singolo ordine (POST):
- *  - /admin/order-action?action=tracking -> aggiorna corriere/tracking (imposta shipped_at se null)
- *  - /admin/order-action?action=complete -> segna come COMPLETED (e prova a valorizzare delivered_at se la colonna esiste)
- *  - /admin/order-action?action=cancel   -> annulla ordine (ripristina stock/slot, status=CANCELLED)
+ * - /admin/order-action?action=tracking -> aggiorna corriere/tracking (imposta
+ * shipped_at se null)
+ * - /admin/order-action?action=complete -> segna come COMPLETED (e prova a
+ * valorizzare delivered_at se la colonna esiste)
+ * - /admin/order-action?action=cancel -> annulla ordine (ripristina stock/slot,
+ * status=CANCELLED)
  *
- * La pagina di dettaglio (GET) è su /admin/order (gestita da AdminOrderServlet).
+ * La pagina di dettaglio (GET) è su /admin/order (gestita da
+ * AdminOrderServlet).
  */
-@WebServlet(name = "AdminOrderActionServlet", urlPatterns = {"/admin/order-action"})
+@WebServlet(name = "AdminOrderActionServlet", urlPatterns = { "/admin/order-action" })
 public class AdminOrderActionServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -30,10 +35,10 @@ public class AdminOrderActionServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // --- Accesso solo ADMIN ---
+        // --- Accesso solo ADMIN ---
         HttpSession session = req.getSession(false);
-        User auth = (session == null) ? null : (User) session.getAttribute("authUser");
-        if (auth == null || auth.getUserType() == null || !"ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()))) {
-            resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
+        if (!SecurityUtils.isAdmin(session)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Accesso negato");
             return;
         }
 
@@ -45,8 +50,8 @@ public class AdminOrderActionServlet extends HttpServlet {
             return;
         }
 
-        String action  = nz(req.getParameter("action"));
-        int orderId    = parseInt(req.getParameter("id"), 0);
+        String action = nz(req.getParameter("action"));
+        int orderId = parseInt(req.getParameter("id"), 0);
 
         if (orderId <= 0) {
             redirectWith(resp, req.getContextPath() + "/admin/orders", "err", "ID ordine non valido");
@@ -57,7 +62,7 @@ public class AdminOrderActionServlet extends HttpServlet {
             switch (action.toLowerCase()) {
                 case "tracking" -> {
                     String carrier = nz(req.getParameter("carrier"));
-                    String code    = nz(req.getParameter("tracking_code"));
+                    String code = nz(req.getParameter("tracking_code"));
                     if (carrier.isBlank() || code.isBlank()) {
                         redirectBack(resp, req, orderId, "err", "Corriere e codice tracking sono obbligatori");
                         return;
@@ -86,14 +91,20 @@ public class AdminOrderActionServlet extends HttpServlet {
 
     // -------- Helpers --------
 
-    private static String nz(String s) { return (s == null) ? "" : s.trim(); }
+    private static String nz(String s) {
+        return (s == null) ? "" : s.trim();
+    }
 
     private static int parseInt(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception ignored) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception ignored) {
+            return def;
+        }
     }
 
     private void redirectBack(HttpServletResponse resp, HttpServletRequest req, int orderId,
-                              String key, String msg) throws IOException {
+            String key, String msg) throws IOException {
         String base = req.getContextPath() + "/admin/order?id=" + orderId; // pagina dettaglio (GET)
         redirectWith(resp, base, key, msg);
     }
