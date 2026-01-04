@@ -52,7 +52,7 @@ public class AdminOrderServlet extends HttpServlet {
             req.setAttribute("isAdmin", true);
 
             // Usiamo la stessa JSP di dettaglio
-            req.getRequestDispatcher("/views/order-details.jsp").forward(req, resp);
+            req.getRequestDispatcher("/views/admin/order-details.jsp").forward(req, resp);
 
         } catch (Exception e) {
             e.printStackTrace();
