@@ -1,8 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
   <%@ page import="java.util.*, model.Category" %>
-    <%! private static String esc(Object o){ if (o==null) return "" ; String s=String.valueOf(o); return
-      s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-      .replace("\"","&quot;").replace("'","&#39;");
+    <%! private static String esc(Object o) { if (o==null) return "" ; String s=String.valueOf(o); return
+      s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
+      .replace("\"", "&quot;").replace("'", "&#39;");
       }
       %>
       <% String ctx=request.getContextPath(); List<Category> categories = (List<Category>)
@@ -21,75 +21,121 @@
               <title>Admin • Categorie</title>
               <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
               <link rel="stylesheet" href="<%=ctx%>/styles/admin.css">
+              <link rel="stylesheet" href="<%=ctx%>/styles/order-details.css">
             </head>
 
             <body>
               <jsp:include page="/views/header.jsp" />
 
               <div class="admin-bg">
-                <div class="container-1100">
+                <div class="admin-shell">
+                  <aside class="admin-sidebar">
+                    <a href="<%=ctx%>/admin">Dashboard</a>
+                    <a href="<%=ctx%>/admin/products">Prodotti</a>
+                    <a href="<%=ctx%>/admin/categories" class="active">Categorie</a>
+                    <a href="<%=ctx%>/admin/orders">Ordini</a>
+                    <a href="<%=ctx%>/admin/users">Utenti</a>
+                    <a href="<%=ctx%>/admin/slots">Slot</a>
+                  </aside>
 
-                  <div class="top">
-                    <h2 class="mt-0">Categorie</h2>
-                    <a class="btn" href="<%=ctx%>/admin/categories/edit">+ Aggiungi Categoria</a>
-                  </div>
-
-                  <% if (ok !=null) { %>
-                    <div class="chip success mb-12">
-                      <%= esc(ok) %>
+                  <section class="admin-content">
+                    <div class="admin-actions-bar">
+                      <div>
+                        <h2 class="admin-header-title">Categorie</h2>
+                        <div class="admin-subtitle">Gestione tassonomia prodotti</div>
+                      </div>
+                      <a class="btn" href="<%=ctx%>/admin/categories/edit">+ Nuova Categoria</a>
                     </div>
-                    <% } %>
-                      <% if (err !=null) { %>
-                        <div class="err mb-12">
-                          <%= esc(err) %>
-                        </div>
-                        <% } %>
 
-                          <div class="card">
-                            <table>
-                              <thead>
+                    <!-- Toast Container -->
+                    <div id="toast-container"></div>
+
+                    <div class="card table-panel">
+                      <table class="modern-table">
+                        <thead>
+                          <tr>
+                            <th width="60" class="center">ID</th>
+                            <th width="200">Nome</th>
+                            <th>Descrizione</th>
+                            <th width="100" class="center">Stato</th>
+                            <th width="80" class="right">Azioni</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% if (categories.isEmpty()) { %>
+                            <tr>
+                              <td colspan="5" class="center muted empty-state">Nessuna categoria trovata.</td>
+                            </tr>
+                            <% } %>
+                              <% for (Category c : categories) { %>
                                 <tr>
-                                  <th>ID</th>
-                                  <th>Nome</th>
-                                  <th>Descrizione</th>
-                                  <th>Attiva</th>
-                                  <th>Azioni</th>
+                                  <td class="center" style="font-family: monospace; opacity: 0.7; font-size: 0.95rem;">
+                                    <%= c.getCategoryId() %>
+                                  </td>
+                                  <td style="font-weight: 600; color: #fff; font-size: 1rem;">
+                                    <%= esc(c.getName()) %>
+                                  </td>
+                                  <td
+                                    style="font-size: 0.95rem; color: rgba(255,255,255,0.85); overflow: hidden; text-overflow: ellipsis;">
+                                    <%= esc(c.getDescription()) !=null && !esc(c.getDescription()).isEmpty() ?
+                                      esc(c.getDescription()) : "—" %>
+                                  </td>
+                                  <td class="center">
+                                    <span class="chip <%= c.isActive() ? " success" : "warn" %>">
+                                      <%= c.isActive() ? "Attiva" : "Inattiva" %>
+                                    </span>
+                                  </td>
+                                  <td class="right">
+                                    <a class="btn sm outline"
+                                      href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>" title="Modifica"
+                                      style="padding: 6px 12px; font-size: 0.9rem;">
+                                      ✏️
+                                    </a>
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody>
-                                <% if (categories.isEmpty()) { %>
-                                  <tr>
-                                    <td colspan="5" class="muted">Nessuna categoria trovata.</td>
-                                  </tr>
-                                  <% } %>
-                                    <% for (Category c : categories) { %>
-                                      <tr>
-                                        <td>
-                                          <%= c.getCategoryId() %>
-                                        </td>
-                                        <td><strong>
-                                            <%= esc(c.getName()) %>
-                                          </strong></td>
-                                        <td class="muted">
-                                          <%= esc(c.getDescription()) %>
-                                        </td>
-                                        <td>
-                                          <span class="chip <%= c.isActive()?" success":"warn" %>">
-                                            <%= c.isActive()?"SI":"NO" %>
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <a class="btn sm outline"
-                                            href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>">Modifica</a>
-                                        </td>
-                                      </tr>
-                                      <% } %>
-                              </tbody>
-                            </table>
-                          </div>
-
+                                <% } %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
                 </div>
               </div>
+
+              <script>
+                // --- Toast Logic ---
+                function showToast(msg, type = 'info') {
+                  const container = document.getElementById('toast-container');
+                  const toast = document.createElement('div');
+                  toast.className = 'toast ' + type;
+
+                  let icon = 'ℹ️';
+                  if (type === 'success') icon = '✅';
+                  if (type === 'error') icon = '⚠️';
+
+                  toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-msg">' + msg + '</span>';
+                  container.appendChild(toast);
+
+                  setTimeout(() => {
+                    toast.style.animation = 'toastFadeOut 0.3s forwards';
+                    setTimeout(() => toast.remove(), 300);
+                  }, 4000);
+                }
+
+                document.addEventListener("DOMContentLoaded", () => {
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const ok = urlParams.get('ok');
+                  const err = urlParams.get('err');
+
+                  if (ok) {
+                    showToast(ok, 'success');
+                    window.history.replaceState({}, document.title, window.location.pathname + window.location.search.replace(/[\?&]ok=[^&]+/, '').replace(/[\?&]err=[^&]+/, ''));
+                  }
+                  if (err) {
+                    showToast(err, 'error');
+                    window.history.replaceState({}, document.title, window.location.pathname + window.location.search.replace(/[\?&]ok=[^&]+/, '').replace(/[\?&]err=[^&]+/, ''));
+                  }
+                });
+              </script>
 
               <jsp:include page="/views/footer.jsp" />
             </body>
