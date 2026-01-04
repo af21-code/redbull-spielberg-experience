@@ -9,7 +9,7 @@
             driverClassName="com.mysql.cj.jdbc.Driver"
             url="jdbc:mysql://localhost:3306/red_bull_spielberg?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Europe/Rome"
             username="root"
-            password="RedBull2025!"
+            password=""
             testOnBorrow="true"
             validationQuery="SELECT 1"/>
 </Context>

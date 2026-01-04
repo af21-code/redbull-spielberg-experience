@@ -1,0 +1,16 @@
+# IntelliJ project files
+.idea/
+*.iml
+out/
+
+# Build artifacts
+target/
+build/
+
+# macOS system files
+.DS_Store
+
+# Miscellaneous and Generated
+web/
+*.log
+*.class

@@ -7,9 +7,9 @@ import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 
-import model.Category;
-import model.dao.CategoryDAO;
-import model.dao.impl.CategoryDAOImpl;
+// import model.Category;
+// import model.dao.CategoryDAO;
+// import model.dao.impl.CategoryDAOImpl;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,25 +19,34 @@ public class AdminProductsServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private boolean isAdmin(HttpSession session) {
-        if (session == null) return false;
+        if (session == null)
+            return false;
         Object authUser = session.getAttribute("authUser");
-        if (authUser == null) return false;
+        if (authUser == null)
+            return false;
         try {
             Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
             return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) { return false; }
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private Integer parseIntNullable(String s) {
-        try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim()); }
-        catch (NumberFormatException e) { return null; }
+        try {
+            return (s == null || s.isBlank()) ? null : Integer.valueOf(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private int parsePositiveOrDefault(String s, int def, int min, int max) {
         try {
             int v = Integer.parseInt(s);
-            if (v < min) v = min;
-            if (v > max) v = max;
+            if (v < min)
+                v = min;
+            if (v > max)
+                v = max;
             return v;
         } catch (Exception e) {
             return def;
@@ -68,25 +77,28 @@ public class AdminProductsServlet extends HttpServlet {
         int pageSize = parsePositiveOrDefault(req.getParameter("pageSize"), 12, 5, 100);
         int page = parsePositiveOrDefault(req.getParameter("page"), 1, 1, Integer.MAX_VALUE);
         String sort = req.getParameter("sort"); // name, price, stock, active, featured, created, updated, ptype, etype
-        String dir  = req.getParameter("dir");  // asc|desc
+        String dir = req.getParameter("dir"); // asc|desc
 
         try {
             ProductDAO pdao = new ProductDAOImpl();
 
             int total = pdao.adminCount(categoryId, q, onlyInactive);
             int totalPages = Math.max(1, (int) Math.ceil(total / (double) pageSize));
-            if (page > totalPages) page = totalPages;
+            if (page > totalPages)
+                page = totalPages;
             int offset = (page - 1) * pageSize;
 
             List<Product> products = pdao.adminFindAllPaged(categoryId, q, onlyInactive, sort, dir, pageSize, offset);
 
             // 🔹 Carica le categorie per il filtro dinamico
-            CategoryDAO cdao = new CategoryDAOImpl();
-            // Firma attesa: adminFindAllPaged(String q, Boolean onlyInactive, String sort, String dir, int limit, int offset)
-            List<Category> allCategories = cdao.adminFindAllPaged(null, null, "name", "asc", 1000, 0);
+            // CategoryDAO cdao = new CategoryDAOImpl();
+            // Firma attesa: adminFindAllPaged(String q, Boolean onlyInactive, String sort,
+            // String dir, int limit, int offset)
+            // List<Category> allCategories = cdao.adminFindAllPaged(null, null, "name",
+            // "asc", 1000, 0);
 
             req.setAttribute("products", products);
-            req.setAttribute("allCategories", allCategories);
+            // req.setAttribute("allCategories", allCategories);
 
             req.setAttribute("q", q == null ? "" : q);
             req.setAttribute("categoryId", categoryId);
@@ -97,7 +109,7 @@ public class AdminProductsServlet extends HttpServlet {
             req.setAttribute("total", total);
             req.setAttribute("totalPages", totalPages);
             req.setAttribute("sort", sort == null ? "" : sort);
-            req.setAttribute("dir",  dir == null ? "" : dir);
+            req.setAttribute("dir", dir == null ? "" : dir);
 
             req.getRequestDispatcher("/views/admin/products.jsp").forward(req, resp);
         } catch (Exception e) {
