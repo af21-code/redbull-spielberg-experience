@@ -108,122 +108,115 @@
                     </a>
                   </div>
 
-                  <!-- Card: Filtri -->
-                  <form class="card filters-panel" method="get" action="<%=ctx%>/admin/orders">
-                    <div class="filters filters-container">
+                  <!-- Compact Toolbar -->
+                  <form class="admin-toolbar" method="get" action="<%=ctx%>/admin/orders">
+                    <div class="search-box">
+                      <input type="text" name="q" value="<%= esc(q) %>" placeholder="Cerca cliente, ID ordine...">
+                    </div>
 
-                      <div class="search-bar-container search-container-grow">
-                        <div class="input-group search-input-group">
-                          <span class="input-icon" style="padding-left: 10px;">🔍</span>
-                          <input type="text" name="q" value="<%= esc(q) %>" placeholder="Cerca cliente, ID ordine..."
-                            style="padding-left: 35px;">
-                        </div>
-                        <div class="divider"></div>
-                        <select name="status" class="status-select">
-                          <option value="">Tutti gli stati</option>
-                          <option value="PENDING" <%="PENDING" .equalsIgnoreCase(status) ? "selected" : "" %>>In Attesa
-                          </option>
-                          <option value="CONFIRMED" <%="CONFIRMED" .equalsIgnoreCase(status) ? "selected" : "" %>
-                            >Confermato</option>
-                          <option value="PROCESSING" <%="PROCESSING" .equalsIgnoreCase(status) ? "selected" : "" %>>In
-                            Lavorazione</option>
-                          <option value="COMPLETED" <%="COMPLETED" .equalsIgnoreCase(status) ? "selected" : "" %>
-                            >Completato</option>
-                          <option value="CANCELLED" <%="CANCELLED" .equalsIgnoreCase(status) ? "selected" : "" %>
-                            >Annullato</option>
-                        </select>
-                      </div>
+                    <select name="status">
+                      <option value="">Tutti gli stati</option>
+                      <option value="PENDING" <%="PENDING" .equalsIgnoreCase(status) ? "selected" : "" %>>In Attesa
+                      </option>
+                      <option value="CONFIRMED" <%="CONFIRMED" .equalsIgnoreCase(status) ? "selected" : "" %>>Confermato
+                      </option>
+                      <option value="PROCESSING" <%="PROCESSING" .equalsIgnoreCase(status) ? "selected" : "" %>>In
+                        Lavorazione</option>
+                      <option value="COMPLETED" <%="COMPLETED" .equalsIgnoreCase(status) ? "selected" : "" %>>Completato
+                      </option>
+                      <option value="CANCELLED" <%="CANCELLED" .equalsIgnoreCase(status) ? "selected" : "" %>>Annullato
+                      </option>
+                    </select>
 
-                      <!-- Compact Date Toolbar -->
-                      <div
-                        style="display: inline-flex; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px 8px; height: 42px;">
-                        <input type="date" name="from" value="<%= esc(from) %>"
-                          style="background:transparent; border:none; color:#fff; font-family:inherit; font-size:0.9rem; outline:none; width: 110px;"
-                          aria-label="Da">
-                        <span style="color:rgba(255,255,255,0.3); font-size:0.8rem; margin: 0 4px;">➜</span>
-                        <input type="date" name="to" value="<%= esc(to) %>"
-                          style="background:transparent; border:none; color:#fff; font-family:inherit; font-size:0.9rem; outline:none; width: 110px;"
-                          aria-label="A">
-                      </div>
+                    <div class="date-range-picker">
+                      <input type="date" name="from" value="<%= esc(from) %>">
+                      <span class="date-sep">→</span>
+                      <input type="date" name="to" value="<%= esc(to) %>">
+                    </div>
 
+                    <input type="hidden" name="pageSize" value="<%= pageSize %>">
 
-
-                      <button class="btn filter-btn" type="submit">Filtra</button>
-                      <a class="btn outline reset-btn" href="<%=ctx%>/admin/orders">↺</a>
+                    <div class="toolbar-actions">
+                      <button class="btn-filter" type="submit">Filtra</button>
+                      <a class="btn-reset" href="<%=ctx%>/admin/orders">🔄 Reset</a>
                     </div>
                   </form>
 
-                  <!-- Card: Table -->
-                  <div class="card table-panel">
-                    <table class="modern-table">
-                      <thead>
-                        <tr>
-                          <th width="12%"># Ordine</th>
-                          <th width="15%">Data</th>
-                          <th width="25%">Cliente</th>
-                          <th width="12%">Totale</th>
-                          <th width="12%">Stato</th>
-                          <th width="12%">Pagamento</th>
-                          <th width="12%" style="text-align:right">Azioni</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <% if (orders.isEmpty()) { %>
+                  <!-- Table with Fixed Height Scroll -->
+                  <div class="table-scroll-panel">
+                    <div class="table-scroll-body">
+                      <table class="modern-table">
+                        <thead>
                           <tr>
-                            <td colspan="7" class="center muted empty-state">
-                              <div class="empty-icon">📭</div>
-                              Nessun ordine trovato.
-                            </td>
+                            <th width="12%"># Ordine</th>
+                            <th width="15%">Data</th>
+                            <th width="25%">Cliente</th>
+                            <th width="12%">Totale</th>
+                            <th width="12%">Stato</th>
+                            <th width="12%">Pagamento</th>
+                            <th width="12%" style="text-align:right">Azioni</th>
                           </tr>
-                          <% } %>
-                            <% for (Map<?, ?> r : orders) {
-                              String onum = String.valueOf(r.get("order_number"));
-                              Object oda = r.get("order_date");
-                              String date = (oda instanceof java.util.Date) ? df.format((java.util.Date) oda) :
-                              String.valueOf(oda);
-                              String cust = String.valueOf(r.get("customer"));
-                              BigDecimal tot = (r.get("total_amount") instanceof BigDecimal) ? (BigDecimal)
-                              r.get("total_amount") : BigDecimal.ZERO;
-                              String st = String.valueOf(r.get("status"));
-                              String pay = String.valueOf(r.get("payment_status"));
-                              String pm = String.valueOf(r.get("payment_method"));
-                              int oid = (r.get("order_id") instanceof Number) ? ((Number) r.get("order_id")).intValue()
-                              : -1;
-                              %>
-                              <tr>
-                                <td data-label="Ordine">
-                                  <div class="order-id-cell">
-                                    <%= esc(onum) %>
-                                  </div>
-                                </td>
-                                <td data-label="Data" class="table-date">
-                                  <%= esc(date) %>
-                                </td>
-                                <td data-label="Cliente">
-                                  <div class="customer-cell">
-                                    <%= esc(cust) %>
-                                  </div>
-                                  <div class="customer-cell-email">
-                                    <%= esc(pm) %>
-                                  </div>
-                                </td>
-                                <td data-label="Totale">
-                                  <div class="price-cell">€ <%= tot %>
-                                  </div>
-                                </td>
-                                <td data-label="Stato"><span class="<%= statusClass(st) %>">
-                                    <%= esc(st) %>
-                                  </span></td>
-                                <td data-label="Pagamento"><span class="<%= payClass(pay) %>">
-                                    <%= esc(pay) %>
-                                  </span></td>
-                                <td data-label="Azioni" style="text-align:right">
-                                  <a class="btn sm outline" href="<%=ctx%>/admin/order?id=<%= oid %>">Dettagli</a>
-                                </td>
-                              </tr>
-                              <% } %>
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          <% if (orders.isEmpty()) { %>
+                            <tr>
+                              <td colspan="7" class="center muted empty-state">
+                                <div class="empty-icon">📭</div>
+                                Nessun ordine trovato.
+                              </td>
+                            </tr>
+                            <% } %>
+                              <% for (Map<?, ?> r : orders) {
+                                String onum = String.valueOf(r.get("order_number"));
+                                Object oda = r.get("order_date");
+                                String date = (oda instanceof java.util.Date) ? df.format((java.util.Date) oda) :
+                                String.valueOf(oda);
+                                String cust = String.valueOf(r.get("customer"));
+                                BigDecimal tot = (r.get("total_amount") instanceof BigDecimal) ? (BigDecimal)
+                                r.get("total_amount") : BigDecimal.ZERO;
+                                String st = String.valueOf(r.get("status"));
+                                String pay = String.valueOf(r.get("payment_status"));
+                                String pm = String.valueOf(r.get("payment_method"));
+                                int oid = (r.get("order_id") instanceof Number) ? ((Number)
+                                r.get("order_id")).intValue()
+                                : -1;
+                                %>
+                                <tr>
+                                  <td data-label="Ordine">
+                                    <div class="order-id-cell">
+                                      <%= esc(onum) %>
+                                    </div>
+                                  </td>
+                                  <td data-label="Data" class="table-date">
+                                    <%= esc(date) %>
+                                  </td>
+                                  <td data-label="Cliente">
+                                    <div class="customer-cell">
+                                      <%= esc(cust) %>
+                                    </div>
+                                    <div class="customer-cell-email">
+                                      <%= esc(pm) %>
+                                    </div>
+                                  </td>
+                                  <td data-label="Totale">
+                                    <div class="price-cell">€ <%= tot %>
+                                    </div>
+                                  </td>
+                                  <td data-label="Stato"><span class="<%= statusClass(st) %>">
+                                      <%= esc(st) %>
+                                    </span></td>
+                                  <td data-label="Pagamento"><span class="<%= payClass(pay) %>">
+                                      <%= esc(pay) %>
+                                    </span></td>
+                                  <td data-label="Azioni" style="text-align:right">
+                                    <a class="btn sm outline" href="<%=ctx%>/admin/order?id=<%= oid %>">Dettagli</a>
+                                  </td>
+                                </tr>
+                                <% } %>
+                        </tbody>
+                      </table>
+                    </div>
+                    <!-- Close table-scroll-body -->
 
                     <!-- Footer Table -->
                     <div class="pagination-footer">
@@ -233,10 +226,9 @@
                         </strong> di <%= pages %>
                       </div>
 
-                      <div class="page-size-selector" style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.85rem; opacity: 0.6;">Righe per pagina:</span>
-                        <select onchange="updatePageSize(this.value)"
-                          style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 0.85rem; outline: none;">
+                      <div class="page-size-selector">
+                        <span>Righe per pagina:</span>
+                        <select onchange="updatePageSize(this.value)">
                           <option value="20" <%=pageSize==20 ? "selected" : "" %>>20</option>
                           <option value="50" <%=pageSize==50 ? "selected" : "" %>>50</option>
                           <option value="100" <%=pageSize==100 ? "selected" : "" %>>100</option>
@@ -251,7 +243,8 @@
 
                             <% int startP=Math.max(1, pageNo - 2); int endP=Math.min(pages, pageNo + 2); for (int
                               i=startP; i <=endP; i++) { %>
-                              <a href="<%=ctx%>/admin/orders?<%= esc(baseQS) %>&page=<%= i %>" class="<%= i==pageNo ? "active" : "" %>"><%= i %></a>
+                              <a href="<%=ctx%>/admin/orders?<%= esc(baseQS) %>&page=<%= i %>"
+                                class="<%= i == pageNo ? " active" : "" %>"><%= i %></a>
                               <% } %>
 
                                 <% if (pageNo < pages) { %>
@@ -261,6 +254,7 @@
                       </div>
                     </div>
                   </div>
+                  <!-- Close table-scroll-panel -->
 
                 </section>
               </div>
