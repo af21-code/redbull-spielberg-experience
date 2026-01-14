@@ -35,19 +35,6 @@
     </div>
   </section>
 
-  <!-- Nav in-page -->
-  <nav class="rb21-sticky">
-    <div class="rb21-sticky__wrap">
-      <span class="logo">RB21</span>
-      <ul>
-        <li><a href="#aero">Aerodinamica</a></li>
-        <li><a href="#powertrain">Powertrain</a></li>
-        <li><a href="#tech">Tecnologia</a></li>
-        <li><a href="#perf">Prestazioni</a></li>
-      </ul>
-    </div>
-  </nav>
-
   <!-- AERODINAMICA -->
   <section id="aero" class="rb21-section">
     <div class="container">
