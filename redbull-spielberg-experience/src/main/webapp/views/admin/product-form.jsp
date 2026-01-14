@@ -6,8 +6,8 @@
       }
       %>
       <% String ctx=request.getContextPath(); Product p=(Product) request.getAttribute("product"); if (p==null) { p=new
-        Product(); p.setActive(true); p.setFeatured(false); }
-        Object catsObj=request.getAttribute("categories"); List<Category> categories = new ArrayList<>();
+        Product(); p.setActive(true); p.setFeatured(false); } Object catsObj=request.getAttribute("categories");
+        List<Category> categories = new ArrayList<>();
           if (catsObj instanceof List
           <?>) {
         for (Object x : (List<?>) catsObj) if (x instanceof Category) categories.add((Category) x);
@@ -77,6 +77,7 @@
                               <% if (isEdit) { %>
                                 <input type="hidden" name="productId" value="<%= p.getProductId() %>">
                                 <% } %>
+                                  <input type="hidden" name="imageUrl" value="<%= esc(p.getImageUrl()) %>">
 
                                   <!-- SEZIONE 1: Info Base -->
                                   <div
