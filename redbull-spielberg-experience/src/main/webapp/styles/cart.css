@@ -13,16 +13,19 @@
   width: 100%;
   border-collapse: collapse;
 }
+
 .cart-table th,
 .cart-table td {
   padding: 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   vertical-align: top;
 }
+
 .cart-table th {
   text-align: left;
   font-weight: 700;
-  color: #F5A600; /* giallo Red Bull */
+  color: #F5A600;
+  /* giallo Red Bull */
 }
 
 /* Product image */
@@ -31,7 +34,7 @@
   height: 66px;
   object-fit: cover;
   border-radius: 8px;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* Forms inline */
@@ -61,9 +64,18 @@
   cursor: pointer;
   transition: filter .2s ease, transform .06s ease;
 }
-.btn:hover { filter: brightness(1.05); }
-.btn:active { transform: translateY(1px); }
-.btn.secondary { background: #444; }
+
+.btn:hover {
+  filter: brightness(1.05);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn.secondary {
+  background: #444;
+}
 
 /* Summary */
 .summary {
@@ -74,6 +86,7 @@
   gap: 12px;
   align-items: center;
 }
+
 .total {
   font-size: 1.2rem;
   font-weight: 800;
@@ -88,16 +101,183 @@
   opacity: .85;
 }
 
-/* Responsive */
-@media (max-width: 720px) {
-  .cart-table th:nth-child(2),
-  .cart-table td:nth-child(2),
-  .cart-table th:nth-child(6),
-  .cart-table td:nth-child(6) {
-    display: none; /* nasconde 'Tipo' e 'Azioni' su schermi piccoli per compattezza */
+/* Quantity Spinner */
+.qty-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-btn:hover {
+  background: #E30613;
+}
+
+.qty-btn:active {
+  transform: scale(0.95);
+}
+
+.qty-form .qty-input {
+  width: 50px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  -moz-appearance: textfield;
+}
+
+.qty-form .qty-input::-webkit-outer-spin-button,
+.qty-form .qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qty-fixed {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== Responsive - Mobile Card View ===== */
+@media (max-width: 768px) {
+  .cart-wrap {
+    padding: 20px 16px 60px;
   }
-  .summary {
+
+  /* Hide table headers */
+  .cart-table thead {
+    display: none;
+  }
+
+  /* Transform rows to cards */
+  .cart-table tbody tr {
+    display: block;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+
+  .cart-table tbody td {
+    display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    padding: 0 8px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .cart-table tbody td:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+  }
+
+  .cart-table tbody td:last-child {
+    border-bottom: none;
+    padding-top: 12px;
+    justify-content: center;
+  }
+
+  .cart-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #F5A600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Product cell - special treatment */
+  .cart-table tbody td:first-child::before {
+    display: none;
+    /* Hide label for product cell, it's self-explanatory */
+  }
+
+  /* Image adjustment */
+  .cart-img {
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  /* Inline forms stack */
+  .inline-form {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qty-input {
+    flex: 1;
+    max-width: 80px;
+    text-align: center;
+  }
+
+  /* Buttons full width */
+  .cart-table tbody td .btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 16px;
+  }
+
+  /* Summary section */
+  .summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    margin-top: 20px;
+  }
+
+  .summary .total {
+    text-align: center;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
+
+  .summary form {
+    width: 100%;
+  }
+
+  .summary .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  /* Empty state */
+  .empty {
+    padding: 40px 16px;
+  }
+
+  .empty .btn {
+    display: block;
+    margin: 16px auto 0;
   }
 }
