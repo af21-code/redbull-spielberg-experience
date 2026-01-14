@@ -29,6 +29,26 @@ public class CategoryDAOImpl implements CategoryDAO {
     }
 
     @Override
+    public List<Category> findAllActive() {
+        List<Category> list = new ArrayList<>();
+        String sql = "SELECT * FROM categories WHERE is_active = 1 ORDER BY name ASC";
+        System.out.println("[CategoryDAO] Executing findAllActive query: " + sql);
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Category c = mapRow(rs);
+                System.out.println("[CategoryDAO] Found category: " + c.getCategoryId() + " - " + c.getName());
+                list.add(c);
+            }
+            System.out.println("[CategoryDAO] Total categories found: " + list.size());
+        } catch (SQLException e) {
+            System.err.println("[CategoryDAO] ERROR in findAllActive: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
     public List<Category> adminFindAllPaged(String q, Boolean onlyInactive, String sort, String dir, int limit,
             int offset) {
         List<Category> list = new ArrayList<>();

@@ -69,23 +69,23 @@
                             <% } %>
                               <% for (Category c : categories) { %>
                                 <tr>
-                                  <td class="center" style="font-family: monospace; opacity: 0.7; font-size: 0.95rem;">
+                                  <td class="center" data-label="ID" style="font-family: monospace; opacity: 0.7; font-size: 0.95rem;">
                                     <%= c.getCategoryId() %>
                                   </td>
-                                  <td style="font-weight: 600; color: #fff; font-size: 1rem;">
+                                  <td data-label="Nome" style="font-weight: 600; color: #fff; font-size: 1rem;">
                                     <%= esc(c.getName()) %>
                                   </td>
-                                  <td
+                                  <td data-label="Descrizione"
                                     style="font-size: 0.95rem; color: rgba(255,255,255,0.85); overflow: hidden; text-overflow: ellipsis;">
                                     <%= esc(c.getDescription()) !=null && !esc(c.getDescription()).isEmpty() ?
                                       esc(c.getDescription()) : "—" %>
                                   </td>
-                                  <td class="center">
+                                  <td class="center" data-label="Stato">
                                     <span class="chip <%= c.isActive() ? " success" : "warn" %>">
                                       <%= c.isActive() ? "Attiva" : "Inattiva" %>
                                     </span>
                                   </td>
-                                  <td class="right">
+                                  <td class="right" data-label="Azioni">
                                     <a class="btn sm outline"
                                       href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>" title="Modifica"
                                       style="padding: 6px 12px; font-size: 0.9rem;">
