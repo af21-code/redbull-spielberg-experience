@@ -48,6 +48,8 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden;
+    /* Prevent accidental horizontal scroll */
 }
 
 /* Header */
@@ -135,12 +137,136 @@ nav ul li a:hover::after {
     transform: scale(1.05);
 }
 
+
+/* Hamburger Button (hidden on desktop) */
+.hamburger {
+    display: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 12px;
+    z-index: 200;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 44px;
+    height: 44px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.hamburger:hover,
+.hamburger:focus {
+    background: rgba(227, 6, 19, 0.2);
+    border-color: rgba(227, 6, 19, 0.5);
+    outline: none;
+}
+
+.hamburger.open {
+    background: rgba(227, 6, 19, 0.3);
+    border-color: #E30613;
+}
+
+.hamburger span {
+    width: 100%;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    position: relative;
+    transform-origin: center;
+}
+
+/* Container adjustments for alignment */
 .container.nav-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     padding: 0 20px;
+    position: relative;
+    /* Ensure context for absolute nav */
+}
+
+/* Mobile Menu Styles */
+@media (max-width: 900px) {
+    .hamburger {
+        display: flex;
+    }
+
+    /* Remove position relative from container so nav can escape */
+    .container.nav-container {
+        position: static;
+    }
+
+    /* Ensure header doesn't clip the nav */
+    header {
+        overflow: visible;
+    }
+
+    nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 11, 43, 0.98);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 80px 20px 40px;
+        gap: 24px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 999;
+    }
+
+    nav.mobile-active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        width: 100%;
+    }
+
+    nav ul li a {
+        font-size: 1.5rem;
+        padding: 12px 24px;
+    }
+
+    nav ul.main-menu,
+    nav ul.menu-right {
+        display: flex;
+    }
+
+    .login-button {
+        margin: 0;
+    }
+
+    /* Ensure hamburger transforms to X */
+    .hamburger.open span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .hamburger.open span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger.open span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    /* Keep hamburger visible above menu */
+    .hamburger {
+        position: relative;
+        z-index: 1000;
+    }
 }
 
 /* Loading screen */
@@ -519,4 +645,159 @@ nav ul li a:hover::after {
     text-decoration: none;
     color: inherit;
     display: inline-block;
+}
+
+/* =======================
+   MOBILE RESPONSIVENESS
+   ======================= */
+@media (max-width: 900px) {
+
+    /* Global Typography & Spacing */
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+    }
+
+    body {
+        font-size: 16px;
+    }
+
+    h2 {
+        font-size: 2rem !important;
+        line-height: 1.2;
+        word-wrap: break-word;
+        /* Prevent overflow on long titles */
+    }
+
+    .container {
+        padding: 0 20px;
+        width: 100%;
+        overflow: hidden;
+        /* Ensure containers don't leak */
+    }
+
+    /* Global Section Padding - Reduced */
+    .project-intro,
+    .track-section,
+    .learn-track-section,
+    .purchase-section {
+        padding: 40px 20px;
+        overflow: hidden;
+        /* Prevent section spill */
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+        height: auto;
+        min-height: 85vh;
+        background-attachment: scroll;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    .hero-text {
+        font-size: 11vw;
+        /* Reduced from 14vw to prevent overflow */
+        padding-left: 20px;
+        padding-right: 20px;
+        line-height: 1.1;
+        text-align: left;
+        width: 100%;
+        margin-top: 20px;
+        word-wrap: break-word;
+        hyphens: auto;
+    }
+
+    /* INTRO SECTION */
+    .intro-container {
+        flex-direction: column;
+        gap: 32px;
+        width: 100%;
+    }
+
+    .intro-text {
+        font-size: 1.1rem;
+        text-align: left;
+    }
+
+    .intro-text h2 {
+        margin-bottom: 12px;
+    }
+
+    .intro-image {
+        justify-content: center;
+        width: 100%;
+        overflow: hidden;
+        /* Contain shadows */
+        padding: 10px;
+        /* Space for shadow */
+        margin: -10px;
+        /* Offset padding */
+    }
+
+    .intro-image img {
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+        box-shadow: 0 4px 15px rgba(255, 0, 79, 0.5);
+    }
+
+    /* TRACK SECTION (Slideshow) */
+    .track-section p {
+        font-size: 1.1rem;
+    }
+
+    .slideshow-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        width: 100%;
+    }
+
+    .slideshow-container .slide {
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+        box-sizing: border-box;
+    }
+
+    /* PURCHASE SECTION */
+    .purchase-options {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 24px;
+        padding: 0 4px;
+        /* Slight padding to avoid edge cutting */
+    }
+
+    .purchase-card {
+        width: 100%;
+        max-width: none;
+        padding: 24px 20px;
+        box-sizing: border-box;
+    }
+
+    .card-link {
+        display: block;
+        width: 100%;
+    }
+
+    /* VIDEO SECTION */
+    .video-wrapper iframe {
+        height: 56.25vw;
+        max-height: 300px;
+        min-height: 200px;
+        max-width: 100%;
+    }
+
+    /* HAMBURGER & NAV CORRECTIONS */
+    .hamburger {
+        display: flex;
+    }
+
+    nav {
+        background: rgba(0, 15, 30, 0.98);
+    }
 }

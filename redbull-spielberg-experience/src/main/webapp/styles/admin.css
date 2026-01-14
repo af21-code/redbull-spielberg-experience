@@ -300,25 +300,92 @@ tbody tr:hover {
   margin-bottom: 12px;
 }
 
+/* GLOBAL RESET & BOX-SIZING */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Layout a due colonne */
 .admin-shell {
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 16px;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 16px;
+  width: 100%;
+  /* Ensure it doesn't overflow parent */
+  overflow-x: hidden;
+  /* Prevent grid items from causing scroll on the shell itself */
 }
 
 /* Sidebar */
 .admin-sidebar {
+  width: 100%;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px;
   box-shadow: var(--shadow);
   position: sticky;
-  top: 16px;
   align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* RESPONSIVE LAYOUT */
+@media (max-width: 900px) {
+  .admin-shell {
+    display: block;
+    /* Switch to block to avoid grid layout quirks on mobile */
+    padding: 12px;
+  }
+
+  .admin-sidebar {
+    top: auto;
+    margin-bottom: 20px;
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 4px;
+    background: #001e36;
+    /* Solid background */
+    z-index: 90;
+    /* Lower z-index since it's not sticky */
+    width: calc(100% + 24px);
+    /* Exact width to match negative margins */
+    margin-left: -12px;
+    margin-right: -12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    /* Hide scrollbar for cleaner look but keep functionality */
+    scrollbar-width: none;
+  }
+
+  .admin-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-sidebar a {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 0 4px;
+    /* Spacing between chips */
+  }
+
+  .admin-sidebar a.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
 }
 
 .admin-sidebar a {
@@ -548,34 +615,108 @@ tbody tr:hover {
    Responsive
    =========================== */
 @media (max-width: 900px) {
+
+  .admin-bg,
+  .wrap {
+    padding: 16px 12px 64px;
+    /* Reduced mobile padding */
+  }
+
   .admin-shell {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 16px;
   }
 
-  .admin-sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    padding: 8px;
-    border-radius: 12px;
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    white-space: nowrap;
-    background: linear-gradient(135deg, rgba(0, 30, 54, .9), rgba(0, 11, 43, .9));
-    border: 1px solid rgba(255, 255, 255, .12);
-  }
 
-  .admin-sidebar a {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 10px;
-  }
 
   .admin-content>.top .gap-6 {
     display: none !important;
   }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    /* Force 1 col on mobile for KPIs */
+  }
+
+  /* Dashboard Specific Mobile */
+  .dashboard-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard-date-toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dashboard Utils (must be outside media query for defaults or inside if exclusive) */
+/* We define default desktop behavior here */
+.dashboard-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboard-date-toolbar {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.dashboard-date-toolbar input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  outline: none;
+  width: auto;
+}
+
+.dashboard-date-toolbar .arrow {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.8rem;
+}
+
+.dashboard-date-toolbar .sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 4px;
+}
+
+.dashboard-date-toolbar button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.mini-kpi-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* override anti-dup */
@@ -837,4 +978,588 @@ tbody tr:hover {
   color: white;
   font-weight: 600;
   box-shadow: 0 2px 10px rgba(10, 132, 255, 0.3);
+}
+
+/* ===================================
+   ADMIN TOOLBAR - Compact Filter Bar
+   =================================== */
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(0, 30, 54, 0.7) 0%, rgba(0, 11, 43, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-toolbar .search-box {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.admin-toolbar .search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.admin-toolbar .search-box input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-toolbar .search-box input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245, 166, 0, 0.15);
+}
+
+.admin-toolbar .search-box::before {
+  content: "🔍";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.admin-toolbar select {
+  width: auto;
+  min-width: 140px;
+  padding: 10px 32px 10px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23F5A600' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.admin-toolbar select:hover,
+.admin-toolbar select:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.admin-toolbar select option {
+  background: #001e36;
+  color: #fff;
+}
+
+.admin-toolbar .toggle-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-toolbar .toggle-check:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-toolbar .toggle-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.admin-toolbar .toggle-check span {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-toolbar .toolbar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  /* Allow wrapping */
+}
+
+/* Toolbar Action Bar - Main Page Header */
+.admin-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .admin-actions-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admin-actions-bar>div {
+    width: 100%;
+  }
+
+  .admin-actions-bar .btn,
+  .admin-actions-bar .btn.outline {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+.admin-toolbar .btn-filter {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--accent) 0%, #FFCC33 100%);
+  color: #001e36;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(245, 166, 0, 0.3);
+}
+
+.admin-toolbar .btn-filter:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 166, 0, 0.4);
+}
+
+.admin-toolbar .btn-reset {
+  padding: 10px 14px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.admin-toolbar .btn-reset:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Responsive toolbar */
+@media (max-width: 768px) {
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-toolbar .search-box {
+    min-width: 100%;
+  }
+
+  .admin-toolbar select {
+    width: 100%;
+  }
+
+  .admin-toolbar .toolbar-actions {
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .admin-toolbar .btn-filter,
+  .admin-toolbar .btn-reset {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ===================================
+   TABLE SCROLL PANEL - Fixed Height
+   =================================== */
+.table-scroll-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 320px);
+  min-height: 400px;
+}
+
+
+
+.table-scroll-panel .table-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll-panel .table-scroll-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroll-panel .table-scroll-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-scroll-panel .table-scroll-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.table-scroll-panel .table-scroll-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.table-scroll-panel .modern-table {
+  width: 100%;
+  min-width: 700px;
+}
+
+.table-scroll-panel .modern-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #001529;
+  backdrop-filter: blur(10px);
+}
+
+/* On mobile, disable the scroll panel and let Card View stack naturally */
+@media (max-width: 900px) {
+  .table-scroll-panel {
+    display: block;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .table-scroll-panel .table-scroll-body {
+    overflow: visible;
+    height: auto;
+  }
+
+  .table-scroll-panel .modern-table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Reset sticky header since we hide thead anyway in Card View */
+  .table-scroll-panel .modern-table thead th {
+    position: static;
+  }
+}
+
+/* Table Scroll Panel already handles footer via pagination-footer class */
+
+/* Date Range Picker */
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.date-range-picker input[type="date"] {
+  width: auto;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.date-range-picker input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.date-range-picker .date-sep {
+  color: var(--accent);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* ===================================
+   KPI CARDS - Dashboard Premium
+   =================================== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: linear-gradient(135deg, rgba(0, 30, 54, 0.8) 0%, rgba(0, 11, 43, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.kpi-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+/* KPI Variants */
+.kpi-card.kpi-success::before {
+  background: linear-gradient(90deg, #4cd964, transparent);
+}
+
+.kpi-card.kpi-success .kpi-label {
+  color: rgba(76, 217, 100, 0.8);
+}
+
+.kpi-card.kpi-success .kpi-value {
+  color: #4cd964;
+}
+
+.kpi-card.kpi-warning::before {
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+.kpi-card.kpi-warning .kpi-label {
+  color: rgba(245, 166, 0, 0.8);
+}
+
+.kpi-card.kpi-warning .kpi-value {
+  color: var(--accent);
+}
+
+.kpi-card.kpi-danger::before {
+  background: linear-gradient(90deg, #ff3b30, transparent);
+}
+
+.kpi-card.kpi-danger .kpi-label {
+  color: rgba(255, 59, 48, 0.8);
+}
+
+.kpi-card.kpi-danger .kpi-value {
+  color: #ff3b30;
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kpi-card {
+    padding: 16px;
+  }
+
+  .kpi-value {
+    font-size: 1.6rem;
+  }
+}
+
+/* ===================================
+   ADMIN ORDERS PAGE - Mobile Enhancements
+   =================================== */
+@media (max-width: 768px) {
+
+  /* Action Bar - Stack title and button */
+  .admin-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-actions-bar>div:first-child {
+    text-align: center;
+  }
+
+  .admin-actions-bar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-header-title {
+    font-size: 1.4rem;
+  }
+
+  .admin-subtitle {
+    font-size: 0.85rem;
+  }
+
+  /* Toolbar - Full width stacked layout */
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .admin-toolbar .search-box {
+    width: 100%;
+  }
+
+  .admin-toolbar .search-box input {
+    width: 100%;
+  }
+
+  .admin-toolbar select {
+    width: 100%;
+  }
+
+  /* Date Range Picker - Stack vertically */
+  .date-range-picker {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .date-range-picker input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+  }
+
+  .date-range-picker .date-sep {
+    display: none;
+    /* Hide arrow separator on mobile */
+  }
+
+  /* Toolbar Actions - Full width buttons */
+  .toolbar-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .toolbar-actions .btn-filter,
+  .toolbar-actions .btn-reset {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+
+  /* Pagination Footer - Compact layout */
+  .pagination-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .page-info {
+    order: 1;
+    font-size: 0.9rem;
+  }
+
+  .page-size-selector {
+    order: 2;
+    font-size: 0.85rem;
+  }
+
+  .page-size-selector span {
+    display: none;
+    /* Hide "Righe per pagina:" label */
+  }
+
+  .modern-pagination {
+    order: 3;
+    gap: 6px;
+  }
+
+  .modern-pagination a {
+    min-width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  /* Table Card View Enhancements for Orders */
+  .modern-table tbody td[data-label="Ordine"] {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .modern-table tbody td[data-label="Azioni"] {
+    text-align: left !important;
+    padding-top: 12px;
+  }
+
+  .modern-table tbody td[data-label="Azioni"] .btn {
+    width: 100%;
+  }
+
+  /* Chip badges - Better sizing on mobile */
+  .chip {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  /* Order ID and Customer cells */
+  .order-id-cell {
+    font-size: 0.95rem;
+  }
+
+  .customer-cell-email {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
 }
