@@ -55,116 +55,112 @@
                   <!-- Toast Container -->
                   <div id="toast-container"></div>
 
-                  <!-- Filtri -->
-                  <form class="card filters-panel" method="get" action="<%=ctx%>/admin/users">
-                    <div class="filters filters-container">
-                      <div class="search-bar-container search-container-grow">
-                        <div class="input-group search-input-group">
-                          <input type="text" name="q" placeholder="Cerca nome/email…" value="<%= esc(q) %>">
-                        </div>
-                        <div class="divider"></div>
-                        <select name="type" class="status-select">
-                          <option value="">Tutti i ruoli</option>
-                          <option value="VISITOR" <%="VISITOR" .equals(type) ? "selected" : "" %>>Visitor</option>
-                          <option value="REGISTERED" <%="REGISTERED" .equals(type) ? "selected" : "" %>>Registered
-                          </option>
-                          <option value="PREMIUM" <%="PREMIUM" .equals(type) ? "selected" : "" %>>Premium</option>
-                          <option value="ADMIN" <%="ADMIN" .equals(type) ? "selected" : "" %>>Admin</option>
-                        </select>
-                      </div>
+                  <!-- Compact Toolbar -->
+                  <form class="admin-toolbar" method="get" action="<%=ctx%>/admin/users">
+                    <div class="search-box">
+                      <input type="text" name="q" placeholder="Cerca nome/email…" value="<%= esc(q) %>">
+                    </div>
 
-                      <div class="search-bar-container date-container"
-                        style="padding: 0 12px; display: flex; align-items: center;">
-                        <label class="checkbox-inline"
-                          style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                          <input type="checkbox" name="onlyInactive" value="1" <%=onlyInactive ? "checked" : "" %>
-                          style="width: auto; margin: 0;">
-                          <span style="font-size: 0.95rem;">Solo disattivi</span>
-                        </label>
-                      </div>
+                    <select name="type">
+                      <option value="">Tutti i ruoli</option>
+                      <option value="VISITOR" <%="VISITOR" .equals(type) ? "selected" : "" %>>Visitor</option>
+                      <option value="REGISTERED" <%="REGISTERED" .equals(type) ? "selected" : "" %>>Registered</option>
+                      <option value="PREMIUM" <%="PREMIUM" .equals(type) ? "selected" : "" %>>Premium</option>
+                      <option value="ADMIN" <%="ADMIN" .equals(type) ? "selected" : "" %>>Admin</option>
+                    </select>
 
-                      <button class="btn filter-btn" type="submit">Filtra</button>
-                      <a class="btn outline reset-btn" href="<%=ctx%>/admin/users">↺</a>
+                    <label class="toggle-check">
+                      <input type="checkbox" name="onlyInactive" value="1" <%=onlyInactive ? "checked" : "" %>>
+                      <span>Solo disattivi</span>
+                    </label>
+
+                    <div class="toolbar-actions">
+                      <button class="btn-filter" type="submit">Filtra</button>
+                      <a class="btn-reset" href="<%=ctx%>/admin/users">🔄 Reset</a>
                     </div>
                   </form>
 
-                  <!-- Table -->
-                  <div class="card table-panel">
-                    <table class="modern-table">
-                      <thead>
-                        <tr>
-                          <th width="5%">ID</th>
-                          <th width="20%">Nome</th>
-                          <th width="25%">Email</th>
-                          <th width="20%">Ruolo</th>
-                          <th width="10%">Stato</th>
-                          <th width="10%">Registrato</th>
-                          <th width="10%" class="right">Azioni</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <% if (list !=null && !list.isEmpty()) { for (User u : list) { boolean active=false; try {
-                          java.lang.reflect.Method m; try { m=u.getClass().getMethod("getActive"); } catch
-                          (NoSuchMethodException e) { m=u.getClass().getMethod("isActive"); } Object val=m.invoke(u); if
-                          (val instanceof Boolean) active=(Boolean) val; } catch (Exception ignore) {} %>
+                  <!-- Table with Fixed Height Scroll -->
+                  <div class="table-scroll-panel">
+                    <div class="table-scroll-body">
+                      <table class="modern-table">
+                        <thead>
                           <tr>
-                            <td data-label="ID" class="order-id-cell">
-                              <%= u.getUserId() %>
-                            </td>
-                            <td data-label="Nome" class="customer-cell">
-                              <%= esc(u.getFirstName()) %>
-                                <%= esc(u.getLastName()) %>
-                            </td>
-                            <td data-label="Email" class="customer-cell-email" style="font-size: 0.95rem; color: #fff;">
-                              <%= esc(u.getEmail()) %>
-                            </td>
-
-                            <td data-label="Ruolo">
-                              <form method="post" action="<%=ctx%>/admin/users/role" data-role-form>
-                                <input type="hidden" name="csrf" value="${csrfToken}">
-                                <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                                <select name="role" class="table-select" onfocus="this.dataset.prev = this.value;"
-                                  onchange="confirmRoleChange(this)">
-                                  <% String current=String.valueOf(u.getUserType()); String[]
-                                    roles={"VISITOR", "REGISTERED" , "PREMIUM" , "ADMIN" }; for (String r : roles) { %>
-                                    <option value="<%= r %>" <%=r.equalsIgnoreCase(current) ? "selected" : "" %>><%= r
-                                        %>
-                                    </option>
-                                    <% } %>
-                                </select>
-                              </form>
-                            </td>
-
-                            <td data-label="Stato">
-                              <span class="chip <%= active ? " success" : " warn" %>">
-                                <%= active ? "Attivo" : "Disattivo" %>
-                              </span>
-                            </td>
-                            <td data-label="Registrato" class="table-date">
-                              <%= u.getRegistrationDate()==null ? "—" : esc(u.getRegistrationDate()) %>
-                            </td>
-                            <td data-label="Azioni" class="right">
-                              <form method="post" action="<%=ctx%>/admin/users/toggle" style="display:inline">
-                                <input type="hidden" name="csrf" value="${csrfToken}">
-                                <input type="hidden" name="id" value="<%= u.getUserId() %>">
-                                <input type="hidden" name="active" value="<%= active ? " 0" : "1" %>">
-                                <button class="btn sm <%= active ? " gray" : " red" %>" type="submit"
-                                  onclick="return confirm('Confermi l\'aggiornamento dello stato?');">
-                                  <%= active ? "Disattiva" : "Attiva" %>
-                                </button>
-                              </form>
-                            </td>
+                            <th width="5%">ID</th>
+                            <th width="20%">Nome</th>
+                            <th width="25%">Email</th>
+                            <th width="20%">Ruolo</th>
+                            <th width="10%">Stato</th>
+                            <th width="10%">Registrato</th>
+                            <th width="10%" class="right">Azioni</th>
                           </tr>
-                          <% } } else { %>
+                        </thead>
+                        <tbody>
+                          <% if (list !=null && !list.isEmpty()) { for (User u : list) { boolean active=false; try {
+                            java.lang.reflect.Method m; try { m=u.getClass().getMethod("getActive"); } catch
+                            (NoSuchMethodException e) { m=u.getClass().getMethod("isActive"); } Object val=m.invoke(u);
+                            if (val instanceof Boolean) active=(Boolean) val; } catch (Exception ignore) {} %>
                             <tr>
-                              <td colspan="7" class="center muted empty-state">
-                                <div class="empty-icon">👥</div>
-                                Nessun utente trovato.
+                              <td data-label="ID" class="order-id-cell">
+                                <%= u.getUserId() %>
+                              </td>
+                              <td data-label="Nome" class="customer-cell">
+                                <%= esc(u.getFirstName()) %>
+                                  <%= esc(u.getLastName()) %>
+                              </td>
+                              <td data-label="Email" class="customer-cell-email"
+                                style="font-size: 0.95rem; color: #fff;">
+                                <%= esc(u.getEmail()) %>
+                              </td>
+
+                              <td data-label="Ruolo">
+                                <form method="post" action="<%=ctx%>/admin/users/role" data-role-form>
+                                  <input type="hidden" name="csrf" value="${csrfToken}">
+                                  <input type="hidden" name="id" value="<%= u.getUserId() %>">
+                                  <select name="role" class="table-select" onfocus="this.dataset.prev = this.value;"
+                                    onchange="confirmRoleChange(this)">
+                                    <% String current=String.valueOf(u.getUserType()); String[]
+                                      roles={"VISITOR", "REGISTERED" , "PREMIUM" , "ADMIN" }; for (String r : roles) {
+                                      %>
+                                      <option value="<%= r %>" <%=r.equalsIgnoreCase(current) ? "selected" : "" %>><%= r
+                                          %>
+                                      </option>
+                                      <% } %>
+                                  </select>
+                                </form>
+                              </td>
+
+                              <td data-label="Stato">
+                                <span class="chip <%= active ? " success" : " warn" %>">
+                                  <%= active ? "Attivo" : "Disattivo" %>
+                                </span>
+                              </td>
+                              <td data-label="Registrato" class="table-date">
+                                <%= u.getRegistrationDate()==null ? "—" : esc(u.getRegistrationDate()) %>
+                              </td>
+                              <td data-label="Azioni" class="right">
+                                <form method="post" action="<%=ctx%>/admin/users/toggle" style="display:inline">
+                                  <input type="hidden" name="csrf" value="${csrfToken}">
+                                  <input type="hidden" name="id" value="<%= u.getUserId() %>">
+                                  <input type="hidden" name="active" value="<%= active ? " 0" : "1" %>">
+                                  <button class="btn sm <%= active ? " gray" : " red" %>" type="submit"
+                                    onclick="return confirm('Confermi l\'aggiornamento dello stato?');">
+                                    <%= active ? "Disattiva" : "Attiva" %>
+                                  </button>
+                                </form>
                               </td>
                             </tr>
-                            <% } %>
-                      </tbody>
-                    </table>
+                            <% } } else { %>
+                              <tr>
+                                <td colspan="7" class="center muted empty-state">
+                                  <div class="empty-icon">👥</div>
+                                  Nessun utente trovato.
+                                </td>
+                              </tr>
+                              <% } %>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </section>
               </div>

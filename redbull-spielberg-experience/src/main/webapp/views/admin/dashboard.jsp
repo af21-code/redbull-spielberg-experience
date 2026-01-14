@@ -43,41 +43,28 @@
             </div>
 
             <!-- KPI Cards -->
-            <div
-              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-              <div class="card" style="padding: 24px;">
-                <div
-                  style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                  Ordini Oggi
-                </div>
-                <div style="font-size: 2rem; font-weight: 700; color: #fff;">
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-label">Ordini Oggi</div>
+                <div class="kpi-value">
                   <%= ordersToday %>
                 </div>
               </div>
-              <div class="card" style="padding: 24px;">
-                <div
-                  style="color: rgba(46, 204, 113, 0.8); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                  Incasso Oggi
-                </div>
-                <div style="font-size: 2rem; font-weight: 700; color: #4cd964;">
+              <div class="kpi-card kpi-success">
+                <div class="kpi-label">Incasso Oggi</div>
+                <div class="kpi-value">
                   <%= euro %>
                 </div>
               </div>
-              <div class="card" style="padding: 24px;">
-                <div
-                  style="color: rgba(255, 179, 0, 0.8); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                  In Attesa
-                </div>
-                <div style="font-size: 2rem; font-weight: 700; color: #ffb300;">
+              <div class="kpi-card kpi-warning">
+                <div class="kpi-label">In Attesa</div>
+                <div class="kpi-value">
                   <%= pendingCount %>
                 </div>
               </div>
-              <div class="card" style="padding: 24px; position: relative; overflow: hidden;">
-                <div
-                  style="color: rgba(255, 59, 48, 0.8); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                  Bassa Scorta
-                </div>
-                <div style="font-size: 2rem; font-weight: 700; color: #ff3b30;">
+              <div class="kpi-card kpi-danger">
+                <div class="kpi-label">Bassa Scorta</div>
+                <div class="kpi-value">
                   <%= lowStockCount %>
                 </div>
               </div>
@@ -95,31 +82,23 @@
 
             <!-- Historical Stats -->
             <div class="card card-spaced" id="stats-card">
-              <div
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+              <div class="dashboard-section-header">
                 <h3 style="margin: 0; font-size: 1.1rem;">Storico Vendite</h3>
 
                 <!-- Compact Date Toolbar -->
-                <div
-                  style="display: inline-flex; align-items: center; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px;">
-                  <input type="date" id="from"
-                    style="background:transparent; border:none; color:#fff; font-family:inherit; font-size:0.9rem; padding: 4px 8px; outline:none;"
-                    aria-label="Da">
-                  <span style="color:rgba(255,255,255,0.3); font-size:0.8rem;">➜</span>
-                  <input type="date" id="to"
-                    style="background:transparent; border:none; color:#fff; font-family:inherit; font-size:0.9rem; padding: 4px 8px; outline:none;"
-                    aria-label="A">
-                  <div style="width:1px; height:20px; background:rgba(255,255,255,0.1); margin: 0 4px;"></div>
-                  <button id="btn-load" type="button"
-                    style="background:transparent; border:none; cursor:pointer; padding: 4px 8px; font-size:1.1rem; line-height:1;"
-                    title="Aggiorna">🔄</button>
+                <div class="dashboard-date-toolbar">
+                  <input type="date" id="from" aria-label="Da">
+                  <span class="arrow">➜</span>
+                  <input type="date" id="to" aria-label="A">
+                  <div class="sep"></div>
+                  <button id="btn-load" type="button" title="Aggiorna">🔄</button>
                 </div>
               </div>
 
               <div id="stats-error" class="toast error"
                 style="display:none; position: static; transform: none; margin-bottom: 16px;"></div>
 
-              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+              <div class="stats-grid">
                 <!-- Table Section -->
                 <div class="card table-panel"
                   style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">
@@ -138,7 +117,7 @@
                 </div>
 
                 <!-- Mini KPI Section -->
-                <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="mini-kpi-col">
                   <div class="card" style="padding: 16px; background: rgba(255,255,255,0.03);">
                     <div class="notes-text">Ordini Totali</div>
                     <div class="val" id="k-orders" style="font-size: 1.5rem; font-weight: 700; color: #fff;">—</div>
@@ -236,9 +215,9 @@
               data.series.forEach(function (r) {
                 const tr = document.createElement('tr');
                 tr.innerHTML =
-                  '<td>' + r.date + '</td>' +
-                  '<td class="right" style="font-weight:500">' + number(r.orders) + '</td>' +
-                  '<td class="right price-highlight" style="font-size:0.95rem">' + euro(r.revenue) + '</td>';
+                  '<td data-label="Giorno">' + r.date + '</td>' +
+                  '<td data-label="Ordini" class="right" style="font-weight:500">' + number(r.orders) + '</td>' +
+                  '<td data-label="Incasso" class="right price-highlight" style="font-size:0.95rem">' + euro(r.revenue) + '</td>';
                 tblBody.appendChild(tr);
               });
             }
