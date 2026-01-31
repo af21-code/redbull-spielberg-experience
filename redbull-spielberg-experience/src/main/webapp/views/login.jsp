@@ -55,7 +55,6 @@
       <div class="divider"></div>
       <div class="actions">
         <a href="${pageContext.request.contextPath}/views/register.jsp">Registrati qui</a>
-        <a href="#">Password Dimenticata?</a>
       </div>
     </div>
   </div>

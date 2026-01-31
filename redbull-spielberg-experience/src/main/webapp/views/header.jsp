@@ -209,8 +209,8 @@
                 <% } %>
 
                 <li>
-                    <a href="<%=ctx%>/cart/view" class="btn-cart <%= cartActive ? "active" : "" %>">
-                        Carrello
+                    <a href="<%=ctx%>/cart/view" class="btn-cart <%= cartActive ? "active" : "" %>" style="display:inline-flex;align-items:center;gap:6px;">
+                        <span>Carrello</span>
                         <% if (cartCount > 0) { %><span class="badge"><%= cartCount %></span><% } %>
                     </a>
                 </li>

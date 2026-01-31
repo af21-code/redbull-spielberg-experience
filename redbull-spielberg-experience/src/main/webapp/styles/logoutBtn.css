@@ -68,3 +68,29 @@
   outline:2px solid #F5A600;
   outline-offset:2px;
 }
+
+/* Simple fallback class to avoid 404 styling gaps */
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e30613 0%, #b2000f 100%);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 16px rgba(227, 6, 19, .25);
+  transition: transform .12s ease, box-shadow .2s ease;
+}
+
+.logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(227, 6, 19, .35);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

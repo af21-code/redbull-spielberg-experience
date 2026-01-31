@@ -105,14 +105,14 @@
                                                                 </div>
 
                                                                 <div style="display: flex; gap: 16px;">
-                                                                    <button type="submit" class="btn"
-                                                                        style="background: #0a84ff; padding: 12px 32px; font-size: 1rem;">
+                                                                    <button type="submit" class="btn brand">
                                                                         <%= isEdit ? "Salva Modifiche"
                                                                             : "Crea Categoria" %>
                                                                     </button>
                                                                     <a href="<%=ctx%>/admin/categories"
-                                                                        class="btn outline"
-                                                                        style="padding: 12px 24px;">Annulla</a>
+                                                                        class="btn outline">
+                                                                        Annulla
+                                                                    </a>
                                                                 </div>
                                             </form>
                                         </div>

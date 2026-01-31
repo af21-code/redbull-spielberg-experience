@@ -69,14 +69,13 @@
                             <% } %>
                               <% for (Category c : categories) { %>
                                 <tr>
-                                  <td class="center" data-label="ID" style="font-family: monospace; opacity: 0.7; font-size: 0.95rem;">
+                                  <td class="center order-id-cell" data-label="ID">
                                     <%= c.getCategoryId() %>
                                   </td>
-                                  <td data-label="Nome" style="font-weight: 600; color: #fff; font-size: 1rem;">
+                                  <td data-label="Nome" class="customer-cell">
                                     <%= esc(c.getName()) %>
                                   </td>
-                                  <td data-label="Descrizione"
-                                    style="font-size: 0.95rem; color: rgba(255,255,255,0.85); overflow: hidden; text-overflow: ellipsis;">
+                                  <td data-label="Descrizione" class="table-desc">
                                     <%= esc(c.getDescription()) !=null && !esc(c.getDescription()).isEmpty() ?
                                       esc(c.getDescription()) : "—" %>
                                   </td>
@@ -86,9 +85,7 @@
                                     </span>
                                   </td>
                                   <td class="right" data-label="Azioni">
-                                    <a class="btn sm outline"
-                                      href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>" title="Modifica"
-                                      style="padding: 6px 12px; font-size: 0.9rem;">
+                                    <a class="btn sm outline" href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>" title="Modifica">
                                       ✏️
                                     </a>
                                   </td>

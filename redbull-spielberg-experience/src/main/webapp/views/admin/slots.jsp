@@ -126,8 +126,7 @@
                   </div>
 
                   <div style="display: flex; gap: 16px;">
-                    <button type="button" class="btn" style="background: #0a84ff; padding: 12px 32px; font-size: 1rem;"
-                      onclick="confirmGeneration()">
+                    <button type="button" class="btn brand" onclick="confirmGeneration()">
                       🚀 Genera Slot Massivi
                     </button>
                   </div>

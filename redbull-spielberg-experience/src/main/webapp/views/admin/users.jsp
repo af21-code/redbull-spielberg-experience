@@ -108,8 +108,7 @@
                                 <%= esc(u.getFirstName()) %>
                                   <%= esc(u.getLastName()) %>
                               </td>
-                              <td data-label="Email" class="customer-cell-email"
-                                style="font-size: 0.95rem; color: #fff;">
+                              <td data-label="Email" class="customer-cell-email">
                                 <%= esc(u.getEmail()) %>
                               </td>
 
@@ -143,8 +142,8 @@
                                   <input type="hidden" name="csrf" value="${csrfToken}">
                                   <input type="hidden" name="id" value="<%= u.getUserId() %>">
                                   <input type="hidden" name="active" value="<%= active ? " 0" : "1" %>">
-                                  <button class="btn sm <%= active ? " gray" : " red" %>" type="submit"
-                                    onclick="return confirm('Confermi l\'aggiornamento dello stato?');">
+                                  <button class="btn sm <%= active ? " gray" : " red" %>" type="button"
+                                    onclick="confirmStatusChange(this.form, '<%= active ? "disattivare" : "attivare" %>')">
                                     <%= active ? "Disattiva" : "Attiva" %>
                                   </button>
                                 </form>
@@ -169,7 +168,7 @@
             <!-- Custom Confirmation Modal -->
             <div id="confirmModal" class="modal-overlay">
               <div class="modal-box">
-                <div class="modal-title">Conferma Modifica Ruolo</div>
+                <div class="modal-title" id="modalTitle">Conferma Azione</div>
                 <div class="modal-desc" id="modalDesc">Sei sicuro di voler cambiare il ruolo a questo utente?</div>
                 <div class="modal-actions">
                   <button class="btn-modal-cancel" onclick="closeModal()">Annulla</button>
@@ -214,6 +213,9 @@
               });
 
               // --- Modal Logic ---
+              const modal = document.getElementById('confirmModal');
+              const modalTitle = document.getElementById('modalTitle');
+              const modalDesc = document.getElementById('modalDesc');
               let pendingForm = null;
               let pendingSelect = null;
               let prevValue = null;
@@ -223,22 +225,28 @@
                 pendingForm = select.form;
                 prevValue = select.dataset.prev;
                 const newVal = select.value;
+                modalTitle.textContent = 'Conferma modifica ruolo';
+                modalDesc.textContent = 'Stai per cambiare il ruolo in ' + newVal + '. Confermi l\'operazione?';
+                modal.classList.add('active');
+              }
 
-                // Update modal text
-                document.getElementById('modalDesc').textContent = 'Stai per cambiare il ruolo in ' + newVal + '. Confermi l\'operazione?';
-
-                // Show modal
-                document.getElementById('confirmModal').classList.add('active');
+              function confirmStatusChange(form, actionLabel) {
+                pendingForm = form;
+                pendingSelect = null;
+                prevValue = null;
+                modalTitle.textContent = 'Conferma cambio stato';
+                modalDesc.textContent = 'Stai per ' + actionLabel + ' questo utente. Confermi l\'operazione?';
+                modal.classList.add('active');
               }
 
               function closeModal() {
-                document.getElementById('confirmModal').classList.remove('active');
-                // Revert value
-                if (pendingSelect) {
+                modal.classList.remove('active');
+                if (pendingSelect && prevValue !== null) {
                   pendingSelect.value = prevValue;
                 }
                 pendingForm = null;
                 pendingSelect = null;
+                prevValue = null;
               }
 
               function confirmAction() {

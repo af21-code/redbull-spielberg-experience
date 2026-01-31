@@ -98,7 +98,32 @@
               <div id="stats-error" class="toast error"
                 style="display:none; position: static; transform: none; margin-bottom: 16px;"></div>
 
+              <!-- KPI strip for periodo -->
+              <div class="mini-kpi-strip">
+                <div class="mini-kpi-box">
+                  <div class="mini-kpi-label">Ordini</div>
+                  <div class="mini-kpi-val" id="k-orders">—</div>
+                </div>
+                <div class="mini-kpi-box">
+                  <div class="mini-kpi-label">Pagati</div>
+                  <div class="mini-kpi-val" id="k-paid">—</div>
+                </div>
+                <div class="mini-kpi-box">
+                  <div class="mini-kpi-label">Incasso</div>
+                  <div class="mini-kpi-val" id="k-rev">—</div>
+                </div>
+                <div class="mini-kpi-box">
+                  <div class="mini-kpi-label">Scontrino medio</div>
+                  <div class="mini-kpi-val" id="k-avg">—</div>
+                </div>
+              </div>
+
               <div class="stats-grid">
+                <!-- Chart Section -->
+                <div class="card chart-panel">
+                  <canvas id="ordersChart" aria-label="Grafico ordini e incasso" role="img"></canvas>
+                </div>
+
                 <!-- Table Section -->
                 <div class="card table-panel"
                   style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);">
@@ -115,27 +140,6 @@
                     </tbody>
                   </table>
                 </div>
-
-                <!-- Mini KPI Section -->
-                <div class="mini-kpi-col">
-                  <div class="card" style="padding: 16px; background: rgba(255,255,255,0.03);">
-                    <div class="notes-text">Ordini Totali</div>
-                    <div class="val" id="k-orders" style="font-size: 1.5rem; font-weight: 700; color: #fff;">—</div>
-                  </div>
-                  <div class="card" style="padding: 16px; background: rgba(255,255,255,0.03);">
-                    <div class="notes-text">Ordini Pagati</div>
-                    <div class="val" id="k-paid" style="font-size: 1.5rem; font-weight: 700; color: #4cd964;">—</div>
-                  </div>
-                  <div class="card" style="padding: 16px; background: rgba(255,255,255,0.03);">
-                    <div class="notes-text">Incasso Totale</div>
-                    <div class="val" id="k-rev" style="font-size: 1.5rem; font-weight: 700; color: #fff;">—</div>
-                  </div>
-                  <div class="card" style="padding: 16px; background: rgba(255,255,255,0.03);">
-                    <div class="notes-text">Scontrino Medio</div>
-                    <div class="val" id="k-avg"
-                      style="font-size: 1.5rem; font-weight: 700; color: rgba(255,255,255,0.7);">—</div>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -144,6 +148,7 @@
 
       <jsp:include page="/views/footer.jsp" />
 
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
       <script>
         (function () {
           const BASE = '<%=ctx%>';
@@ -156,6 +161,8 @@
           const kRev = document.getElementById('k-rev');
           const kAvg = document.getElementById('k-avg');
           const tblBody = document.querySelector('#tbl tbody');
+          const chartCtx = document.getElementById('ordersChart').getContext('2d');
+          let chartInstance = null;
 
           // Default last 7 days
           const to = new Date();
@@ -211,6 +218,7 @@
             // Table
             if (!data.series || data.series.length === 0) {
               tblBody.innerHTML = '<tr><td colspan="3" class="center muted empty-state"><div class="empty-icon">📊</div>Nessun dato nel periodo.</td></tr>';
+              renderChart([]);
             } else {
               data.series.forEach(function (r) {
                 const tr = document.createElement('tr');
@@ -220,12 +228,91 @@
                   '<td data-label="Incasso" class="right price-highlight" style="font-size:0.95rem">' + euro(r.revenue) + '</td>';
                 tblBody.appendChild(tr);
               });
+              renderChart(data.series);
+            }
+          }
+
+          function renderChart(series) {
+            const labels = series.map(r => r.date);
+            const orders = series.map(r => Number(r.orders) || 0);
+            const revenue = series.map(r => Number(r.revenue) || 0);
+
+            const data = {
+              labels,
+              datasets: [
+                {
+                  type: 'bar',
+                  label: 'Incasso',
+                  data: revenue,
+                  yAxisID: 'y1',
+                  backgroundColor: 'rgba(245, 166, 0, 0.35)',
+                  borderColor: '#F5A600',
+                  borderWidth: 1.5,
+                  borderRadius: 6,
+                },
+                {
+                  type: 'line',
+                  label: 'Ordini',
+                  data: orders,
+                  yAxisID: 'y',
+                  borderColor: '#0a84ff',
+                  backgroundColor: 'rgba(10, 132, 255, 0.2)',
+                  borderWidth: 2.5,
+                  tension: 0.25,
+                  pointRadius: 4,
+                  pointBackgroundColor: '#fff',
+                  pointBorderColor: '#0a84ff',
+                },
+              ]
+            };
+
+            const options = {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { labels: { color: '#fff' } },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => ctx.dataset.label + ': ' + (ctx.dataset.label === 'Incasso' ? euro(ctx.parsed.y) : number(ctx.parsed.y))
+                  }
+                },
+              },
+              scales: {
+                x: {
+                  ticks: { color: 'rgba(255,255,255,0.7)' },
+                  grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: { color: 'rgba(255,255,255,0.7)', precision: 0 },
+                  grid: { color: 'rgba(255,255,255,0.08)' }
+                },
+                y1: {
+                  beginAtZero: true,
+                  position: 'right',
+                  ticks: {
+                    color: 'rgba(255,255,255,0.7)',
+                    callback: val => euro(val)
+                  },
+                  grid: { drawOnChartArea: false }
+                }
+              }
+            };
+
+            if (chartInstance) {
+              chartInstance.data = data;
+              chartInstance.options = options;
+              chartInstance.update();
+            } else {
+              chartInstance = new Chart(chartCtx, { type: 'bar', data, options });
             }
           }
 
           function showErr(msg) {
             errBox.textContent = msg;
             errBox.style.display = 'block';
+            renderChart([]);
           }
 
           function number(x) {

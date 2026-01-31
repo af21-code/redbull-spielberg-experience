@@ -226,7 +226,7 @@
                         </strong> di <%= pages %>
                       </div>
 
-                      <div class="page-size-selector">
+                      <div class="page-size-selector" style="display:flex;align-items:center;gap:8px;white-space:nowrap">
                         <span>Righe per pagina:</span>
                         <select onchange="updatePageSize(this.value)">
                           <option value="20" <%=pageSize==20 ? "selected" : "" %>>20</option>
