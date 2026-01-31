@@ -54,58 +54,37 @@
 <!-- CSS globali -->
 <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
 <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
-<link rel="stylesheet" href="<%=ctx%>/styles/logoutbtn.css?v=3">
+<link rel="stylesheet" href="<%=ctx%>/styles/logoutBtn.css?v=3">
 
 <!-- Espone il token CSRF anche come meta per gli script -->
 <meta name="csrf-token" content="<%= csrfToken %>">
 
 <!-- Fallback minimo per il bottone Logout + badge carrello -->
 <style>
-    header .menu-right .Btn {
-        --bg: #1f2937;
-        --bgH: #E30613;
-        --txt: #fff;
-        --ring: rgba(227, 6, 19, .35);
+    /* Logout come link testuale, stesso stile delle altre voci menu */
+    header .menu-right .logout-link {
         display: inline-flex;
         align-items: center;
-        gap: .6rem;
-        background: var(--bg);
-        color: var(--txt);
-        border: 1px solid rgba(255, 255, 255, .12);
-        border-radius: 12px;
-        padding: .55rem .9rem;
+        gap: 6px;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        padding: 8px 0;
+        transition: color .15s ease;
+        background: none;
+        border: none;
         cursor: pointer;
-        transition: background .2s, transform .15s, box-shadow .2s, border-color .2s;
     }
-
-    header .menu-right .Btn .sign {
-        display: grid;
-        place-items: center;
-        width: 20px;
-        height: 20px;
+    header .menu-right .logout-link:hover {
+        color: #E30613;
     }
-
-    header .menu-right .Btn .sign img {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    header .menu-right .Btn .text {
-        font-weight: 700;
-        letter-spacing: .2px;
-    }
-
-    header .menu-right .Btn:hover {
-        background: var(--bgH);
-        transform: translateY(-1px);
-        box-shadow: 0 10px 24px var(--ring);
-        border-color: rgba(227, 6, 19, .55);
-    }
-
-    header .menu-right .Btn:active {
-        transform: translateY(0);
-        box-shadow: none;
+    header .menu-right .logout-link svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        transition: fill .15s ease;
     }
 
     /* Badge quantità carrello */
@@ -220,14 +199,12 @@
                 <% } else { %>
                 <li>
                     <form action="<%=ctx%>/logout" method="get" style="display:inline;">
-                        <button class="Btn" type="submit" title="Logout" aria-label="Logout">
-                            <div class="sign" aria-hidden="true">
-                                <!-- Icona logout via data-URI SVG (niente tag SVG inline => niente warning JSP) -->
-                                <img
-                                        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-8c-1.1 0-2 .9-2 2v4h2V5h8v14h-8v-4h-2v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E"
-                                        width="20" height="20" alt="" draggable="false">
-                            </div>
-                            <span class="text">Logout</span>
+                        <button class="logout-link" type="submit" title="Logout" aria-label="Logout">
+                            <!-- Icona logout via data-URI SVG (niente tag SVG inline => niente warning JSP) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path fill="white" d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-8c-1.1 0-2 .9-2 2v4h2V5h8v14h-8v-4h-2v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                            </svg>
+                            Logout
                         </button>
                     </form>
                 </li>

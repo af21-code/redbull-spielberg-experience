@@ -1,96 +1,27 @@
-/* Fancy Logout Button (scoped so it won't clash with .btn) */
-.menu-right .Btn{
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.15);
-  background:#121826;
-  color:#fff;
-  cursor:pointer;
-  transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
-}
-
-.menu-right .Btn .sign{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:42px; height:42px;
-  border-radius:10px;
-  background:#E30613; /* Red Bull red */
-  transition:transform .2s ease, background .2s ease, width .25s ease;
-  overflow:hidden;
-}
-
-.menu-right .Btn .sign svg{
-  width:18px; height:18px;
-  fill:#fff;
-  transition:transform .25s ease;
-}
-
-.menu-right .Btn .text{
-  font-weight:700;
-  letter-spacing:.2px;
-  transform:translateX(0);
-  transition:transform .25s ease, opacity .25s ease;
-  opacity:.95;
-  white-space:nowrap;
-}
-
-/* Hover effects */
-.menu-right .Btn:hover{
-  background:#172036;
-  box-shadow:0 10px 24px rgba(0,0,0,.25);
-  transform:translateY(-2px);
-}
-
-.menu-right .Btn:hover .sign{
-  transform:translateX(2px);
-  background:#ff0a1a; /* brighter red on hover */
-}
-
-.menu-right .Btn:hover .sign svg{
-  transform:translateX(3px);
-}
-
-.menu-right .Btn:active{
-  transform:translateY(0);
-  box-shadow:none;
-}
-
-.menu-right .Btn:active .sign{
-  transform:translateX(0) scale(.96);
-}
-
-/* Keyboard focus */
-.menu-right .Btn:focus-visible{
-  outline:2px solid #F5A600;
-  outline-offset:2px;
-}
-
-/* Simple fallback class to avoid 404 styling gaps */
-.logout-btn {
+/* Logout come link testuale, stesso stile delle altre voci menu */
+.menu-right .logout-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #e30613 0%, #b2000f 100%);
   color: #fff;
   text-decoration: none;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 6px 16px rgba(227, 6, 19, .25);
-  transition: transform .12s ease, box-shadow .2s ease;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  padding: 8px 0;
+  transition: color .15s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
-.logout-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(227, 6, 19, .35);
+.menu-right .logout-link:hover {
+  color: #E30613;
 }
 
-.logout-btn:active {
-  transform: translateY(0);
-  box-shadow: none;
+.menu-right .logout-link svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  transition: fill .15s ease;
 }
