@@ -71,8 +71,10 @@ public class CheckoutService {
             ps.setString(1, sizeKey);
             ps.setLong(2, it.getProductId());
             try (ResultSet rs = ps.executeQuery()) {
-              if (!rs.next() || rs.getInt("is_active") == 0)
-                throw new AvailabilityException("Prodotto non disponibile", it.getProductId(), null, sizeKey);
+              if (!rs.next())
+                throw new AvailabilityException("Prodotto non trovato", it.getProductId(), null, sizeKey);
+              if (rs.getInt("is_active") == 0)
+                throw new AvailabilityException("Prodotto disattivato", it.getProductId(), null, sizeKey);
               Integer stockObj = (Integer) rs.getObject("stock");
               if (stockObj != null && stockObj < it.getQuantity())
                 throw new AvailabilityException("Stock insufficiente per " + rs.getString("name"), it.getProductId(),
@@ -87,15 +89,15 @@ public class CheckoutService {
             ps.setLong(1, it.getSlotId());
             try (ResultSet rs = ps.executeQuery()) {
               if (!rs.next() || rs.getInt("is_available") == 0)
-                throw new AvailabilityException("Slot non disponibile", it.getProductId(), it.getSlotId(),
+                throw new AvailabilityException("Lo slot selezionato non è più disponibile", it.getProductId(), it.getSlotId(),
                     it.getSize());
               LocalDate d = rs.getDate("slot_date").toLocalDate();
               LocalTime t = rs.getTime("slot_time").toLocalTime();
               if (d.isBefore(LocalDate.now()) || (d.equals(LocalDate.now()) && t.isBefore(LocalTime.now())))
-                throw new AvailabilityException("Slot scaduto", it.getProductId(), it.getSlotId(), it.getSize());
+                throw new AvailabilityException("Lo slot selezionato è scaduto", it.getProductId(), it.getSlotId(), it.getSize());
               int cap = rs.getInt("max_capacity"), booked = rs.getInt("booked_capacity");
               if (booked + it.getQuantity() > cap)
-                throw new AvailabilityException("Capienza slot esaurita", it.getProductId(), it.getSlotId(),
+                throw new AvailabilityException("Lo slot selezionato non ha più posti disponibili", it.getProductId(), it.getSlotId(),
                     it.getSize());
             }
           }
@@ -203,6 +205,16 @@ public class CheckoutService {
                 "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?")) {
               ps.setInt(1, it.getQuantity());
               ps.setLong(2, it.getProductId());
+              ps.executeUpdate();
+            }
+          } else {
+            try (PreparedStatement ps = c.prepareStatement(
+                "UPDATE products p " +
+                    "SET p.stock_quantity = (" +
+                    "  SELECT COALESCE(SUM(v.stock_quantity), 0) FROM product_variants v WHERE v.product_id = p.product_id" +
+                    ") " +
+                    "WHERE p.product_id = ?")) {
+              ps.setLong(1, it.getProductId());
               ps.executeUpdate();
             }
           }

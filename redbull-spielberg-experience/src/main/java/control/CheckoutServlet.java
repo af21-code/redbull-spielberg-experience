@@ -49,10 +49,13 @@ public class CheckoutServlet extends HttpServlet {
         }
 
         // VERIFICA DISPONIBILITÀ SLOT PRIMA DI MOSTRARE CHECKOUT
-        String unavailableError = checkSlotAvailability(cart);
-        if (unavailableError != null) {
+        AvailabilityCheck availability = checkSlotAvailability(cart);
+        if (availability != null) {
+            if (availability.removeFromCart) {
+                pruneUnavailable(session, availability.productId, availability.slotId, availability.size);
+            }
             // Reindirizza al carrello con errore
-            session.setAttribute("cartError", unavailableError);
+            session.setAttribute("cartError", availability.message);
             resp.sendRedirect(req.getContextPath() + "/cart/view");
             return;
         }
@@ -76,15 +79,72 @@ public class CheckoutServlet extends HttpServlet {
         req.getRequestDispatcher("/views/checkout.jsp").forward(req, resp);
     }
 
+    private static final class AvailabilityCheck {
+        private final String message;
+        private final boolean removeFromCart;
+        private final int productId;
+        private final Integer slotId;
+        private final String size;
+
+        private AvailabilityCheck(String message, boolean removeFromCart, int productId, Integer slotId, String size) {
+            this.message = message;
+            this.removeFromCart = removeFromCart;
+            this.productId = productId;
+            this.slotId = slotId;
+            this.size = size;
+        }
+    }
+
     /**
      * Verifica la disponibilità degli slot nel carrello.
-     * 
-     * @return messaggio d'errore se uno slot non è disponibile, null se tutto ok
+     *
+     * @return info d'errore se uno slot non è disponibile, null se tutto ok
      */
-    private String checkSlotAvailability(List<CartItem> cart) {
+    private AvailabilityCheck checkSlotAvailability(List<CartItem> cart) {
         for (CartItem it : cart) {
-            if (it.getSlotId() == null)
-                continue; // MERCH, skip
+            boolean isExperience = "EXPERIENCE".equalsIgnoreCase(it.getProductType());
+            if (isExperience && it.getSlotId() == null) {
+                return new AvailabilityCheck(
+                        "Slot obbligatorio per \"" + it.getProductName() + "\".",
+                        true, it.getProductId(), null, it.getSize());
+            }
+            if (it.getSlotId() == null) {
+                // MERCH: check stock/disponibilità
+                try (java.sql.Connection c = utils.DatabaseConnection.getInstance().getConnection();
+                        java.sql.PreparedStatement ps = c.prepareStatement(
+                                "SELECT p.is_active, p.name, COALESCE(v.stock_quantity, p.stock_quantity) AS stock " +
+                                        "FROM products p " +
+                                        "LEFT JOIN product_variants v ON v.product_id=p.product_id AND v.size=? " +
+                                        "WHERE p.product_id=?")) {
+                    String sizeKey = it.getSize() == null ? "" : it.getSize();
+                    ps.setString(1, sizeKey);
+                    ps.setLong(2, it.getProductId());
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            return new AvailabilityCheck(
+                                    "Prodotto non trovato: \"" + it.getProductName() + "\".",
+                                    true, it.getProductId(), null, sizeKey);
+                        }
+                        if (rs.getInt("is_active") == 0) {
+                            return new AvailabilityCheck(
+                                    "Prodotto disattivato: \"" + it.getProductName() + "\".",
+                                    true, it.getProductId(), null, sizeKey);
+                        }
+                        Integer stockObj = (Integer) rs.getObject("stock");
+                        if (stockObj != null && stockObj < it.getQuantity()) {
+                            return new AvailabilityCheck(
+                                    "Stock insufficiente per " + rs.getString("name"),
+                                    true, it.getProductId(), null, sizeKey);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return new AvailabilityCheck(
+                            "Errore durante la verifica della disponibilità. Riprova.",
+                            false, it.getProductId(), null, it.getSize());
+                }
+                continue;
+            }
 
             try (java.sql.Connection c = utils.DatabaseConnection.getInstance().getConnection();
                     java.sql.PreparedStatement ps = c.prepareStatement(
@@ -93,27 +153,37 @@ public class CheckoutServlet extends HttpServlet {
                 ps.setInt(1, it.getSlotId());
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) {
-                        return "Lo slot selezionato per \"" + it.getProductName() + "\" non esiste più.";
+                        return new AvailabilityCheck(
+                                "Lo slot selezionato per \"" + it.getProductName() + "\" non esiste più.",
+                                true, it.getProductId(), it.getSlotId(), it.getSize());
                     }
                     if (rs.getInt("is_available") == 0) {
-                        return "Lo slot selezionato per \"" + it.getProductName() + "\" non è più disponibile.";
+                        return new AvailabilityCheck(
+                                "Lo slot selezionato per \"" + it.getProductName() + "\" non è più disponibile.",
+                                true, it.getProductId(), it.getSlotId(), it.getSize());
                     }
                     java.time.LocalDate slotDate = rs.getDate("slot_date").toLocalDate();
                     java.time.LocalTime slotTime = rs.getTime("slot_time").toLocalTime();
                     if (slotDate.isBefore(java.time.LocalDate.now()) ||
                             (slotDate.equals(java.time.LocalDate.now())
                                     && slotTime.isBefore(java.time.LocalTime.now()))) {
-                        return "Lo slot selezionato per \"" + it.getProductName() + "\" è scaduto.";
+                        return new AvailabilityCheck(
+                                "Lo slot selezionato per \"" + it.getProductName() + "\" è scaduto.",
+                                true, it.getProductId(), it.getSlotId(), it.getSize());
                     }
                     int maxCap = rs.getInt("max_capacity");
                     int booked = rs.getInt("booked_capacity");
                     if (booked + it.getQuantity() > maxCap) {
-                        return "Lo slot selezionato per \"" + it.getProductName() + "\" non ha più posti disponibili.";
+                        return new AvailabilityCheck(
+                                "Lo slot selezionato per \"" + it.getProductName() + "\" non ha più posti disponibili.",
+                                true, it.getProductId(), it.getSlotId(), it.getSize());
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return "Errore durante la verifica della disponibilità. Riprova.";
+                return new AvailabilityCheck(
+                        "Errore durante la verifica della disponibilità. Riprova.",
+                        false, it.getProductId(), it.getSlotId(), it.getSize());
             }
         }
         return null; // tutto ok
@@ -219,8 +289,8 @@ public class CheckoutServlet extends HttpServlet {
 
         } catch (AvailabilityException ae) {
             pruneUnavailable(session, ae.productId, ae.slotId, ae.size);
-            req.setAttribute("checkoutError", ae.getMessage());
-            req.getRequestDispatcher("/views/checkout.jsp").forward(req, resp);
+            session.setAttribute("cartError", ae.getMessage());
+            resp.sendRedirect(ctx + "/cart/view");
         } catch (Exception e) {
             e.printStackTrace();
             req.setAttribute("checkoutError",
