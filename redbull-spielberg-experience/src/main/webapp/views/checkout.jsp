@@ -344,6 +344,7 @@
 
                 <jsp:include page="footer.jsp" />
                 <script src="<%=ctx%>/scripts/checkout.js?v=2"></script>
+            </div>
           </body>
 
           </html>

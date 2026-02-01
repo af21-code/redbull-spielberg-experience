@@ -1,66 +1,76 @@
 (function(){
-  const ctx = window.ADM_CTX || "";
-  const $from = document.getElementById("adm-stats-from");
-  const $to   = document.getElementById("adm-stats-to");
-  const $btn  = document.getElementById("adm-stats-refresh");
+  var ctx = window.ADM_CTX || "";
+  var $from = document.getElementById("adm-stats-from");
+  var $to   = document.getElementById("adm-stats-to");
+  var $btn  = document.getElementById("adm-stats-refresh");
 
-  const $orders  = document.getElementById("kpi-orders");
-  const $paid    = document.getElementById("kpi-paid");
-  const $rev     = document.getElementById("kpi-revenue");
-  const $avg     = document.getElementById("kpi-avg");
-  const $tbody   = document.getElementById("adm-stats-tbody");
+  var $orders  = document.getElementById("kpi-orders");
+  var $paid    = document.getElementById("kpi-paid");
+  var $rev     = document.getElementById("kpi-revenue");
+  var $avg     = document.getElementById("kpi-avg");
+  var $tbody   = document.getElementById("adm-stats-tbody");
 
   // default: ultimi 7 giorni
-  const today = new Date();
-  const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  var today = new Date();
+  var toISO = function(d){
+    return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  };
 
-  const defTo = toISO(today);
-  const defFrom = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6));
+  var defTo = toISO(today);
+  var defFrom = toISO(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6));
   if ($from && !$from.value) $from.value = defFrom;
   if ($to && !$to.value)     $to.value   = defTo;
 
-  async function load(){
-    const from = $from.value || defFrom;
-    const to   = $to.value   || defTo;
+  function setText(el, v){ if (el) el.textContent = v; }
 
-    if ($tbody) $tbody.innerHTML = `<tr><td colspan="3" class="muted">Caricamento…</td></tr>`;
-    [$orders,$paid,$rev,$avg].forEach(el => el && (el.textContent = "…"));
+  function load(){
+    var from = ($from && $from.value) ? $from.value : defFrom;
+    var to   = ($to && $to.value) ? $to.value : defTo;
 
-    try{
-      const res = await fetch(`${ctx}/admin/stats?from=${from}&to=${to}`, { credentials: "same-origin" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+    if ($tbody) $tbody.innerHTML = '<tr><td colspan="3" class="muted">Caricamento…</td></tr>';
+    [ $orders, $paid, $rev, $avg ].forEach(function(el){ setText(el, "…"); });
 
-      // KPI
-      const k = data.kpi || {};
-      $orders.textContent = (k.orders ?? 0);
-      $paid.textContent   = (k.paidOrders ?? 0);
+    var url = ctx + "/admin/stats?from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
 
-      const fmt = new Intl.NumberFormat("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const rev = Number(k.revenue ?? 0);
-      const avg = Number(k.avgOrder ?? 0);
-      $rev.textContent = fmt.format(rev);
-      $avg.textContent = fmt.format(avg);
+    fetch(url, { credentials: "same-origin" })
+      .then(function(res){
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        var k = (data && data.kpi) ? data.kpi : {};
+        setText($orders, (k.orders != null ? k.orders : 0));
+        setText($paid, (k.paidOrders != null ? k.paidOrders : 0));
 
-      // Serie
-      const s = Array.isArray(data.series) ? data.series : [];
-      if (!s.length){
-        $tbody.innerHTML = `<tr><td colspan="3" class="muted">Nessun dato nel periodo selezionato.</td></tr>`;
-      } else {
-        $tbody.innerHTML = s.map(row => {
-          const date = row.date;
-          const ord  = row.orders ?? 0;
-          const r    = fmt.format(Number(row.revenue ?? 0));
-          return `<tr><td>${date}</td><td>${ord}</td><td>€ ${r}</td></tr>`;
-        }).join("");
-      }
-    } catch(e){
-      console.error(e);
-      if ($tbody) $tbody.innerHTML = `<tr><td colspan="3" class="muted">Errore nel caricamento.</td></tr>`;
-      [$orders,$paid,$rev,$avg].forEach(el => el && (el.textContent = "—"));
-    }
+        var fmt = new Intl.NumberFormat("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var rev = Number(k.revenue != null ? k.revenue : 0);
+        var avg = Number(k.avgOrder != null ? k.avgOrder : 0);
+        setText($rev, fmt.format(rev));
+        setText($avg, fmt.format(avg));
+
+        var s = (data && Array.isArray(data.series)) ? data.series : [];
+        if (!$tbody) return;
+        if (!s.length){
+          $tbody.innerHTML = '<tr><td colspan="3" class="muted">Nessun dato nel periodo selezionato.</td></tr>';
+        } else {
+          var rows = '';
+          for (var i = 0; i < s.length; i++){
+            var row = s[i] || {};
+            var date = row.date;
+            var ord  = (row.orders != null ? row.orders : 0);
+            var r    = fmt.format(Number(row.revenue != null ? row.revenue : 0));
+            rows += '<tr><td>' + date + '</td><td>' + ord + '</td><td>€ ' + r + '</td></tr>';
+          }
+          $tbody.innerHTML = rows;
+        }
+      })
+      .catch(function(e){
+        try { console.error(e); } catch(_) {}
+        if ($tbody) $tbody.innerHTML = '<tr><td colspan="3" class="muted">Errore nel caricamento.</td></tr>';
+        [ $orders, $paid, $rev, $avg ].forEach(function(el){ setText(el, "—"); });
+      });
   }
 
-  $btn && $btn.addEventListener("click", load);
+  if ($btn) $btn.addEventListener("click", load);
   load(); // autoload
 })();

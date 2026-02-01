@@ -1,0 +1,2 @@
+eclipse.preferences.version=1
+disabled=org.eclipse.jst.jsp.core.JSPBatchValidator,org.eclipse.jst.jsp.core.JSPValidator,org.eclipse.wst.jsdt.web.core.JSBatchValidator,org.eclipse.wst.jsdt.web.core.JSValidator

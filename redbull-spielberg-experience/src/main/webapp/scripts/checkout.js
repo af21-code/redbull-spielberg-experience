@@ -2,26 +2,26 @@
   'use strict';
 
   // --- helpers DOM ---
-  const $  = (s, root) => (root || document).querySelector(s);
-  const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
+  var $  = function (s, root) { return (root || document).querySelector(s); };
+  var $$ = function (s, root) { return Array.from((root || document).querySelectorAll(s)); };
 
-  const form       = $('#checkout-form');
+  var form       = $('#checkout-form');
   if (!form) return; // non siamo su checkout.jsp
 
-  const same       = $('#same_as_shipping');
-  const billingBox = $('#billing-fields');
-  const steps      = $$('.step');
-  const panels     = $$('.step-panel');
-  const btnNext    = $('[data-next]');
-  const btnBack    = $('[data-back]');
-  const errBar     = $('#form-error');
-  const cardExtra  = $('[data-card-extra]');
-  const payInputs  = $$('input[name="paymentMethod"]');
+  var same       = $('#same_as_shipping');
+  var billingBox = $('#billing-fields');
+  var steps      = $$('.step');
+  var panels     = $$('.step-panel');
+  var btnNext    = $('[data-next]');
+  var btnBack    = $('[data-back]');
+  var errBar     = $('#form-error');
+  var cardExtra  = $('[data-card-extra]');
+  var payInputs  = $$('input[name="paymentMethod"]');
 
   // --- stepper ---
   function gotoStep(n) {
-    steps.forEach(s => s.classList.toggle('is-active', s.dataset.step === String(n)));
-    panels.forEach(p => p.classList.toggle('is-visible', p.dataset.stepPanel === String(n)));
+    steps.forEach(function(s){ s.classList.toggle('is-active', s.dataset.step === String(n)); });
+    panels.forEach(function(p){ p.classList.toggle('is-visible', p.dataset.stepPanel === String(n)); });
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
   }
 
@@ -38,20 +38,20 @@
   // --- mostra/nascondi extra per carta ---
   function updatePayExtra() {
     if (!cardExtra) return;
-    const sel = $('input[name="paymentMethod"]:checked');
+    var sel = $('input[name="paymentMethod"]:checked');
     cardExtra.classList.toggle('show', !!sel && sel.value === 'CARD');
   }
-  payInputs.forEach(i => i.addEventListener('change', updatePayExtra));
+  payInputs.forEach(function(i){ i.addEventListener('change', updatePayExtra); });
   updatePayExtra();
 
   // --- navigazione step ---
-  if (btnNext) btnNext.addEventListener('click', () => {
+  if (btnNext) btnNext.addEventListener('click', function () {
     if (validateShipping()) gotoStep(2);
   });
-  if (btnBack) btnBack.addEventListener('click', () => gotoStep(1));
+  if (btnBack) btnBack.addEventListener('click', function () { gotoStep(1); });
 
   // --- invio form ---
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', function (e) {
     setErrBar(''); // pulizia
 
     // 1) validazione spedizione (anche se siamo allo step 2)
@@ -63,7 +63,7 @@
     }
 
     // 2) metodo pagamento
-    const paySel = $('input[name="paymentMethod"]:checked');
+    var paySel = $('input[name="paymentMethod"]:checked');
     if (!paySel) {
       setErrBar('Seleziona un metodo di pagamento.');
       e.preventDefault();
@@ -71,9 +71,9 @@
     }
 
     // 3) costruzione indirizzi per il backend
-    const shippingTxt = buildAddressBlock('ship_');
-    const shippingEl  = $('#shippingAddress');
-    const billingEl   = $('#billingAddress');
+    var shippingTxt = buildAddressBlock('ship_');
+    var shippingEl  = $('#shippingAddress');
+    var billingEl   = $('#billingAddress');
     if (shippingEl) shippingEl.value = shippingTxt;
 
     if (same && same.checked) {
@@ -89,13 +89,13 @@
     }
 
     // 4) anti-doppio invio
-    const submitBtn = form.querySelector('button[type="submit"]');
+    var submitBtn = form.querySelector('button[type="submit"]');
     if (submitBtn && !submitBtn.disabled) {
       submitBtn.disabled = true;
       submitBtn.dataset.originalText = submitBtn.textContent || '';
       submitBtn.textContent = 'Invio…';
       // best-effort re-enable dopo un po’ (es. errore rete)
-      setTimeout(() => {
+      setTimeout(function(){
         submitBtn.disabled = false;
         submitBtn.textContent = submitBtn.dataset.originalText || 'Conferma ordine';
       }, 15000);
@@ -105,22 +105,23 @@
 
   // ---------- VALIDAZIONI ----------
   function val(id) {
-    const el = document.getElementById(id);
+    var el = document.getElementById(id);
     return (el && typeof el.value === 'string') ? el.value.trim() : '';
   }
   function setFieldError(inputId, msg) {
-    const field = document.getElementById(inputId)?.closest('.field');
-    const holder = field ? field.querySelector('.error-msg') : null;
+    var el = document.getElementById(inputId);
+    var field = el ? el.closest('.field') : null;
+    var holder = field ? field.querySelector('.error-msg') : null;
     if (holder) holder.textContent = msg || '';
   }
   function requireField(id) {
-    const v = val(id);
+    var v = val(id);
     setFieldError(id, v ? '' : 'Campo obbligatorio');
     return !!v;
   }
   function matchPattern(id, re, msg) {
-    const v = val(id);
-    const ok = re.test(v);
+    var v = val(id);
+    var ok = re.test(v);
     setFieldError(id, ok ? '' : (msg || 'Formato non valido'));
     return ok;
   }
@@ -136,7 +137,7 @@
   }
 
   function validateShipping() {
-    let ok = true;
+    var ok = true;
     ok = requireField('ship_name')  && ok;
     ok = requireField('ship_phone') && matchPattern('ship_phone', /^(\+?\d[\d\s\-]{5,})$/, 'Telefono non valido') && ok;
     ok = requireField('ship_street') && ok;
@@ -149,7 +150,7 @@
 
   function validateBilling() {
     if (same && same.checked) return true;
-    let ok = true;
+    var ok = true;
     ok = requireField('bill_name')   && ok;
     ok = requireField('bill_street') && ok;
     ok = requireField('bill_city')   && ok;
@@ -160,18 +161,18 @@
   }
 
   function buildAddressBlock(prefix) {
-    const name   = val(prefix + 'name');
-    const phone  = (prefix === 'ship_') ? val('ship_phone') : '';
-    const street = val(prefix + 'street');
-    const city   = val(prefix + 'city');
-    const prov   = val(prefix + 'prov');
-    const zip    = val(prefix + 'zip');
-    const ctry   = val(prefix + 'country');
+    var name   = val(prefix + 'name');
+    var phone  = (prefix === 'ship_') ? val('ship_phone') : '';
+    var street = val(prefix + 'street');
+    var city   = val(prefix + 'city');
+    var prov   = val(prefix + 'prov');
+    var zip    = val(prefix + 'zip');
+    var ctry   = val(prefix + 'country');
 
-    const lines = [];
+    var lines = [];
     if (name)   lines.push(name);
     if (street) lines.push(street);
-    const line2 = [zip, city, prov].filter(Boolean).join(' ');
+    var line2 = [zip, city, prov].filter(Boolean).join(' ');
     if (line2)  lines.push(line2);
     if (ctry)   lines.push(ctry);
     if (phone)  lines.push('Tel: ' + phone);
