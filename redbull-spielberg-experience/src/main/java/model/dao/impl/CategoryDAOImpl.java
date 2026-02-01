@@ -11,10 +11,14 @@ import java.util.List;
 
 public class CategoryDAOImpl implements CategoryDAO {
 
-    private final Connection connection;
-
-    public CategoryDAOImpl() throws SQLException {
-        this.connection = DatabaseConnection.getInstance().getConnection();
+    private interface SQLRun<T> { T run(Connection c) throws Exception; }
+    private <T> T withCon(SQLRun<T> block) {
+        try (Connection c = DatabaseConnection.getInstance().getConnection()) {
+            return block.run(c);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            throw new RuntimeException(e);
+        }
     }
 
     private Category mapRow(ResultSet rs) throws SQLException {
@@ -33,18 +37,18 @@ public class CategoryDAOImpl implements CategoryDAO {
         List<Category> list = new ArrayList<>();
         String sql = "SELECT * FROM categories WHERE is_active = 1 ORDER BY name ASC";
         System.out.println("[CategoryDAO] Executing findAllActive query: " + sql);
-        try (PreparedStatement ps = connection.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Category c = mapRow(rs);
-                System.out.println("[CategoryDAO] Found category: " + c.getCategoryId() + " - " + c.getName());
-                list.add(c);
+        withCon(c -> {
+            try (PreparedStatement ps = c.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Category cat = mapRow(rs);
+                    System.out.println("[CategoryDAO] Found category: " + cat.getCategoryId() + " - " + cat.getName());
+                    list.add(cat);
+                }
+                System.out.println("[CategoryDAO] Total categories found: " + list.size());
             }
-            System.out.println("[CategoryDAO] Total categories found: " + list.size());
-        } catch (SQLException e) {
-            System.err.println("[CategoryDAO] ERROR in findAllActive: " + e.getMessage());
-            e.printStackTrace();
-        }
+            return null;
+        });
         return list;
     }
 
@@ -94,18 +98,19 @@ public class CategoryDAOImpl implements CategoryDAO {
         params.add(limit);
         params.add(offset);
 
-        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
+        withCon(c -> {
+            try (PreparedStatement ps = c.prepareStatement(sql.toString())) {
+                for (int i = 0; i < params.size(); i++) {
+                    ps.setObject(i + 1, params.get(i));
+                }
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapRow(rs));
+                    }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            return null;
+        });
 
         return list;
     }
@@ -113,43 +118,45 @@ public class CategoryDAOImpl implements CategoryDAO {
     @Override
     public Category adminFindById(int id) {
         String sql = "SELECT * FROM categories WHERE category_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return mapRow(rs);
+        return withCon(c -> {
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return mapRow(rs);
+                    }
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
+            return null;
+        });
     }
 
     @Override
     public void insert(Category category) {
         String sql = "INSERT INTO categories (name, description, is_active) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, category.getName());
-            ps.setString(2, category.getDescription());
-            ps.setBoolean(3, category.isActive());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        withCon(c -> {
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, category.getName());
+                ps.setString(2, category.getDescription());
+                ps.setBoolean(3, category.isActive());
+                ps.executeUpdate();
+            }
+            return null;
+        });
     }
 
     @Override
     public void update(Category category) {
         String sql = "UPDATE categories SET name = ?, description = ?, is_active = ? WHERE category_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, category.getName());
-            ps.setString(2, category.getDescription());
-            ps.setBoolean(3, category.isActive());
-            ps.setInt(4, category.getCategoryId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        withCon(c -> {
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, category.getName());
+                ps.setString(2, category.getDescription());
+                ps.setBoolean(3, category.isActive());
+                ps.setInt(4, category.getCategoryId());
+                ps.executeUpdate();
+            }
+            return null;
+        });
     }
 }

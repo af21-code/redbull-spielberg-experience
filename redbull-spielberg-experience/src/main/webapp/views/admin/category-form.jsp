@@ -40,24 +40,25 @@
                             </aside>
 
                             <section class="admin-content">
-                                <div class="admin-actions-bar">
-                                    <div>
-                                        <h2 class="admin-header-title">
-                                            <%= isEdit ? "Modifica Categoria" : "Nuova Categoria" %>
-                                        </h2>
-                                        <div class="admin-subtitle">Gestisci i dettagli della categoria</div>
-                                    </div>
-                                    <a class="btn outline" href="<%=ctx%>/admin/categories">← Torna alla lista</a>
-                                </div>
+                                <div class="container-900">
+                                     <div class="admin-actions-bar">
+                                         <div>
+                                             <h2 class="admin-header-title">
+                                                 <%= isEdit ? "Modifica Categoria" : "Nuova Categoria" %>
+                                             </h2>
+                                             <div class="admin-subtitle">Gestisci i dettagli della categoria</div>
+                                         </div>
+                                         <a class="btn outline" href="<%=ctx%>/admin/categories">← Torna alla lista</a>
+                                     </div>
 
-                                <% if (error !=null) { %>
-                                    <div class="alert danger" style="margin-bottom: 20px;">
-                                        <%= esc(error) %>
-                                    </div>
-                                    <% } %>
+                                     <% if (error !=null) { %>
+                                         <div class="alert danger" style="margin-bottom: 20px;">
+                                             <%= esc(error) %>
+                                         </div>
+                                         <% } %>
 
-                                        <div class="card" style="padding: 32px; max-width: 900px;">
-                                            <form method="post" action="<%=ctx%>/admin/categories/edit">
+                                         <div class="card" style="padding: 32px; max-width: 900px;">
+                                             <form method="post" action="<%=ctx%>/admin/categories/edit">
                                                 <% if (isEdit) { %>
                                                     <input type="hidden" name="id"
                                                         value="<%= category.getCategoryId() %>">
@@ -105,18 +106,19 @@
                                                                 </div>
 
                                                                 <div style="display: flex; gap: 16px;">
-                                                                    <button type="submit" class="btn brand">
-                                                                        <%= isEdit ? "Salva Modifiche"
-                                                                            : "Crea Categoria" %>
-                                                                    </button>
-                                                                    <a href="<%=ctx%>/admin/categories"
-                                                                        class="btn outline">
-                                                                        Annulla
-                                                                    </a>
-                                                                </div>
-                                            </form>
-                                        </div>
-                            </section>
+                                                    <button type="submit" class="btn primary">
+                                                         <%= isEdit ? "Salva Modifiche"
+                                                             : "Crea Categoria" %>
+                                                     </button>
+                                                     <a href="<%=ctx%>/admin/categories"
+                                                         class="btn outline">
+                                                         Annulla
+                                                     </a>
+                                                 </div>
+                                             </form>
+                                         </div>
+                                </div>
+                             </section>
                         </div>
                     </div>
 
