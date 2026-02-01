@@ -11,6 +11,7 @@ public class OrderItem {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private String productName;
+    private String size;
 
     public int getItemId() { return itemId; }
     public void setItemId(int itemId) { this.itemId = itemId; }
@@ -35,4 +36,6 @@ public class OrderItem {
 
     public String getProductName() { return productName; }
     public void setProductName(String productName) { this.productName = productName; }
+    public String getSize() { return size; }
+    public void setSize(String size) { this.size = size; }
 }

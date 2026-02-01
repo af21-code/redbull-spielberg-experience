@@ -436,8 +436,9 @@ public class OrderDAOImpl implements OrderDAO {
                SET status = 'COMPLETED',
                    delivered_at = COALESCE(delivered_at, NOW())
              WHERE order_id = ?
+               AND status <> 'CANCELLED'
         """;
-        String sqlWithoutDelivered = "UPDATE orders SET status='COMPLETED' WHERE order_id=?";
+        String sqlWithoutDelivered = "UPDATE orders SET status='COMPLETED' WHERE order_id=? AND status <> 'CANCELLED'";
 
         try (Connection con = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = con.prepareStatement(sqlWithDelivered)) {
@@ -541,3 +542,4 @@ public class OrderDAOImpl implements OrderDAO {
         }
     }
 }
+

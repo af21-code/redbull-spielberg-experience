@@ -162,6 +162,7 @@
                                         String driverNum = (String) r.get("driver_number");
                                         String comp = (String) r.get("companion_name");
                                         String veh = (String) r.get("vehicle_code");
+                                        String size = (String) r.get("size");
                                         String ptype = r.get("product_type") == null ? null :
                                         String.valueOf(r.get("product_type"));
                                         java.sql.Date ev = (java.sql.Date) r.get("event_date");
@@ -177,35 +178,25 @@
                                             <div class="small muted">Q.tà <%= qty %> × € <%= up %>
                                             </div>
                                             <div class="small muted item-meta">
-                                              <% if (driver !=null && !driver.isBlank()) { %>Pilota: <strong>
-                                                  <%= esc(driver) %>
-                                                </strong>
-                                                <% } %>
-                                                  <% if (driverNum !=null && !driverNum.isBlank()) { %>
-                                                    <% if (driver !=null && !driver.isBlank()) { %> • <% } %>N°: <%=
-                                                          esc(driverNum) %>
-                                                          <% } %>
-                                                            <% if (comp !=null && !comp.isBlank()) { %>
-                                                              <% if ((driver !=null && !driver.isBlank()) || (driverNum
-                                                                !=null && !driverNum.isBlank())) { %> • <% } %>
-                                                                  Accompagnatore: <%= esc(comp) %>
-                                                                    <% } %>
-                                                                      <% if (veh !=null && !veh.isBlank()) { %>
-                                                                        <% if ((driver !=null && !driver.isBlank()) ||
-                                                                          (driverNum !=null && !driverNum.isBlank()) ||
-                                                                          (comp !=null && !comp.isBlank())) { %> • <% }
-                                                                            %>Veicolo: <%= esc(veh) %>
-                                                                              <% } %>
-                                                                                <% if (ev !=null) { %>
-                                                                                  <% if ((driver !=null &&
-                                                                                    !driver.isBlank()) || (driverNum
-                                                                                    !=null && !driverNum.isBlank()) ||
-                                                                                    (comp !=null && !comp.isBlank()) ||
-                                                                                    (veh !=null && !veh.isBlank())) { %>
-                                                                                    • <% } %>Data evento: <%= esc(new
-                                                                                        java.text.SimpleDateFormat("dd/MM/yyyy").format(ev))
-                                                                                        %>
-                                                                                        <% } %>
+                                              <% boolean first = true; %>
+                                              <% if (driver !=null && !driver.isBlank()) { %>
+                                                <span>Pilota: <strong><%= esc(driver) %></strong></span>
+                                                <% first = false; } %>
+                                              <% if (driverNum !=null && !driverNum.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>N°: <%= esc(driverNum) %></span>
+                                                <% first = false; } %>
+                                              <% if (comp !=null && !comp.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Accompagnatore: <%= esc(comp) %></span>
+                                                <% first = false; } %>
+                                              <% if (veh !=null && !veh.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Veicolo: <%= esc(veh) %></span>
+                                                <% first = false; } %>
+                                              <% if (ev !=null) { %>
+                                                <% if (!first) { %> • <% } %><span>Data: <%= new SimpleDateFormat("dd/MM/yyyy").format(ev) %></span>
+                                                <% first = false; } %>
+                                              <% if (size != null && !size.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Taglia: <%= esc(size) %></span>
+                                              <% } %>
                                             </div>
                                           </div>
                                           <div class="price">€ <%= tp %>
@@ -315,9 +306,8 @@
                                 <% if (cancellable) { %>
                                   <div class="card card-spaced">
                                     <h3 class="section-title">Azioni ordine</h3>
-                                    <form method="post" action="<%=ctx%>/order/cancel"
-                                      onsubmit="return confirm('Annullare definitivamente questo ordine? Verranno ripristinati stock/capienze.');">
-                                      <input type="hidden" name="id" value="<%= esc(o.get(" order_id")) %>">
+                                    <form method="post" action="<%=ctx%>/order/cancel" class="js-confirm" data-confirm-msg="Annullare definitivamente questo ordine? Verranno ripristinati stock/capienze.">
+                                      <input type="hidden" name="id" value="<%= esc(o.get("order_id")) %>">
                                       <% if (csrf !=null && !csrf.isEmpty()) { %>
                                         <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
                                         <% } %>
@@ -333,6 +323,59 @@
                         </div>
 
                         <jsp:include page="/views/footer.jsp" />
+                        <!-- Modal conferma -->
+<div id="confirmModal" class="modal" style="display:none;">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <p id="confirmMessage"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn secondary" id="confirmCancel">Annulla</button>
+      <button type="button" class="btn" id="confirmOk">Conferma</button>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    const modal = document.getElementById('confirmModal');
+    if(!modal) return;
+    const msgEl = document.getElementById('confirmMessage');
+    const btnOk = document.getElementById('confirmOk');
+    const btnCancel = document.getElementById('confirmCancel');
+    let pendingForm = null;
+
+    function openModal(message, form){
+      pendingForm = form;
+      msgEl.textContent = message || 'Confermi?';
+      modal.style.display = 'flex';
+      document.body.classList.add('no-scroll');
+    }
+    function closeModal(){
+      modal.style.display = 'none';
+      document.body.classList.remove('no-scroll');
+      pendingForm = null;
+    }
+
+    document.querySelectorAll('form.js-confirm').forEach(f => {
+      f.addEventListener('submit', function(e){
+        e.preventDefault();
+        openModal(f.dataset.confirmMsg, f);
+      });
+    });
+
+    btnOk?.addEventListener('click', ()=>{ if(pendingForm) pendingForm.submit(); closeModal(); });
+    btnCancel?.addEventListener('click', closeModal);
+    modal.querySelector('.modal-backdrop')?.addEventListener('click', closeModal);
+    document.addEventListener('keyup', (e)=>{ if(e.key==='Escape') closeModal(); });
+  })();
+</script>
+<style>
+  .modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
+  .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(1px); }
+  .modal-box { position:relative; background:#0b0f1a; color:#fff; padding:20px; border-radius:12px; box-shadow:0 18px 36px rgba(0,0,0,0.45); max-width:420px; width:90%; z-index:1; }
+  .modal-actions { margin-top:16px; display:flex; gap:10px; justify-content:flex-end; }
+  body.no-scroll { overflow:hidden; }
+</style>
                       </body>
 
                       </html>
+

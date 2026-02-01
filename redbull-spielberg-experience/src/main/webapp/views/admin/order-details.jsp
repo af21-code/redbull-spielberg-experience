@@ -151,8 +151,8 @@
                                         String driverNum = (String) r.get("driver_number");
                                         String comp = (String) r.get("companion_name");
                                         String veh = (String) r.get("vehicle_code");
-                                        String ptype = r.get("product_type") == null ? null :
-                                        String.valueOf(r.get("product_type"));
+                                        String size = (String) r.get("size");
+                                        String ptype = r.get("product_type") == null ? null : String.valueOf(r.get("product_type"));
                                         java.sql.Date ev = (java.sql.Date) r.get("event_date");
                                         String imgSrc = resolveImg(img, veh, ptype, ctx);
                                         %>
@@ -166,35 +166,25 @@
                                             <div class="small muted">Q.tà <%= qty %> × € <%= up %>
                                             </div>
                                             <div class="small muted item-meta">
-                                              <% if (driver !=null && !driver.isBlank()) { %>Pilota: <strong>
-                                                  <%= esc(driver) %>
-                                                </strong>
-                                                <% } %>
-                                                  <% if (driverNum !=null && !driverNum.isBlank()) { %>
-                                                    <% if (driver !=null && !driver.isBlank()) { %> • <% } %>N°: <%=
-                                                          esc(driverNum) %>
-                                                          <% } %>
-                                                            <% if (comp !=null && !comp.isBlank()) { %>
-                                                              <% if ((driver !=null && !driver.isBlank()) || (driverNum
-                                                                !=null && !driverNum.isBlank())) { %> • <% } %>
-                                                                  Accompagnatore: <%= esc(comp) %>
-                                                                    <% } %>
-                                                                      <% if (veh !=null && !veh.isBlank()) { %>
-                                                                        <% if ((driver !=null && !driver.isBlank()) ||
-                                                                          (driverNum !=null && !driverNum.isBlank()) ||
-                                                                          (comp !=null && !comp.isBlank())) { %> • <% }
-                                                                            %>Veicolo: <%= esc(veh) %>
-                                                                              <% } %>
-                                                                                <% if (ev !=null) { %>
-                                                                                  <% if ((driver !=null &&
-                                                                                    !driver.isBlank()) || (driverNum
-                                                                                    !=null && !driverNum.isBlank()) ||
-                                                                                    (comp !=null && !comp.isBlank()) ||
-                                                                                    (veh !=null && !veh.isBlank())) { %>
-                                                                                    • <% } %>Data evento: <%= esc(new
-                                                                                        java.text.SimpleDateFormat("dd/MM/yyyy").format(ev))
-                                                                                        %>
-                                                                                        <% } %>
+                                              <% boolean first=true; %>
+                                              <% if (driver !=null && !driver.isBlank()) { %>
+                                                <span>Pilota: <strong><%= esc(driver) %></strong></span>
+                                                <% first=false; } %>
+                                              <% if (driverNum !=null && !driverNum.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>N°: <%= esc(driverNum) %></span>
+                                                <% first=false; } %>
+                                              <% if (comp !=null && !comp.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Accompagnatore: <%= esc(comp) %></span>
+                                                <% first=false; } %>
+                                              <% if (veh !=null && !veh.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Veicolo: <%= esc(veh) %></span>
+                                                <% first=false; } %>
+                                              <% if (ev !=null) { %>
+                                                <% if (!first) { %> • <% } %><span>Data evento: <%= esc(new java.text.SimpleDateFormat("dd/MM/yyyy").format(ev)) %></span>
+                                                <% first=false; } %>
+                                              <% if (size != null && !size.isBlank()) { %>
+                                                <% if (!first) { %> • <% } %><span>Taglia: <%= esc(size) %></span>
+                                              <% } %>
                                             </div>
                                           </div>
                                           <div class="price">€ <%= tp %>
@@ -307,7 +297,7 @@
 
                                   <!-- Tracking -->
                                   <form method="post" action="<%=ctx%>/admin/order-action" class="form-spaced">
-                                    <input type="hidden" name="id" value="<%= esc(o.get(" order_id")) %>">
+                                    <input type="hidden" name="id" value="<%= esc(o.get("order_id")) %>">
                                     <input type="hidden" name="action" value="tracking">
                                     <% if (csrf !=null && !csrf.isEmpty()) { %>
                                       <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
@@ -324,15 +314,14 @@
                                   </form>
 
                                   <!-- Completa -->
-                                  <% if (!"COMPLETED".equalsIgnoreCase(status)) { %>
-                                    <form method="post" action="<%=ctx%>/admin/order-action"
-                                      onsubmit="return confirm('Segnare l\'ordine come CONSEGNATO/COMPLETATO?')">
-                                      <input type="hidden" name="id" value="<%= esc(o.get(" order_id")) %>">
+                                  <% if (!"COMPLETED".equalsIgnoreCase(status) && !"CANCELLED".equalsIgnoreCase(status)) { %>
+                                    <form id="completeForm" method="post" action="<%=ctx%>/admin/order-action">
+                                      <input type="hidden" name="id" value="<%= esc(o.get("order_id")) %>">
                                       <input type="hidden" name="action" value="complete">
                                       <% if (csrf !=null && !csrf.isEmpty()) { %>
                                         <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
                                         <% } %>
-                                          <button class="btn primary block">Segna come consegnato</button>
+                                          <button type="button" class="btn primary block" onclick="openConfirm('complete')">Segna come consegnato</button>
                                     </form>
                                     <% } %>
 
@@ -340,14 +329,13 @@
                                       <% if (!"COMPLETED".equalsIgnoreCase(status) &&
                                         !"CANCELLED".equalsIgnoreCase(status)) { %>
                                         <hr class="action-divider">
-                                        <form method="post" action="<%=ctx%>/admin/order-action" class="cancel-form"
-                                          onsubmit="return confirm('Annullare definitivamente questo ordine? Verranno liberati eventuali slot e ripristinato lo stock.')">
-                                          <input type="hidden" name="id" value="<%= esc(o.get(" order_id")) %>">
+                                        <form id="cancelForm" method="post" action="<%=ctx%>/admin/order-action" class="cancel-form">
+                                          <input type="hidden" name="id" value="<%= esc(o.get("order_id")) %>">
                                           <input type="hidden" name="action" value="cancel">
                                           <% if (csrf !=null && !csrf.isEmpty()) { %>
                                             <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
                                             <% } %>
-                                              <button class="btn warn block">Annulla ordine</button>
+                                              <button type="button" class="btn warn block" onclick="openConfirm('cancel')">Annulla ordine</button>
                                         </form>
                                         <% } %>
                                 </div>
@@ -357,6 +345,53 @@
                           </div>
                         </div>
 
+                        <!-- Modal conferma ordini -->
+                        <div id="confirmModal" class="od-modal" hidden>
+                          <div class="od-modal__backdrop" onclick="closeConfirm()"></div>
+                          <div class="od-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+                            <h3 id="confirmTitle">Conferma azione</h3>
+                            <p id="confirmText" class="muted"></p>
+                            <div class="od-modal__actions">
+                              <button type="button" class="btn outline" onclick="closeConfirm()">Annulla</button>
+                              <button type="button" class="btn primary" id="confirmActionBtn">Conferma</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <script>
+                          (function(){
+                            const modal = document.getElementById('confirmModal');
+                            const textEl = document.getElementById('confirmText');
+                            const actionBtn = document.getElementById('confirmActionBtn');
+                            let targetForm = null;
+
+                            window.openConfirm = function(kind){
+                              if (!modal) return;
+                              if (kind === 'complete') {
+                                targetForm = document.getElementById('completeForm');
+                                textEl.textContent = "Segnare l'ordine come CONSEGNATO/COMPLETATO?";
+                              } else if (kind === 'cancel') {
+                                targetForm = document.getElementById('cancelForm');
+                                textEl.textContent = "Annullare definitivamente questo ordine? Verranno liberati gli slot e ripristinato lo stock.";
+                              }
+                              if (!targetForm) return;
+                              modal.hidden = false;
+                              document.body.classList.add('od-modal-open');
+                            };
+
+                            window.closeConfirm = function(){
+                              modal.hidden = true;
+                              document.body.classList.remove('od-modal-open');
+                              targetForm = null;
+                            };
+
+                            if (actionBtn) {
+                              actionBtn.addEventListener('click', function(){
+                                if (targetForm) targetForm.submit();
+                              });
+                            }
+                          })();
+                        </script>
                         <jsp:include page="/views/footer.jsp" />
                       </body>
 
