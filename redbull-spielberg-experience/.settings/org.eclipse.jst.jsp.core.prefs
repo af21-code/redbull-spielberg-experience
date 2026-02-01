@@ -1,0 +1,7 @@
+eclipse.preferences.version=1
+org.eclipse.jst.jsp.core.compiler.problem.unusedImport=ignore
+org.eclipse.jst.jsp.core.compiler.problem.unusedLocal=ignore
+org.eclipse.jst.jsp.core.compiler.problem.unusedPrivateMember=ignore
+org.eclipse.jst.jsp.core.compiler.problem.unusedDeclaredThrownException=ignore
+org.eclipse.jst.jsp.core.compiler.problem.unusedParameter=ignore
+org.eclipse.jst.jsp.core.compiler.problem.unusedTypeParameter=ignore
