@@ -52,6 +52,13 @@
                             }
                             }
                             }
+
+                            String selectedVehicleLabel = "—";
+                            if (vehiclesVm != null && !vehiclesVm.isEmpty()) {
+                              for (VehicleVM v : vehiclesVm) {
+                                if (v.isChecked()) { selectedVehicleLabel = v.getLabel(); break; }
+                              }
+                            }
                             %>
                             <!DOCTYPE html>
                             <html lang="it">
@@ -360,11 +367,7 @@
                                                                 <p class="sidebar-item">
                                                                     <span class="label">Veicolo:</span>
                                                                     <span class="value" id="summary-vehicle">
-                                                                        <% if (vehiclesVm !=null) { String vLbl="—" ;
-                                                                            for (VehicleVM v : vehiclesVm) { if
-                                                                            (v.isChecked()) { vLbl=v.getLabel(); break;
-                                                                            } } out.print(vLbl); } else {
-                                                                            out.print("—"); } %>
+                                                                        <%= selectedVehicleLabel %>
                                                                     </span>
                                                                 </p>
 
