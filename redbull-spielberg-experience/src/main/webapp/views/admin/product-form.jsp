@@ -53,24 +53,25 @@
                 </aside>
 
                 <section class="admin-content">
-                  <div class="admin-actions-bar">
-                    <div>
-                      <h2 class="admin-header-title">
-                        <%= isEdit ? "Modifica Prodotto" : "Nuovo Prodotto" %>
-                      </h2>
-                      <div class="admin-subtitle">Modifica i dettagli del catalogo</div>
-                    </div>
-                    <a href="<%=ctx%>/admin/products" class="btn outline">← Torna alla lista</a>
-                  </div>
+                  <div class="container-900">
+                   <div class="admin-actions-bar">
+                     <div>
+                       <h2 class="admin-header-title">
+                         <%= isEdit ? "Modifica Prodotto" : "Nuovo Prodotto" %>
+                       </h2>
+                       <div class="admin-subtitle">Modifica i dettagli del catalogo</div>
+                     </div>
+                     <a href="<%=ctx%>/admin/products" class="btn outline">← Torna alla lista</a>
+                   </div>
 
-                  <% if (err !=null) { %>
-                    <div class="alert danger" style="margin-bottom: 20px;">
-                      <%= esc(err) %>
-                    </div>
-                    <% } %>
+                   <% if (err !=null) { %>
+                     <div class="alert danger" style="margin-bottom: 20px;">
+                       <%= esc(err) %>
+                     </div>
+                     <% } %>
 
-                      <div class="card" style="padding: 32px; max-width: 900px;">
-                        <form method="post" action="<%=ctx%>/admin/products/save" enctype="multipart/form-data">
+                   <div class="card" style="padding: 32px; max-width: 900px;">
+                     <form method="post" action="<%=ctx%>/admin/products/save" enctype="multipart/form-data">
                           <% if (csrf !=null && !csrf.isBlank()) { %>
                             <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
                             <% } %>
@@ -169,6 +170,48 @@
                                     </div>
                                   </div>
 
+                                  <!-- SEZIONE 3b: Varianti / Taglie (solo MERCHANDISE) -->
+                                  <div id="variantsWrap" class="card" style="padding:16px; margin-bottom:24px; display:none;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                      <div>
+                                        <h4 style="margin:0; color:#fff;">Taglie / Varianti</h4>
+                                        <div class="admin-subtitle">Gestisci stock e prezzo opzionale per taglia</div>
+                                      </div>
+                                      <button type="button" class="btn sm" onclick="addVariantRow()">+ Aggiungi taglia</button>
+                                    </div>
+                                    <div class="variants-table">
+                                      <div class="variants-head">
+                                        <span>Taglia*</span><span>SKU</span><span>Stock</span><span>Attivo</span><span></span>
+                                      </div>
+                                      <div id="variantRows">
+                                        <% if (p.getVariants()!=null && !p.getVariants().isEmpty()) {
+                                             for (model.ProductVariant v : p.getVariants()) { %>
+                                          <div class="variant-row">
+                                            <input name="variantSize" placeholder="Es. S" value="<%= esc(v.getSize()) %>" required>
+                                            <input name="variantSku" placeholder="SKU" value="<%= esc(v.getSku()) %>">
+                                            <input name="variantStock" type="number" min="0" placeholder="Stock" value="<%= v.getStockQuantity()==null?"":v.getStockQuantity() %>">
+                                            <label class="toggle">
+                                              <input type="checkbox" name="variantActive" <%= Boolean.TRUE.equals(v.getActive())?"checked":"" %>>
+                                              <span>Attivo</span>
+                                            </label>
+                                            <button type="button" class="btn sm secondary" onclick="this.parentElement.remove()">X</button>
+                                          </div>
+                                        <% } } else { %>
+                                          <div class="variant-row">
+                                            <input name="variantSize" placeholder="Es. S" required>
+                                            <input name="variantSku" placeholder="SKU">
+                                            <input name="variantStock" type="number" min="0" placeholder="Stock">
+                                            <label class="toggle">
+                                              <input type="checkbox" name="variantActive" checked>
+                                              <span>Attivo</span>
+                                            </label>
+                                            <button type="button" class="btn sm secondary" onclick="this.parentElement.remove()">X</button>
+                                          </div>
+                                        <% } %>
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   <!-- SEZIONE 4: Immagine e Descrizione -->
                                   <div style="margin-bottom: 24px;">
                                     <label
@@ -230,18 +273,17 @@
                                   </div>
 
                                   <div style="display: flex; gap: 16px;">
-                                    <button class="btn"
-                                      style="background: #0a84ff; padding: 12px 32px; font-size: 1rem;" type="submit">
-                                      <%= isEdit ? "Salva Modifiche" : "Crea Prodotto" %>
-                                    </button>
-                                    <a href="<%=ctx%>/admin/products" class="btn outline"
-                                      style="padding: 12px 24px;">Annulla</a>
-                                  </div>
-                        </form>
-                      </div>
-                </section>
+                    <button class="btn primary" type="submit">
+                      <%= isEdit ? "Salva Modifiche" : "Crea Prodotto" %>
+                    </button>
+                    <a href="<%=ctx%>/admin/products" class="btn outline">Annulla</a>
+                  </div>
+                </form>
               </div>
             </div>
+           </section>
+          </div>
+        </div>
 
             <script>
               (function () {
@@ -272,7 +314,72 @@
               })();
             </script>
 
+            <script>
+               const productTypeSelect = document.getElementById('productType');
+               const stockWrap = document.getElementById('stockWrap');
+               const expType = document.getElementById('experienceType');
+               const variantsWrap = document.getElementById('variantsWrap');
+
+               function setVariantsRequired(on){
+                 const sizes = document.querySelectorAll('#variantRows input[name="variantSize"]');
+                 sizes.forEach(inp => on ? inp.setAttribute('required','required') : inp.removeAttribute('required'));
+               }
+
+               function toggleSections() {
+                 const isMerch = productTypeSelect.value === 'MERCHANDISE';
+                 if (stockWrap) stockWrap.style.display = isMerch ? 'block' : 'none';
+                 if (variantsWrap) variantsWrap.style.display = isMerch ? 'block' : 'none';
+                 if (!isMerch) {
+                   if (expType) expType.removeAttribute('disabled');
+                   setVariantsRequired(false); // evita required su campi nascosti
+                 } else {
+                   if (expType) expType.setAttribute('disabled','disabled');
+                   setVariantsRequired(true);
+                 }
+               }
+               productTypeSelect.addEventListener('change', toggleSections);
+               toggleSections();
+
+               function addVariantRow() {
+                 const isMerch = productTypeSelect.value === 'MERCHANDISE';
+                 const row = document.createElement('div');
+                 row.className = 'variant-row';
+                 row.innerHTML = `
+                   <input name="variantSize" placeholder="Es. S" ${isMerch ? 'required' : ''}>
+                   <input name="variantSku" placeholder="SKU">
+                   <input name="variantStock" type="number" min="0" placeholder="Stock">
+                   <label class="toggle">
+                     <input type="checkbox" name="variantActive" checked>
+                     <span>Attivo</span>
+                   </label>
+                   <button type="button" class="btn sm secondary" onclick="this.parentElement.remove()">X</button>
+                 `;
+                 document.getElementById('variantRows').appendChild(row);
+               }
+             </script>
+
+            <style>
+              .variants-table { display:flex; flex-direction:column; gap:8px; }
+              .variants-head, .variant-row { display:grid; grid-template-columns: 1.3fr 1fr 0.9fr 0.8fr 0.5fr; gap:8px; align-items:center; }
+              .variants-head { color:#aaa; font-size:0.9rem; }
+              .variant-row input { width:100%; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(0,0,0,0.2); color:#fff; padding:8px; }
+              .variant-row .toggle { display:flex; align-items:center; gap:6px; color:#fff; }
+              @media (max-width: 900px) {
+                .variants-head, .variant-row { grid-template-columns: repeat(2, minmax(0,1fr)); grid-auto-rows:auto; }
+                .variants-head span:nth-child(n+3) { display:none; }
+                .variant-row input { padding:10px; }
+                .variant-row .toggle { justify-content:flex-start; }
+                .variant-row button { width:100%; }
+              }
+              @media (max-width: 600px) {
+                .variants-head, .variant-row { grid-template-columns: 1fr; }
+                .variants-table { gap:12px; }
+                .variant-row { row-gap:10px; }
+              }
+            </style>
+
             <jsp:include page="/views/footer.jsp" />
           </body>
 
           </html>
+

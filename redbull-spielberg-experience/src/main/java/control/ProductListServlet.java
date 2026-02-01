@@ -37,8 +37,8 @@ public class ProductListServlet extends HttpServlet {
             List<Category> categories = categoryDAO.findAllActive();
             req.setAttribute("categories", categories);
 
-            // SOLO MERCHANDISE attivi, con categoria opzionale
-            List<Product> products = productDAO.findActiveMerchandise(categoryId);
+            // TUTTI i prodotti attivi (MERCHANDISE + EXPERIENCE), con categoria opzionale
+            List<Product> products = productDAO.findAll(categoryId);
             req.setAttribute("products", products);
             req.setAttribute("selectedCategory", categoryId);
 

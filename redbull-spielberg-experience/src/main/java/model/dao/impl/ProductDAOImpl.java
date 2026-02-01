@@ -1,6 +1,7 @@
 package model.dao.impl;
 
 import model.Product;
+import model.ProductVariant;
 import model.dao.ProductDAO;
 import utils.DatabaseConnection;
 
@@ -49,8 +50,11 @@ public class ProductDAOImpl implements ProductDAO {
             if (categoryId != null)
                 ps.setInt(1, categoryId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next())
-                    results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -63,8 +67,11 @@ public class ProductDAOImpl implements ProductDAO {
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next())
-                    return mapRow(rs);
+                if (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    return p;
+                }
             }
         }
         return null;
@@ -83,8 +90,11 @@ public class ProductDAOImpl implements ProductDAO {
             if (categoryId != null)
                 ps.setInt(1, categoryId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next())
-                    results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -105,8 +115,11 @@ public class ProductDAOImpl implements ProductDAO {
                 PreparedStatement ps = con.prepareStatement(sb.toString())) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next())
-                    results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -135,8 +148,11 @@ public class ProductDAOImpl implements ProductDAO {
                 PreparedStatement ps = con.prepareStatement(sb.toString())) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next())
-                    results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -166,8 +182,11 @@ public class ProductDAOImpl implements ProductDAO {
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next())
-                    return mapRow(rs);
+                if (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    return p;
+                }
             }
         }
         return null;
@@ -186,12 +205,15 @@ public class ProductDAOImpl implements ProductDAO {
                 PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindUpsert(ps, p);
             ps.executeUpdate();
+            Integer newId = null;
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next())
-                    return rs.getInt(1);
+                if (rs.next()) newId = rs.getInt(1);
             }
+            if (newId == null) throw new SQLException("Insert product failed: no ID obtained.");
+            p.setProductId(newId);
+            saveVariants(con, p, true);
+            return newId;
         }
-        throw new SQLException("Insert product failed: no ID obtained.");
     }
 
     @Override
@@ -208,6 +230,7 @@ public class ProductDAOImpl implements ProductDAO {
             int idx = bindUpsert(ps, p);
             ps.setInt(idx, p.getProductId());
             ps.executeUpdate();
+            saveVariants(con, p, false);
         }
     }
 
@@ -337,6 +360,59 @@ public class ProductDAOImpl implements ProductDAO {
         if (uAt != null)
             p.setUpdatedAt(uAt.toLocalDateTime());
         return p;
+    }
+
+    private List<ProductVariant> loadVariants(Connection con, int productId, boolean onlyActive) throws SQLException {
+        final String sql = "SELECT variant_id, size, sku, price_override, stock_quantity, is_active, created_at, updated_at " +
+                "FROM product_variants WHERE product_id=?" + (onlyActive ? " AND is_active=1" : "") + " ORDER BY variant_id";
+        List<ProductVariant> variants = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ProductVariant v = new ProductVariant();
+                    v.setVariantId(rs.getInt("variant_id"));
+                    v.setProductId(productId);
+                    v.setSize(rs.getString("size"));
+                    v.setSku(rs.getString("sku"));
+                    v.setPriceOverride(rs.getBigDecimal("price_override"));
+                    v.setStockQuantity((Integer) rs.getObject("stock_quantity"));
+                    v.setActive(rs.getBoolean("is_active"));
+                    Timestamp cAt = rs.getTimestamp("created_at");
+                    Timestamp uAt = rs.getTimestamp("updated_at");
+                    if (cAt != null) v.setCreatedAt(cAt.toLocalDateTime());
+                    if (uAt != null) v.setUpdatedAt(uAt.toLocalDateTime());
+                    variants.add(v);
+                }
+            }
+        }
+        return variants;
+    }
+
+    private void saveVariants(Connection con, Product p, boolean isInsert) throws SQLException {
+        if (p.getVariants() == null) return;
+        // simple approach: delete old (if update) then insert all
+        if (!isInsert) {
+            try (PreparedStatement del = con.prepareStatement("DELETE FROM product_variants WHERE product_id=?")) {
+                del.setInt(1, p.getProductId());
+                del.executeUpdate();
+            }
+        }
+        final String ins = "INSERT INTO product_variants (product_id, size, sku, price_override, stock_quantity, is_active, created_at, updated_at) " +
+                "VALUES (?,?,?,?,?,?, NOW(), NOW())";
+        try (PreparedStatement ps = con.prepareStatement(ins)) {
+            for (ProductVariant v : p.getVariants()) {
+                int i = 1;
+                ps.setInt(i++, p.getProductId());
+                ps.setString(i++, v.getSize());
+                if (v.getSku() == null || v.getSku().isBlank()) ps.setNull(i++, Types.VARCHAR); else ps.setString(i++, v.getSku());
+                if (v.getPriceOverride() == null) ps.setNull(i++, Types.DECIMAL); else ps.setBigDecimal(i++, v.getPriceOverride());
+                if (v.getStockQuantity() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, v.getStockQuantity());
+                ps.setBoolean(i++, Boolean.TRUE.equals(v.getActive()));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 
     private static Product.ProductType safeProductType(String s) {
