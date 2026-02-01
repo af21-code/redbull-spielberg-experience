@@ -61,39 +61,22 @@
             <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=2">
             <style>
               /* Piccolo ritocco per le thumb nel riepilogo (non tocca il resto del CSS) */
-              .summary-line {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 10px
+              .checkout-wrap .grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 24px; align-items: start; }
+              .card.sticky { position: sticky; top: 16px; }
+              .summary-line{display:flex; align-items:center; justify-content:space-between; gap:10px}
+              .summary-line .sum-left{display:flex; align-items:center; gap:10px; min-width:0}
+              .sum-thumb{width:64px; height:48px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,.15)}
+              .sum-name{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px}
+              .summary-line.total{justify-content:space-between; font-weight:600}
+              @media (max-width: 980px){
+                .checkout-wrap .grid{grid-template-columns:1fr;}
+                .card.sticky{position:static;}
+                .sum-name{max-width:100%;}
               }
-
-              .summary-line .sum-left {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                min-width: 0
-              }
-
-              .sum-thumb {
-                width: 64px;
-                height: 48px;
-                object-fit: cover;
-                border-radius: 8px;
-                border: 1px solid rgba(255, 255, 255, .15)
-              }
-
-              .sum-name {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 320px
-              }
-
-              @media (max-width: 600px) {
-                .sum-name {
-                  max-width: 200px
-                }
+              @media (max-width: 600px){
+                .summary-line{align-items:flex-start;}
+                .summary-line .sum-left{align-items:flex-start;}
+                .sum-thumb{width:56px; height:42px;}
               }
             </style>
           </head>
@@ -344,20 +327,24 @@
                                       esc(it.getSize()) %>
                                       <% } %>
                             </div>
-                            <div><strong>€ <%= money.format(it.getTotal()) %></strong></div>
-                          </div>
-                          <% } } %>
-                            <hr class="sep">
-                            <div class="summary-line total">
-                              <span>Totale</span><span>€ <%= money.format(total) %></span>
+                            <div>
+                              <strong>€ <%= money.format(it.getTotal()) %></strong>
                             </div>
+                          </div>
                         </div>
                       </div>
+                    <% } } %>
+                    <hr class="sep">
+                    <div class="summary-line total">
+                      <span>Totale</span><span>€ <%= money.format(total) %></span>
+                    </div>
                   </div>
                 </div>
+            </div>
 
                 <jsp:include page="footer.jsp" />
                 <script src="<%=ctx%>/scripts/checkout.js?v=2"></script>
           </body>
 
           </html>
+
