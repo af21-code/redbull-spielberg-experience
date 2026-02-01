@@ -7,15 +7,19 @@
       }
       %>
 
-      <% String ctx=request.getContextPath(); List<User> list = (List<User>)
-          request.getAttribute("users");
-          String q = request.getParameter("q") == null ? "" : request.getParameter("q");
-          String type = request.getParameter("type") == null ? "" : request.getParameter("type");
-          boolean onlyInactive = "1".equals(request.getParameter("onlyInactive"));
+      <% String ctx=request.getContextPath();
+   List<User> list = new ArrayList<>();
+   Object usersObj = request.getAttribute("users");
+   if (usersObj instanceof List<?>) {
+     for (Object x : (List<?>) usersObj) if (x instanceof User) list.add((User) x);
+   }
+   String q = request.getParameter("q") == null ? "" : request.getParameter("q");
+   String type = request.getParameter("type") == null ? "" : request.getParameter("type");
+   boolean onlyInactive = "1".equals(request.getParameter("onlyInactive"));
 
-          String okMsg = request.getParameter("ok");
-          String errMsg = request.getParameter("err");
-          %>
+   String okMsg = request.getParameter("ok");
+   String errMsg = request.getParameter("err");
+   %>
           <!DOCTYPE html>
           <html lang="it">
 
@@ -180,28 +184,29 @@
 
             <script>
               // --- Toast Logic ---
-              function showToast(msg, type = 'info') {
-                const container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
+              function showToast(msg, type) {
+                type = type || 'info';
+                var container = document.getElementById('toast-container');
+                var toast = document.createElement('div');
                 toast.className = 'toast ' + type;
 
-                let icon = 'ℹ️';
+                var icon = 'ℹ️';
                 if (type === 'success') icon = '✅';
                 if (type === 'error') icon = '⚠️';
 
                 toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-msg">' + msg + '</span>';
                 container.appendChild(toast);
 
-                setTimeout(() => {
+                setTimeout(function () {
                   toast.style.animation = 'toastFadeOut 0.3s forwards';
-                  setTimeout(() => toast.remove(), 300);
+                  setTimeout(function () { toast.remove(); }, 300);
                 }, 4000);
               }
 
-              document.addEventListener("DOMContentLoaded", () => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const ok = urlParams.get('ok');
-                const err = urlParams.get('err');
+              document.addEventListener("DOMContentLoaded", function () {
+                var urlParams = new URLSearchParams(window.location.search);
+                var ok = urlParams.get('ok');
+                var err = urlParams.get('err');
 
                 if (ok) {
                   showToast(ok, 'success');
@@ -214,18 +219,18 @@
               });
 
               // --- Modal Logic ---
-              const modal = document.getElementById('confirmModal');
-              const modalTitle = document.getElementById('modalTitle');
-              const modalDesc = document.getElementById('modalDesc');
-              let pendingForm = null;
-              let pendingSelect = null;
-              let prevValue = null;
+              var modal = document.getElementById('confirmModal');
+              var modalTitle = document.getElementById('modalTitle');
+              var modalDesc = document.getElementById('modalDesc');
+              var pendingForm = null;
+              var pendingSelect = null;
+              var prevValue = null;
 
               function confirmRoleChange(select) {
                 pendingSelect = select;
                 pendingForm = select.form;
                 prevValue = select.dataset.prev;
-                const newVal = select.value;
+                var newVal = select.value;
                 modalTitle.textContent = 'Conferma modifica ruolo';
                 modalDesc.textContent = 'Stai per cambiare il ruolo in ' + newVal + '. Confermi l\'operazione?';
                 modal.classList.add('active');

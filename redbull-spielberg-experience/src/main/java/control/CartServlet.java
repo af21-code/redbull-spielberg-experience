@@ -247,9 +247,14 @@ public class CartServlet extends HttpServlet {
     }
 
     private List<CartItem> getCart(HttpSession session) {
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
-        if (cart == null) {
-            cart = new ArrayList<>();
+        Object obj = session.getAttribute("cartItems");
+        List<CartItem> cart = new ArrayList<>();
+        if (obj instanceof List<?> list) {
+            for (Object x : list) if (x instanceof CartItem) cart.add((CartItem) x);
+        }
+        if (cart.isEmpty()) {
+            session.setAttribute("cartItems", cart);
+        } else if (obj != cart) {
             session.setAttribute("cartItems", cart);
         }
         return cart;

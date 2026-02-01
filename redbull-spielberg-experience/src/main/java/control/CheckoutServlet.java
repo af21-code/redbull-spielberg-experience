@@ -41,8 +41,8 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
-        if (cart == null || cart.isEmpty()) {
+        List<CartItem> cart = getCartFromSession(session);
+        if (cart.isEmpty()) {
             resp.sendRedirect(req.getContextPath() + "/shop");
             return;
         }
@@ -207,8 +207,8 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
-        if (cart == null || cart.isEmpty()) {
+        List<CartItem> cart = getCartFromSession(session);
+        if (cart.isEmpty()) {
             resp.sendRedirect(ctx + "/shop");
             return;
         }
@@ -310,8 +310,8 @@ public class CheckoutServlet extends HttpServlet {
         if (session == null)
             return;
         String sizeKey = size == null ? "" : size;
-        List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
-        if (cart != null) {
+        List<CartItem> cart = getCartFromSession(session);
+        if (!cart.isEmpty()) {
             cart.removeIf(it -> it.getProductId() == productId
                     && Objects.equals(it.getSlotId(), slotId)
                     && Objects.equals(nz(it.getSize()), sizeKey));
@@ -329,4 +329,16 @@ public class CheckoutServlet extends HttpServlet {
     private static String nz(String s) {
         return s == null ? "" : s;
     }
+
+    private static List<CartItem> getCartFromSession(HttpSession session) {
+        List<CartItem> out = new ArrayList<>();
+        if (session == null) return out;
+        Object obj = session.getAttribute("cartItems");
+        if (obj instanceof List<?> list) {
+            for (Object x : list) if (x instanceof CartItem) out.add((CartItem) x);
+        }
+        session.setAttribute("cartItems", out);
+        return out;
+    }
 }
+

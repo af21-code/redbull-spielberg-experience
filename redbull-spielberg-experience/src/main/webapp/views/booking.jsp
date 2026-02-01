@@ -1,15 +1,25 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ page import="java.util.*, java.time.LocalDate" %>
         <%@ page import="control.BookingServlet.SlotVM, control.BookingServlet.VehicleVM" %>
-            <% String ctx=request.getContextPath(); String cssVer=(String) request.getAttribute("cssVersion"); String
+        <% String ctx=request.getContextPath(); String cssVer=(String) request.getAttribute("cssVersion"); String
                 displayName=(String) request.getAttribute("displayName"); String itShort=(String)
                 request.getAttribute("itShort"); String itDesc=(String) request.getAttribute("itDesc"); String
                 heroImg=(String) request.getAttribute("heroImg"); String overlayWall=(String)
                 request.getAttribute("overlayWall"); String expCode=(String) request.getAttribute("expCode"); Integer
                 productId=(Integer) request.getAttribute("productId"); LocalDate selectedDate=(LocalDate)
-                request.getAttribute("selectedDate"); List<SlotVM> slotsVm = (List
-                <SlotVM>) request.getAttribute("slotsVm");
-                    List<VehicleVM> vehiclesVm = (List<VehicleVM>) request.getAttribute("vehiclesVm");
+                request.getAttribute("selectedDate");
+
+                List<SlotVM> slotsVm = new ArrayList<>();
+                Object slotsObj = request.getAttribute("slotsVm");
+                if (slotsObj instanceof List<?>) {
+                  for (Object x : (List<?>) slotsObj) if (x instanceof SlotVM) slotsVm.add((SlotVM) x);
+                }
+
+                List<VehicleVM> vehiclesVm = new ArrayList<>();
+                Object vehObj = request.getAttribute("vehiclesVm");
+                if (vehObj instanceof List<?>) {
+                  for (Object x : (List<?>) vehObj) if (x instanceof VehicleVM) vehiclesVm.add((VehicleVM) x);
+                }
 
                             Integer totalRemainingObj = (Integer) request.getAttribute("totalRemaining");
                             int totalRemaining = (totalRemainingObj == null ? 0 : totalRemainingObj);

@@ -44,7 +44,7 @@ public class CartSyncFilter implements Filter {
         HttpSession session = r.getSession(false);
         if (session != null) {
             Object auth = session.getAttribute("authUser");
-            List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
+            List<CartItem> sessionCart = safeCart(session.getAttribute("cartItems"));
 
             boolean merged = Boolean.TRUE.equals(session.getAttribute("cartMerged"));
             if (auth != null && !merged) {
@@ -78,5 +78,13 @@ public class CartSyncFilter implements Filter {
         }
 
         chain.doFilter(req, res);
+    }
+
+    private static List<CartItem> safeCart(Object obj) {
+        List<CartItem> out = new java.util.ArrayList<>();
+        if (obj instanceof List<?> list) {
+            for (Object x : list) if (x instanceof CartItem) out.add((CartItem) x);
+        }
+        return out;
     }
 }

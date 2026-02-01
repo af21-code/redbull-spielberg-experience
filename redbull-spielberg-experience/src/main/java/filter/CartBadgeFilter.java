@@ -8,6 +8,7 @@ import model.dao.CartDAO;
 import model.dao.impl.CartDAOImpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CartBadgeFilter implements Filter {
@@ -44,8 +45,8 @@ public class CartBadgeFilter implements Filter {
     int cartCount = 0;
     HttpSession session = r.getSession(false);
     if (session != null) {
-      List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
-      if (sessionCart != null && !sessionCart.isEmpty()) {
+      List<CartItem> sessionCart = safeCart(session.getAttribute("cartItems"));
+      if (!sessionCart.isEmpty()) {
         for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());
       } else {
         Object authUser = session.getAttribute("authUser");
@@ -67,5 +68,13 @@ public class CartBadgeFilter implements Filter {
 
     r.setAttribute("cartCount", cartCount);
     chain.doFilter(req, res);
+  }
+
+  private static List<CartItem> safeCart(Object obj) {
+    List<CartItem> out = new ArrayList<>();
+    if (obj instanceof List<?> list) {
+      for (Object x : list) if (x instanceof CartItem) out.add((CartItem) x);
+    }
+    return out;
   }
 }

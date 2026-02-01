@@ -5,13 +5,16 @@
       .replace("\"", "&quot;").replace("'", "&#39;");
       }
       %>
-      <% String ctx=request.getContextPath(); List<Category> categories = (List<Category>
-          ) request.getAttribute("categories");
-          if (categories == null) categories = new ArrayList<>();
+      <% String ctx=request.getContextPath();
+   List<Category> categories = new ArrayList<>();
+   Object catObj = request.getAttribute("categories");
+   if (catObj instanceof List<?>) {
+     for (Object x : (List<?>) catObj) if (x instanceof Category) categories.add((Category) x);
+   }
 
-            String ok = request.getParameter("ok");
-            String err = request.getParameter("err");
-            %>
+   String ok = request.getParameter("ok");
+   String err = request.getParameter("err");
+%>
             <!DOCTYPE html>
             <html lang="it">
 
@@ -102,28 +105,29 @@
 
               <script>
                 // --- Toast Logic ---
-                function showToast(msg, type = 'info') {
-                  const container = document.getElementById('toast-container');
-                  const toast = document.createElement('div');
+                function showToast(msg, type) {
+                  type = type || 'info';
+                  var container = document.getElementById('toast-container');
+                  var toast = document.createElement('div');
                   toast.className = 'toast ' + type;
 
-                  let icon = 'ℹ️';
+                  var icon = 'ℹ️';
                   if (type === 'success') icon = '✅';
                   if (type === 'error') icon = '⚠️';
 
                   toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-msg">' + msg + '</span>';
                   container.appendChild(toast);
 
-                  setTimeout(() => {
+                  setTimeout(function () {
                     toast.style.animation = 'toastFadeOut 0.3s forwards';
-                    setTimeout(() => toast.remove(), 300);
+                    setTimeout(function () { toast.remove(); }, 300);
                   }, 4000);
                 }
 
-                document.addEventListener("DOMContentLoaded", () => {
-                  const urlParams = new URLSearchParams(window.location.search);
-                  const ok = urlParams.get('ok');
-                  const err = urlParams.get('err');
+                document.addEventListener("DOMContentLoaded", function () {
+                  var urlParams = new URLSearchParams(window.location.search);
+                  var ok = urlParams.get('ok');
+                  var err = urlParams.get('err');
 
                   if (ok) {
                     showToast(ok, 'success');

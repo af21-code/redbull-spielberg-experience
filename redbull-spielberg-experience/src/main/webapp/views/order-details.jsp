@@ -35,20 +35,27 @@
       }
 
       private static Map<String, Object> asMapSO(Object obj) {
-        return (obj instanceof Map) ? (Map<String, Object>) obj : null;
+        if (!(obj instanceof Map<?, ?>)) return null;
+        Map<?, ?> m = (Map<?, ?>) obj;
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> e : m.entrySet()) {
+          if (e.getKey() instanceof String) {
+            out.put((String) e.getKey(), e.getValue());
+          }
+        }
+        return out;
           }
 
           private static List<Map<String, Object>> asListOfMapSO(Object obj) {
-            List<Map<String, Object>> out = new ArrayList<>();
-                if (obj instanceof List
-                <?>) {
-            for (Object x : (List<?>) obj) {
-                if (x instanceof Map
-                <?, ?>) out.add((Map<String, Object>) x);
-                  }
-                  }
-                  return out;
-                  }
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (obj instanceof List<?>) {
+          for (Object x : (List<?>) obj) {
+            Map<String, Object> m = asMapSO(x);
+            if (m != null) out.add(m);
+          }
+        }
+        return out;
+      }
                   %>
 
                   <% String ctx=request.getContextPath(); Map<String, Object> o =
@@ -358,7 +365,7 @@
                                     <h3 class="section-title">Azioni ordine</h3>
                                     <form method="post" action="<%=ctx%>/order/cancel" class="js-confirm"
                                       data-confirm-msg="Annullare definitivamente questo ordine? Verranno ripristinati stock/capienze.">
-                                      <input type="hidden" name="id" value="<%= esc(o.get(" order_id")) %>">
+                                      <input type="hidden" name="id" value="<%= esc(o.get("order_id")) %>">
                                       <% if (csrf !=null && !csrf.isEmpty()) { %>
                                         <input type="hidden" name="csrf" value="<%= esc(csrf) %>">
                                         <% } %>
@@ -387,12 +394,12 @@
                         </div>
                         <script>
                           (function () {
-                            const modal = document.getElementById('confirmModal');
+                            var modal = document.getElementById('confirmModal');
                             if (!modal) return;
-                            const msgEl = document.getElementById('confirmMessage');
-                            const btnOk = document.getElementById('confirmOk');
-                            const btnCancel = document.getElementById('confirmCancel');
-                            let pendingForm = null;
+                            var msgEl = document.getElementById('confirmMessage');
+                            var btnOk = document.getElementById('confirmOk');
+                            var btnCancel = document.getElementById('confirmCancel');
+                            var pendingForm = null;
 
                             function openModal(message, form) {
                               pendingForm = form;
@@ -406,17 +413,28 @@
                               pendingForm = null;
                             }
 
-                            document.querySelectorAll('form.js-confirm').forEach(f => {
-                              f.addEventListener('submit', function (e) {
+                            var forms = document.querySelectorAll('form.js-confirm');
+                            for (var i = 0; i < forms.length; i++) {
+                              forms[i].addEventListener('submit', function (e) {
                                 e.preventDefault();
-                                openModal(f.dataset.confirmMsg, f);
+                                openModal(this.dataset.confirmMsg, this);
                               });
-                            });
+                            }
 
-                            btnOk?.addEventListener('click', () => { if (pendingForm) pendingForm.submit(); closeModal(); });
-                            btnCancel?.addEventListener('click', closeModal);
-                            modal.querySelector('.modal-backdrop')?.addEventListener('click', closeModal);
-                            document.addEventListener('keyup', (e) => { if (e.key === 'Escape') closeModal(); });
+                            if (btnOk) {
+                              btnOk.addEventListener('click', function () {
+                                if (pendingForm) pendingForm.submit();
+                                closeModal();
+                              });
+                            }
+                            if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+                            var backdrop = modal.querySelector('.modal-backdrop');
+                            if (backdrop) backdrop.addEventListener('click', closeModal);
+
+                            document.addEventListener('keyup', function (e) {
+                              if (e.key === 'Escape') closeModal();
+                            });
                           })();
                         </script>
                       </body>

@@ -32,22 +32,26 @@
       }
       %>
 
-      <% String ctx=request.getContextPath(); // Carrello dal session scope (come nel tuo file originale)
-        List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
-          model.User auth = (model.User) session.getAttribute("authUser");
-          String defaultShipName = (auth == null) ? "" : ( (auth.getFirstName()==null?"":auth.getFirstName()) + " " +
-          (auth.getLastName()==null?"":auth.getLastName()) ).trim();
-          String defaultShipPhone = (auth == null || auth.getPhoneNumber()==null) ? "" : auth.getPhoneNumber();
+      <% String ctx=request.getContextPath();
+         List<CartItem> items = new ArrayList<>();
+         Object cartObj = session.getAttribute("cartItems");
+         if (cartObj instanceof List<?>) {
+           for (Object x : (List<?>) cartObj) if (x instanceof CartItem) items.add((CartItem) x);
+         }
+         model.User auth = (model.User) session.getAttribute("authUser");
+         String defaultShipName = (auth == null) ? "" : ( (auth.getFirstName()==null?"":auth.getFirstName()) + " " +
+         (auth.getLastName()==null?"":auth.getLastName()) ).trim();
+         String defaultShipPhone = (auth == null || auth.getPhoneNumber()==null) ? "" : auth.getPhoneNumber();
 
-          // Formattazione prezzi (IT)
-          DecimalFormatSymbols sy = new DecimalFormatSymbols(Locale.ITALY);
-          sy.setDecimalSeparator(',');
-          sy.setGroupingSeparator('.');
-          DecimalFormat money = new DecimalFormat("#,##0.00", sy);
+         // Formattazione prezzi (IT)
+         DecimalFormatSymbols sy = new DecimalFormatSymbols(Locale.ITALY);
+         sy.setDecimalSeparator(',');
+         sy.setGroupingSeparator('.');
+         DecimalFormat money = new DecimalFormat("#,##0.00", sy);
 
-          BigDecimal total = BigDecimal.ZERO;
-          if (items != null) for (CartItem it : items) total = total.add(it.getTotal());
-          %>
+         BigDecimal total = BigDecimal.ZERO;
+         if (items != null) for (CartItem it : items) total = total.add(it.getTotal());
+         %>
 
           <!DOCTYPE html>
           <html lang="it">
@@ -106,8 +110,8 @@
                     </div>
                     <script>
                       // porta in vista l'errore del server
-                      setTimeout(() => {
-                        const a = document.getElementById('srv-error-anchor');
+                      setTimeout(function () {
+                        var a = document.getElementById('srv-error-anchor');
                         if (a) a.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       }, 0);
                     </script>

@@ -31,19 +31,27 @@
       }
 
       private static Map<String, Object> asMapSO(Object obj) {
-        return (obj instanceof Map) ? (Map<String, Object>) obj : null;
-          }
+  if (!(obj instanceof Map<?, ?>)) return null;
+  Map<?, ?> m = (Map<?, ?>) obj;
+  Map<String, Object> out = new LinkedHashMap<>();
+  for (Map.Entry<?, ?> e : m.entrySet()) {
+    if (e.getKey() instanceof String) {
+      out.put((String) e.getKey(), e.getValue());
+    }
+  }
+  return out;
+}
 
-          private static List<Map<String, Object>> asListOfMapSO(Object obj) {
-            List<Map<String, Object>> out = new ArrayList<>();
-                if (obj instanceof List
-                <?>) {
-            for (Object x : (List<?>) obj)
-                if (x instanceof Map
-                <?, ?>) out.add((Map<String, Object>) x);
-                  }
-                  return out;
-                  }
+private static List<Map<String, Object>> asListOfMapSO(Object obj) {
+  List<Map<String, Object>> out = new ArrayList<>();
+  if (obj instanceof List<?>) {
+    for (Object x : (List<?>) obj) {
+      Map<String, Object> m = asMapSO(x);
+      if (m != null) out.add(m);
+    }
+  }
+  return out;
+}
                   %>
 
                   <% String ctx=request.getContextPath(); Map<String, Object> o =
@@ -344,7 +352,7 @@
                         </div>
 
                         <!-- Modal conferma ordini -->
-                        <div id="confirmModal" class="od-modal" hidden>
+                        <div id="confirmModal" class="od-modal" hidden="hidden">
                           <div class="od-modal__backdrop" onclick="closeConfirm()"></div>
                           <div class="od-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
                             <h3 id="confirmTitle">Conferma azione</h3>
@@ -358,10 +366,10 @@
 
                         <script>
                           (function(){
-                            const modal = document.getElementById('confirmModal');
-                            const textEl = document.getElementById('confirmText');
-                            const actionBtn = document.getElementById('confirmActionBtn');
-                            let targetForm = null;
+                            var modal = document.getElementById('confirmModal');
+                            var textEl = document.getElementById('confirmText');
+                            var actionBtn = document.getElementById('confirmActionBtn');
+                            var targetForm = null;
 
                             window.openConfirm = function(kind){
                               if (!modal) return;
@@ -378,6 +386,7 @@
                             };
 
                             window.closeConfirm = function(){
+                              if (!modal) return;
                               modal.hidden = true;
                               document.body.classList.remove('od-modal-open');
                               targetForm = null;
