@@ -29,7 +29,6 @@ public class CartSyncFilter implements Filter {
         return "/booking/availability".equals(path) || "/booking/slots".equals(path);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {

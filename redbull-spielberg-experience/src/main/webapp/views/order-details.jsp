@@ -2,13 +2,12 @@
   <%@ page import="java.util.*, java.math.BigDecimal, java.text.SimpleDateFormat" %>
 
     <%! // Escape HTML semplice
-      @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return ""
+      private static String esc(Object o) { if (o==null) return ""
       ; String s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
       .replace("\"", "&quot;").replace("'", "&#39;");
       }
 
       // Normalizza path immagine
-      @SuppressWarnings("unused")
       private String normImg(String p, String ctx) {
       if (p == null || p.isBlank()) return null;
       String s = p.trim();
@@ -18,7 +17,6 @@
       }
 
       // Risolve immagine item
-      @SuppressWarnings("unused")
       private String resolveImg(String imageUrl, String vehicleCode, String productType, String ctx) {
       String db = normImg(imageUrl, ctx);
       if (db != null) return db;
@@ -36,12 +34,10 @@
       }
       }
 
-      @SuppressWarnings("unchecked")
       private static Map<String, Object> asMapSO(Object obj) {
         return (obj instanceof Map) ? (Map<String, Object>) obj : null;
           }
 
-          @SuppressWarnings("unchecked")
           private static List<Map<String, Object>> asListOfMapSO(Object obj) {
             List<Map<String, Object>> out = new ArrayList<>();
                 if (obj instanceof List

@@ -2,12 +2,11 @@
     <%@ page import="java.util.*, java.math.BigDecimal" %>
         <%@ page import="model.Product, model.Product.ProductType, model.Category" %>
             <%@ page import="java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
-                <%! @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return "" ; String
+                <%! private static String esc(Object o) { if (o==null) return "" ; String
                     s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
                     .replace("\"", "&quot;").replace("'", "&#39;");
                     }
 
-                    @SuppressWarnings("unused")
                     private String normImg(String p, String ctx) {
                     if (p == null || p.isBlank()) return null;
                     String s = p.trim();

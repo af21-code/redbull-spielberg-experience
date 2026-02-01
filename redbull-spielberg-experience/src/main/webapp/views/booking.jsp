@@ -7,9 +7,8 @@
                 heroImg=(String) request.getAttribute("heroImg"); String overlayWall=(String)
                 request.getAttribute("overlayWall"); String expCode=(String) request.getAttribute("expCode"); Integer
                 productId=(Integer) request.getAttribute("productId"); LocalDate selectedDate=(LocalDate)
-                request.getAttribute("selectedDate"); @SuppressWarnings("unchecked") List<SlotVM> slotsVm = (List
+                request.getAttribute("selectedDate"); List<SlotVM> slotsVm = (List
                 <SlotVM>) request.getAttribute("slotsVm");
-                    @SuppressWarnings("unchecked")
                     List<VehicleVM> vehiclesVm = (List<VehicleVM>) request.getAttribute("vehiclesVm");
 
                             Integer totalRemainingObj = (Integer) request.getAttribute("totalRemaining");

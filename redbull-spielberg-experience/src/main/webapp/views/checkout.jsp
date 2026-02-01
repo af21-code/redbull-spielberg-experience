@@ -10,7 +10,6 @@
       }
 
       // ---- Helper per risolvere il path immagine (con fallback) ----
-      @SuppressWarnings("unused")
       private static String resolveImg(String ctx, String imageUrl, String vehicleCode, String productType) {
       if (imageUrl != null && !imageUrl.isBlank()) {
       String u = imageUrl.trim();
@@ -34,7 +33,7 @@
       %>
 
       <% String ctx=request.getContextPath(); // Carrello dal session scope (come nel tuo file originale)
-        @SuppressWarnings("unchecked") List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
+        List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
           model.User auth = (model.User) session.getAttribute("authUser");
           String defaultShipName = (auth == null) ? "" : ( (auth.getFirstName()==null?"":auth.getFirstName()) + " " +
           (auth.getLastName()==null?"":auth.getLastName()) ).trim();

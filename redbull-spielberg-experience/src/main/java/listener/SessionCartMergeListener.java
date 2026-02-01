@@ -28,7 +28,6 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
         catch (Exception ignored) {}
         if (userId == null) return;
 
-        @SuppressWarnings("unchecked")
         List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
         if (items == null || items.isEmpty()) return;
 

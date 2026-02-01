@@ -26,7 +26,6 @@ public class CheckoutServlet extends HttpServlet {
 
     private final CartDAO cartDao = new CartDAOImpl();
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -189,7 +188,6 @@ public class CheckoutServlet extends HttpServlet {
         return null; // tutto ok
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -308,7 +306,6 @@ public class CheckoutServlet extends HttpServlet {
         return s == null ? null : s.trim();
     }
 
-    @SuppressWarnings("unchecked")
     private void pruneUnavailable(HttpSession session, int productId, Integer slotId, String size) {
         if (session == null)
             return;

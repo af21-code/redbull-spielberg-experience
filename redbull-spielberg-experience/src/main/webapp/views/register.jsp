@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
   <%! // Escape HTML semplice, senza dipendenze esterne
-    @SuppressWarnings("unused") private static String esc(Object o)
+    private static String esc(Object o)
     { if (o==null) return "" ; String s=String.valueOf(o); return s.replace("&","&amp;").replace("<","&lt;").replace("> ","&gt;")
     .replace("\"","&quot;").replace("'","&#39;");
     }

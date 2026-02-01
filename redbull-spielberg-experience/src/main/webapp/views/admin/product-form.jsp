@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
   <%@ page import="java.util.*, model.Product, model.Category" %>
-    <%! @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return "" ; String
+    <%! private static String esc(Object o) { if (o==null) return "" ; String
       s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
       .replace("\"", "&quot;").replace("'", "&#39;");
       }

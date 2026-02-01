@@ -30,12 +30,10 @@
       }
       }
 
-      @SuppressWarnings("unchecked")
       private static Map<String, Object> asMapSO(Object obj) {
         return (obj instanceof Map) ? (Map<String, Object>) obj : null;
           }
 
-          @SuppressWarnings("unchecked")
           private static List<Map<String, Object>> asListOfMapSO(Object obj) {
             List<Map<String, Object>> out = new ArrayList<>();
                 if (obj instanceof List

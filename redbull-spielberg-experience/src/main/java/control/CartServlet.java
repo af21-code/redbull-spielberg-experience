@@ -246,7 +246,6 @@ public class CartServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/cart/view");
     }
 
-    @SuppressWarnings("unchecked")
     private List<CartItem> getCart(HttpSession session) {
         List<CartItem> cart = (List<CartItem>) session.getAttribute("cartItems");
         if (cart == null) {

@@ -44,7 +44,6 @@ public class CartBadgeFilter implements Filter {
     int cartCount = 0;
     HttpSession session = r.getSession(false);
     if (session != null) {
-      @SuppressWarnings("unchecked")
       List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
       if (sessionCart != null && !sessionCart.isEmpty()) {
         for (CartItem it : sessionCart) cartCount += Math.max(1, it.getQuantity());

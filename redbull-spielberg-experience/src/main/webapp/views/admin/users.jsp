@@ -7,7 +7,7 @@
       }
       %>
 
-      <% String ctx=request.getContextPath(); @SuppressWarnings("unchecked") List<User> list = (List<User>)
+      <% String ctx=request.getContextPath(); List<User> list = (List<User>)
           request.getAttribute("users");
           String q = request.getParameter("q") == null ? "" : request.getParameter("q");
           String type = request.getParameter("type") == null ? "" : request.getParameter("type");

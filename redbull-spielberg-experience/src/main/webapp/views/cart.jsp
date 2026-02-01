@@ -2,13 +2,12 @@
     <%@ page import="java.util.*, java.math.BigDecimal, java.time.format.DateTimeFormatter" %>
         <%@ page import="model.CartItem" %>
             <%@ page import="java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
-                <%! @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return "" ; String
+                <%! private static String esc(Object o) { if (o==null) return "" ; String
                     s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
                     .replace("\"", "&quot;").replace("'", "&#39;");
                     }
 
                     // Normalizza path immagine - supporta base64 data URI
-                    @SuppressWarnings("unused")
                     private String normImg(String p, String ctx) {
                     if (p == null || p.isBlank()) return null;
                     String s = p.trim();
@@ -23,7 +22,6 @@
                     }
 
                     // Resolve immagine con fallback
-                    @SuppressWarnings("unused")
                     private String resolveImg(String imageUrl, String vehicleCode, String productType, String ctx) {
                     String db = normImg(imageUrl, ctx);
                     if (db != null) return db;
