@@ -18,10 +18,19 @@
           if (csrf == null || csrf.isBlank()) csrf = (String) session.getAttribute("csrfToken");
 
           boolean isEdit = (p.getProductId() != null);
-
           // comodi per i confronti
           String expName = (p.getExperienceType() == null ? "" : p.getExperienceType().name());
           String prodName = (p.getProductType() == null ? "" : p.getProductType().name());
+
+          boolean hasVariants = (p.getVariants() != null && !p.getVariants().isEmpty());
+          boolean isMerchServer = "MERCHANDISE".equals(prodName);
+          int variantsSum = 0;
+          if (hasVariants) {
+            for (model.ProductVariant v : p.getVariants()) {
+              if (v.getStockQuantity() != null) variantsSum += Math.max(0, v.getStockQuantity());
+            }
+          }
+
           Integer curCatId = p.getCategoryId();
           %>
           <!DOCTYPE html>
@@ -149,9 +158,14 @@
                                         style="display:block; margin-bottom:8px; font-weight:600; color:#fff;">Stock
                                         (Qtà)</label>
                                       <input id="stockQuantity" name="stockQuantity" type="number" min="0"
-                                        value="<%= p.getStockQuantity() == null ? "" : String.valueOf(p.getStockQuantity()) %>"
+                                        value="<%= (hasVariants || isMerchServer) ? String.valueOf(variantsSum) : (p.getStockQuantity() == null ? "" : String.valueOf(p.getStockQuantity())) %>"
                                         placeholder="Solo per MERCHANDISE"
+                                        <%= (hasVariants || isMerchServer) ? "readonly" : "" %>
                                         style="width: 100%; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; background: rgba(0,0,0,0.2); color: #fff; padding: 10px;">
+                                      <div id="stockDerivedNote"
+                                        style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-top: 6px; <%= (hasVariants || isMerchServer) ? "" : "display:none;" %>">
+                                        Stock generale derivato dalle varianti.
+                                      </div>
                                     </div>
                                     <div>
                                       <label for="experienceType"
@@ -192,7 +206,6 @@
                                             <input name="variantStock" type="number" min="0" placeholder="Stock" value="<%= v.getStockQuantity()==null?"":v.getStockQuantity() %>">
                                             <label class="toggle">
                                               <input type="checkbox" name="variantActive" <%= Boolean.TRUE.equals(v.getActive())?"checked":"" %>>
-                                              <span>Attivo</span>
                                             </label>
                                             <button type="button" class="btn sm secondary" onclick="this.parentElement.remove()">X</button>
                                           </div>
@@ -336,9 +349,41 @@
                    if (expType) expType.setAttribute('disabled','disabled');
                    setVariantsRequired(true);
                  }
+                 toggleDerivedStock();
                }
                productTypeSelect.addEventListener('change', toggleSections);
                toggleSections();
+
+               function hasAnyVariant() {
+                 const sizes = document.querySelectorAll('#variantRows input[name="variantSize"]');
+                 return Array.from(sizes).some(inp => (inp.value || '').trim().length > 0);
+               }
+
+               function toggleDerivedStock() {
+                 const isMerch = productTypeSelect.value === 'MERCHANDISE';
+                 const stockInput = document.getElementById('stockQuantity');
+                 const note = document.getElementById('stockDerivedNote');
+                 const derived = isMerch;
+                 if (stockInput) {
+                   stockInput.readOnly = derived;
+                   if (derived) {
+                     stockInput.value = sumVariantStock();
+                   }
+                 }
+                 if (note) {
+                   note.style.display = derived ? 'block' : 'none';
+                 }
+               }
+
+               function sumVariantStock() {
+                 const stocks = document.querySelectorAll('#variantRows input[name="variantStock"]');
+                 let sum = 0;
+                 stocks.forEach(inp => {
+                   const v = parseInt((inp.value || '0').trim(), 10);
+                   if (!isNaN(v) && v > 0) sum += v;
+                 });
+                 return sum;
+               }
 
                function addVariantRow() {
                  const isMerch = productTypeSelect.value === 'MERCHANDISE';
@@ -352,10 +397,21 @@
                      <input type="checkbox" name="variantActive" checked>
                      <span>Attivo</span>
                    </label>
-                   <button type="button" class="btn sm secondary" onclick="this.parentElement.remove()">X</button>
+                   <button type="button" class="btn sm secondary" onclick="this.parentElement.remove(); toggleDerivedStock();">X</button>
                  `;
                  document.getElementById('variantRows').appendChild(row);
+                 const sizeInput = row.querySelector('input[name="variantSize"]');
+                 if (sizeInput) {
+                   sizeInput.addEventListener('input', toggleDerivedStock);
+                 }
+                 toggleDerivedStock();
                }
+
+                document.addEventListener('input', function (e) {
+                  if (e.target && (e.target.name === 'variantSize' || e.target.name === 'variantStock')) {
+                    toggleDerivedStock();
+                  }
+                });
              </script>
 
             <style>

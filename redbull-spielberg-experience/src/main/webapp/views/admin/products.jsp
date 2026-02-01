@@ -151,6 +151,12 @@
                                   <% for (Product p : products) { String pType=p.getProductType()==null ? "—" :
                                     p.getProductType().name(); String eType=p.getExperienceType()==null ? "—" :
                                     p.getExperienceType().name(); boolean isActive=Boolean.TRUE.equals(p.getActive());
+                                    int derivedStock = 0; boolean hasVars = p.getVariants()!=null && !p.getVariants().isEmpty();
+                                    if (hasVars) { for (model.ProductVariant v : p.getVariants()) {
+                                        if (v.getStockQuantity() != null) derivedStock += Math.max(0, v.getStockQuantity());
+                                    } }
+                                    String stockLabel = hasVars ? String.valueOf(derivedStock)
+                                        : (p.getStockQuantity()==null ? "—" : String.valueOf(p.getStockQuantity()));
                                     %>
                                     <tr>
                                       <td data-label="Nome">
@@ -176,7 +182,7 @@
                                       <td data-label="Prezzo" class="price-cell">€ <%= p.getPrice() %>
                                       </td>
                                       <td data-label="Stock" style="font-weight: 500;">
-                                        <%= p.getStockQuantity()==null ? "—" : p.getStockQuantity() %>
+                                        <%= stockLabel %>
                                       </td>
                                       <td data-label="Stato">
                                         <span class="chip <%= isActive ? " success" : "warn" %>">

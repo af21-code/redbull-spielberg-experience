@@ -257,9 +257,21 @@ public class AdminProductSaveServlet extends HttpServlet {
                 }
             }
             p.setVariants(variants);
+            if (!variants.isEmpty()) {
+                int sum = 0;
+                for (ProductVariant v : variants) {
+                    if (v.getStockQuantity() != null) {
+                        sum += Math.max(0, v.getStockQuantity());
+                    }
+                }
+                stockQty = sum;
+            }
         } else {
             p.setVariants(null);
         }
+
+        // riallinea lo stock generale dopo eventuali varianti
+        p.setStockQuantity(stockQty);
 
         // ---- persistenza ----
         try {
