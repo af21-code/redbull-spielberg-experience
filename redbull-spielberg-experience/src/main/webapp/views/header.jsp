@@ -92,7 +92,8 @@
 <!-- CSRF bootstrap + patch globale fetch() + XMLHttpRequest + auto-hidden nelle form POST -->
 <script>
     (function () {
-        var token = document.querySelector('meta[name="csrf-token"]')?.content || "<%= csrfToken %>";
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        var token = meta ? meta.content : "<%= csrfToken %>";
         window.RBX = window.RBX || {};
         window.RBX.csrfToken = token;
 
