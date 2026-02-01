@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/userLogo.css">
   <!-- Stile bottone logout (in caso non venga incluso da header o caricato tardi) -->
-  <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/logoutbtn.css?v=2">
+  <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/logoutBtn.css?v=2">
   <!-- Stile della pagina RB21 -->
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/rb21.css?v=3">
 
