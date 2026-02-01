@@ -252,12 +252,10 @@
                                                                                             onerror="this.onerror=null;this.src='<%= ctx %>/images/vehicles/placeholder-vehicle.jpg';">
                                                                                         <span class="veh-body"
                                                                                             style="display:block">
-                                                                                            <h4>
                                                                                                 <%= v.getLabel() %>
-                                                                                            </h4>
-                                                                                            <p class="veh-specs">
+                                                                                            <span class="veh-specs">
                                                                                                 <%= v.getSpecs() %>
-                                                                                            </p>
+                                                                                            </span>
                                                                                         </span>
                                                                             </span>
                                                                         </label>
