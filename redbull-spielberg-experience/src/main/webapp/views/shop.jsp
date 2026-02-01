@@ -2,11 +2,12 @@
     <%@ page import="java.util.*, java.math.BigDecimal" %>
         <%@ page import="model.Product, model.Product.ProductType, model.Category" %>
             <%@ page import="java.text.DecimalFormat, java.text.DecimalFormatSymbols, java.util.Locale" %>
-                <%! private static String esc(Object o) { if (o==null) return "" ; String s=String.valueOf(o); return
-                    s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
+                <%! @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return "" ; String
+                    s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
                     .replace("\"", "&quot;").replace("'", "&#39;");
                     }
 
+                    @SuppressWarnings("unused")
                     private String normImg(String p, String ctx) {
                     if (p == null || p.isBlank()) return null;
                     String s = p.trim();
@@ -90,10 +91,11 @@
                                                         img=normImg(p.getImageUrl(), ctx); if (img==null)
                                                         img="https://via.placeholder.com/400x300?text=Red+Bull" ;
                                                         boolean isMerch=(p.getProductType()==ProductType.MERCHANDISE);
-                                                        boolean hasVariants=(p.getVariants()!=null && !p.getVariants().isEmpty());
-                                                        boolean hasStock=(p.getStockQuantity() !=null);
-                                                        boolean outOfStock=hasStock && p.getStockQuantity()==0;
-                                                        BigDecimal price=p.getPrice()==null ? BigDecimal.ZERO : p.getPrice(); %>
+                                                        boolean hasVariants=(p.getVariants()!=null &&
+                                                        !p.getVariants().isEmpty()); boolean
+                                                        hasStock=(p.getStockQuantity() !=null); boolean
+                                                        outOfStock=hasStock && p.getStockQuantity()==0; BigDecimal
+                                                        price=p.getPrice()==null ? BigDecimal.ZERO : p.getPrice(); %>
                                                         <div class="product-card">
                                                             <div class="product-image">
                                                                 <img src="<%= img %>" alt="<%= esc(p.getName()) %>"
@@ -108,7 +110,7 @@
                                                                 </p>
                                                                 <div class="meta">
                                                                     <span class="price">€ <%= money.format(price) %>
-                                                                            </span>
+                                                                    </span>
                                                                     <% if (isMerch && hasStock) { %>
                                                                         <span
                                                                             class="stock <%= (p.getStockQuantity() > 0 ? "in" : "out" ) %>">
@@ -120,49 +122,73 @@
                                                                 </div>
 
                                                                 <% if (isMerch) { %>
-                                                                <form class="add-to-cart" action="<%=ctx%>/cart/add"
-                                                                    method="post">
-                                                                    <% if (csrf !=null) { %><input type="hidden"
-                                                                            name="csrf" value="<%= csrf %>">
-                                                                        <% } %>
-                                                                            <input type="hidden" name="productId"
-                                                                                value="<%= p.getProductId() %>">
-                                                                            <input type="hidden" name="quantity"
-                                                                                value="1">
-
-                                                                            <!-- Hidden per carrello guest (sessione) -->
-                                                                            <input type="hidden" name="name"
-                                                                                value="<%= esc(p.getName()) %>">
-                                                                            <input type="hidden" name="imageUrl"
-                                                                                value="<%= p.getImageUrl() == null ? "" : esc(p.getImageUrl()) %>">
-                                                                            <input type="hidden" name="price"
-                                                                                value="<%= price %>">
-                                                                            <input type="hidden" name="productType"
-                                                                                value="<%= p.getProductType().name() %>">
-
-                                                                            <% if (hasVariants) { %>
-                                                                              <label class="size-label">Taglia</label>
-                                                                              <select name="size" required>
-                                                                                <% boolean anyAvailable=false; for (model.ProductVariant v : p.getVariants()) { boolean available = v.getStockQuantity()==null || v.getStockQuantity()>0; anyAvailable = anyAvailable || available; %>
-                                                                                  <option value="<%= esc(v.getSize()) %>" <%= available? "" : "disabled" %>>
-                                                                                    <%= esc(v.getSize()) %> <%= available? "" : "(esaurito)" %>
-                                                                                  </option>
-                                                                                <% } %>
-                                                                              </select>
-                                                                            <% } else { %>
-                                                                              <input type="hidden" name="size" value="">
+                                                                    <form class="add-to-cart" action="<%=ctx%>/cart/add"
+                                                                        method="post">
+                                                                        <% if (csrf !=null) { %><input type="hidden"
+                                                                                name="csrf" value="<%= csrf %>">
                                                                             <% } %>
+                                                                                <input type="hidden" name="productId"
+                                                                                    value="<%= p.getProductId() %>">
+                                                                                <input type="hidden" name="quantity"
+                                                                                    value="1">
 
-                                                                            <button type="submit" <%=(hasVariants && p.getVariants().stream().noneMatch(v -> v.getStockQuantity()==null || v.getStockQuantity()>0)) || (!hasVariants && outOfStock) ? "disabled" : "" %>>
-                                                                                Aggiungi al carrello
-                                                                            </button>
-                                                                 </form>
-                                                                <% } else { %>
-                                                                  <!-- EXPERIENCE: link al booking -->
-                                                                  <a class="btn-book" href="<%=ctx%>/booking?productId=<%= p.getProductId() %>">
-                                                                    Prenota Esperienza
-                                                                  </a>
-                                                                <% } %>
+                                                                                <!-- Hidden per carrello guest (sessione) -->
+                                                                                <input type="hidden" name="name"
+                                                                                    value="<%= esc(p.getName()) %>">
+                                                                                <input type="hidden" name="imageUrl"
+                                                                                    value="<%= p.getImageUrl() == null ? "" : esc(p.getImageUrl()) %>">
+                                                                                <input type="hidden" name="price"
+                                                                                    value="<%= price %>">
+                                                                                <input type="hidden" name="productType"
+                                                                                    value="<%= p.getProductType().name() %>">
+
+                                                                                <% if (hasVariants) { %>
+                                                                                    <label
+                                                                                        class="size-label">Taglia</label>
+                                                                                    <select name="size" required>
+                                                                                        <% boolean anyAvailable=false;
+                                                                                            for (model.ProductVariant v
+                                                                                            : p.getVariants()) { boolean
+                                                                                            available=v.getStockQuantity()==null
+                                                                                            || v.getStockQuantity()>0;
+                                                                                            anyAvailable = anyAvailable
+                                                                                            || available; %>
+                                                                                            <option
+                                                                                                value="<%= esc(v.getSize()) %>"
+                                                                                                <%=available? ""
+                                                                                                : "disabled" %>>
+                                                                                                <%= esc(v.getSize()) %>
+                                                                                                    <%= available? ""
+                                                                                                        : "(esaurito)"
+                                                                                                        %>
+                                                                                            </option>
+                                                                                            <% } %>
+                                                                                    </select>
+                                                                                    <% } else { %>
+                                                                                        <input type="hidden" name="size"
+                                                                                            value="">
+                                                                                        <% } %>
+
+                                                                                            <button type="submit"
+                                                                                                <%=(hasVariants &&
+                                                                                                p.getVariants().stream().noneMatch(v
+                                                                                                ->
+                                                                                                v.getStockQuantity()==null
+                                                                                                ||
+                                                                                                v.getStockQuantity()>0))
+                                                                                                || (!hasVariants &&
+                                                                                                outOfStock) ? "disabled"
+                                                                                                : "" %>>
+                                                                                                Aggiungi al carrello
+                                                                                            </button>
+                                                                    </form>
+                                                                    <% } else { %>
+                                                                        <!-- EXPERIENCE: link al booking -->
+                                                                        <a class="btn-book"
+                                                                            href="<%=ctx%>/booking?productId=<%= p.getProductId() %>">
+                                                                            Prenota Esperienza
+                                                                        </a>
+                                                                        <% } %>
                                                             </div>
                                                         </div>
                                                         <% } } %>

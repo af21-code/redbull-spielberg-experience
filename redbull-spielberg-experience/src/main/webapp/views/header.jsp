@@ -1,40 +1,18 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="model.User, java.util.List, model.CartItem" %>
-<%
-    User authUser = (User) session.getAttribute("authUser");
-    String
-            ctx = request.getContextPath();
-    String uri = request.getRequestURI() == null ? "" : request.getRequestURI();
-    boolean exploreActive = uri.endsWith("/index.jsp");
-    boolean rb21Active = uri.contains("/rb21");
-    boolean
-            trackActive = uri.contains("#track");
-    boolean
-            shopActive = uri.contains("/shop") || uri.contains("/booking") || uri.endsWith("/views/shop.jsp");
-    boolean
-            ordersActive = uri.contains("/orders") || uri.endsWith("/views/orders.jsp");
-    boolean
-            cartActive = uri.contains("/cart");
-    boolean adminActive = uri.contains("/admin");
-    boolean isAdmin = false;
-    if (authUser != null) {
-        try {
-            Object
-                    t = authUser.getClass().getMethod("getUserType").invoke(authUser);
-            isAdmin = (t != null && "ADMIN"
-                    .equalsIgnoreCase(String.valueOf(t)));
-        } catch (Exception ignored) {
-        }
-    }
-    Integer cartCountObj = (Integer)
-            request.getAttribute("cartCount");
-    int cartCount = (cartCountObj != null) ? cartCountObj : 0;
-    if (cartCount
-            <= 0) {
-        Object cartObj = session.getAttribute("cartItems");
-        if (cartObj instanceof java.util.List<?>) {
+    <%@ page import="model.User, java.util.List, model.CartItem" %>
+        <% User authUser=(User) session.getAttribute("authUser"); String ctx=request.getContextPath(); String
+            uri=request.getRequestURI()==null ? "" : request.getRequestURI(); boolean
+            exploreActive=uri.endsWith("/index.jsp"); boolean rb21Active=uri.contains("/rb21"); boolean
+            trackActive=uri.contains("#track"); boolean shopActive=uri.contains("/shop") || uri.contains("/booking") ||
+            uri.endsWith("/views/shop.jsp"); boolean ordersActive=uri.contains("/orders") ||
+            uri.endsWith("/views/orders.jsp"); boolean cartActive=uri.contains("/cart"); boolean
+            adminActive=uri.contains("/admin"); boolean isAdmin=false; if (authUser !=null) { try { Object
+            t=authUser.getClass().getMethod("getUserType").invoke(authUser); isAdmin=(t !=null && "ADMIN"
+            .equalsIgnoreCase(String.valueOf(t))); } catch (Exception ignored) { } } Integer cartCountObj=(Integer)
+            request.getAttribute("cartCount"); int cartCount=(cartCountObj !=null) ? cartCountObj : 0; if (cartCount
+            <=0) { Object cartObj=session.getAttribute("cartItems"); if (cartObj instanceof java.util.List<?>) {
             for (Object itObj : (java.util.List
-                    <?>) cartObj) {
+            <?>) cartObj) {
                 if (itObj instanceof CartItem) {
                     CartItem it = (CartItem) itObj;
                     cartCount += Math.max(1, it.getQuantity());
@@ -209,9 +187,7 @@
                     <form action="<%=ctx%>/logout" method="get" style="display:inline;">
                         <button class="logout-link" type="submit" title="Logout" aria-label="Logout">
                             <!-- Icona logout via data-URI SVG (niente tag SVG inline => niente warning JSP) -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                <path fill="white" d="M16 13v-2H7V8l-5 4 5 4v-3zM20 3h-8c-1.1 0-2 .9-2 2v4h2V5h8v14h-8v-4h-2v4c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-                            </svg>
+                            <img src="<%=ctx%>/images/logout.svg" alt="" style="width:18px;height:18px;">
                             Logout
                         </button>
                     </form>

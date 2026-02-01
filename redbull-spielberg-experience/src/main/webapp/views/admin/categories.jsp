@@ -1,12 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
   <%@ page import="java.util.*, model.Category" %>
-    <%! private static String esc(Object o) { if (o==null) return "" ; String s=String.valueOf(o); return
-      s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
+    <%! @SuppressWarnings("unused") private static String esc(Object o) { if (o==null) return "" ; String
+      s=String.valueOf(o); return s.replace("&", "&amp;" ).replace("<", "&lt;" ).replace(">", "&gt;")
       .replace("\"", "&quot;").replace("'", "&#39;");
       }
       %>
-      <% String ctx=request.getContextPath(); List<Category> categories = (List<Category>)
-          request.getAttribute("categories");
+      <% String ctx=request.getContextPath(); @SuppressWarnings("unchecked") List<Category> categories = (List<Category>
+          ) request.getAttribute("categories");
           if (categories == null) categories = new ArrayList<>();
 
             String ok = request.getParameter("ok");
@@ -85,7 +85,9 @@
                                     </span>
                                   </td>
                                   <td class="right" data-label="Azioni">
-                                    <a class="btn sm outline" href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>" title="Modifica">
+                                    <a class="btn sm outline"
+                                      href="<%=ctx%>/admin/categories/edit?id=<%= c.getCategoryId() %>"
+                                      title="Modifica">
                                       ✏️
                                     </a>
                                   </td>

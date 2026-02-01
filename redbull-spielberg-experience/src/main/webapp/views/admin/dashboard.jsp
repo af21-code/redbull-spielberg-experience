@@ -46,19 +46,27 @@
             <div class="kpi-grid">
               <div class="kpi-card">
                 <div class="kpi-label">Ordini Oggi</div>
-                <div class="kpi-value" id="k-orders"><%= ordersToday %></div>
+                <div class="kpi-value" id="k-orders">
+                  <%= ordersToday %>
+                </div>
               </div>
               <div class="kpi-card kpi-success">
                 <div class="kpi-label">Incasso Oggi</div>
-                <div class="kpi-value" id="k-rev"><%= euro %></div>
+                <div class="kpi-value" id="k-rev">
+                  <%= euro %>
+                </div>
               </div>
               <div class="kpi-card kpi-warning">
                 <div class="kpi-label">In Attesa</div>
-                <div class="kpi-value" id="k-paid"><%= pendingCount %></div>
+                <div class="kpi-value" id="k-paid">
+                  <%= pendingCount %>
+                </div>
               </div>
               <div class="kpi-card kpi-danger">
                 <div class="kpi-label">Bassa Scorta</div>
-                <div class="kpi-value" id="k-avg"><%= lowStockCount %></div>
+                <div class="kpi-value" id="k-avg">
+                  <%= lowStockCount %>
+                </div>
               </div>
             </div>
 
@@ -120,7 +128,7 @@
 
       <jsp:include page="/views/footer.jsp" />
 
-      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
       <script>
         (function () {
           const BASE = '<%=ctx%>';
