@@ -5,6 +5,7 @@ import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Product;
+import model.ProductVariant;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 import utils.FileStorage;
@@ -13,6 +14,8 @@ import utils.SecurityUtils;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet(urlPatterns = "/admin/products/save")
 @MultipartConfig(fileSizeThreshold = 1_000_000, // 1MB
@@ -229,6 +232,34 @@ public class AdminProductSaveServlet extends HttpServlet {
         p.setImageUrl(imageUrl);
         p.setFeatured(featured);
         p.setActive(active);
+
+        // Varianti taglie (solo per MERCHANDISE)
+        if (pType == Product.ProductType.MERCHANDISE) {
+            String[] sizes  = req.getParameterValues("variantSize");
+            String[] skus   = req.getParameterValues("variantSku");
+            String[] stocks = req.getParameterValues("variantStock");
+            String[] actives= req.getParameterValues("variantActive");
+            List<ProductVariant> variants = new ArrayList<>();
+            if (sizes != null) {
+                for (int i = 0; i < sizes.length; i++) {
+                    String sz = nz(sizes[i]);
+                    if (sz.isEmpty()) continue;
+                    ProductVariant v = new ProductVariant();
+                    v.setSize(sz);
+                    if (skus != null && i < skus.length && !nz(skus[i]).isEmpty()) v.setSku(nz(skus[i]));
+                    // Nessun price override: si usa il prezzo prodotto
+                    if (stocks != null && i < stocks.length && !nz(stocks[i]).isEmpty()) {
+                        try { v.setStockQuantity(Integer.parseInt(nz(stocks[i]))); } catch (Exception ignored) {}
+                    }
+                    boolean vActive = actives != null && i < actives.length && "on".equalsIgnoreCase(nz(actives[i]));
+                    v.setActive(vActive);
+                    variants.add(v);
+                }
+            }
+            p.setVariants(variants);
+        } else {
+            p.setVariants(null);
+        }
 
         // ---- persistenza ----
         try {

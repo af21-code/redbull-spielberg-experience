@@ -16,11 +16,7 @@ public class AdminCategoryFormServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        try {
-            this.categoryDAO = new CategoryDAOImpl();
-        } catch (java.sql.SQLException e) {
-            throw new ServletException("Cannot initialize CategoryDAO", e);
-        }
+        this.categoryDAO = new CategoryDAOImpl();
     }
 
     @Override
