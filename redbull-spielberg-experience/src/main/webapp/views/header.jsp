@@ -87,6 +87,14 @@
         transition: fill .15s ease;
     }
 
+    header .menu-right .Btn .text { white-space: nowrap; }
+
+    header .menu-right .Btn:hover { background: #222c3f; box-shadow: 0 6px 14px rgba(0,0,0,.25); }
+
+    header .menu-right .Btn:active { background: #1a2233; box-shadow: none; }
+
+    header .menu-right .Btn:focus-visible { outline: 2px solid #F5A600; outline-offset: 2px; }
+
     /* Badge quantità carrello */
     header .menu-right .btn-cart .badge {
         display: inline-grid;

@@ -46,27 +46,19 @@
             <div class="kpi-grid">
               <div class="kpi-card">
                 <div class="kpi-label">Ordini Oggi</div>
-                <div class="kpi-value">
-                  <%= ordersToday %>
-                </div>
+                <div class="kpi-value" id="k-orders"><%= ordersToday %></div>
               </div>
               <div class="kpi-card kpi-success">
                 <div class="kpi-label">Incasso Oggi</div>
-                <div class="kpi-value">
-                  <%= euro %>
-                </div>
+                <div class="kpi-value" id="k-rev"><%= euro %></div>
               </div>
               <div class="kpi-card kpi-warning">
                 <div class="kpi-label">In Attesa</div>
-                <div class="kpi-value">
-                  <%= pendingCount %>
-                </div>
+                <div class="kpi-value" id="k-paid"><%= pendingCount %></div>
               </div>
               <div class="kpi-card kpi-danger">
                 <div class="kpi-label">Bassa Scorta</div>
-                <div class="kpi-value">
-                  <%= lowStockCount %>
-                </div>
+                <div class="kpi-value" id="k-avg"><%= lowStockCount %></div>
               </div>
             </div>
 
@@ -98,26 +90,6 @@
               <div id="stats-error" class="toast error"
                 style="display:none; position: static; transform: none; margin-bottom: 16px;"></div>
 
-              <!-- KPI strip for periodo -->
-              <div class="mini-kpi-strip">
-                <div class="mini-kpi-box">
-                  <div class="mini-kpi-label">Ordini</div>
-                  <div class="mini-kpi-val" id="k-orders">—</div>
-                </div>
-                <div class="mini-kpi-box">
-                  <div class="mini-kpi-label">Pagati</div>
-                  <div class="mini-kpi-val" id="k-paid">—</div>
-                </div>
-                <div class="mini-kpi-box">
-                  <div class="mini-kpi-label">Incasso</div>
-                  <div class="mini-kpi-val" id="k-rev">—</div>
-                </div>
-                <div class="mini-kpi-box">
-                  <div class="mini-kpi-label">Scontrino medio</div>
-                  <div class="mini-kpi-val" id="k-avg">—</div>
-                </div>
-              </div>
-
               <div class="stats-grid">
                 <!-- Chart Section -->
                 <div class="card chart-panel">
@@ -148,7 +120,7 @@
 
       <jsp:include page="/views/footer.jsp" />
 
-      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
       <script>
         (function () {
           const BASE = '<%=ctx%>';
