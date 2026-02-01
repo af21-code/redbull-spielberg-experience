@@ -2,18 +2,13 @@ package control.admin;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Time;
-import java.sql.Date; // attenzione: java.sql.Date
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;

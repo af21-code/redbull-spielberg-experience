@@ -4,7 +4,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
-import model.User;
 import model.dao.OrderDAO;
 import model.dao.impl.OrderDAOImpl;
 import utils.SecurityUtils;

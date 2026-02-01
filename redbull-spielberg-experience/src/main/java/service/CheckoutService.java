@@ -15,6 +15,7 @@ public class CheckoutService {
 
   /** Eccezione controllata per disponibilità carrello. */
   public static class AvailabilityException extends IllegalStateException {
+    private static final long serialVersionUID = 1L;
     public final int productId;
     public final Integer slotId;
     public final String size;

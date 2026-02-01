@@ -2,7 +2,6 @@ package control.admin;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
-import model.User;
 import model.dao.AdminUserDAO;
 import model.dao.impl.AdminUserDAOImpl;
 import utils.SecurityUtils;
