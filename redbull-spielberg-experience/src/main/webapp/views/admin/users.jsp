@@ -108,7 +108,8 @@
                                 <%= esc(u.getFirstName()) %>
                                   <%= esc(u.getLastName()) %>
                               </td>
-                              <td data-label="Email" class="customer-cell-email">
+                              <td data-label="Email" class="customer-cell-email"
+                                style="font-size: 0.95rem; color: #fff;">
                                 <%= esc(u.getEmail()) %>
                               </td>
 

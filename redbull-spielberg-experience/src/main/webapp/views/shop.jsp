@@ -49,7 +49,7 @@
                                         <title>Shop - RedBull Spielberg Experience</title>
                                         <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
                                         <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
-                                        <link rel="stylesheet" href="<%=ctx%>/styles/shop.css?v=6">
+                                        <link rel="stylesheet" href="<%=ctx%>/styles/shop.css?v=8">
                                         <link
                                             href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Barlow+Condensed:wght@500;700&display=swap"
                                             rel="stylesheet">
@@ -90,9 +90,10 @@
                                                         img=normImg(p.getImageUrl(), ctx); if (img==null)
                                                         img="https://via.placeholder.com/400x300?text=Red+Bull" ;
                                                         boolean isMerch=(p.getProductType()==ProductType.MERCHANDISE);
-                                                        boolean hasStock=(p.getStockQuantity() !=null); boolean
-                                                        outOfStock=hasStock && p.getStockQuantity()==0; BigDecimal
-                                                        price=p.getPrice()==null ? BigDecimal.ZERO : p.getPrice(); %>
+                                                        boolean hasVariants=(p.getVariants()!=null && !p.getVariants().isEmpty());
+                                                        boolean hasStock=(p.getStockQuantity() !=null);
+                                                        boolean outOfStock=hasStock && p.getStockQuantity()==0;
+                                                        BigDecimal price=p.getPrice()==null ? BigDecimal.ZERO : p.getPrice(); %>
                                                         <div class="product-card">
                                                             <div class="product-image">
                                                                 <img src="<%= img %>" alt="<%= esc(p.getName()) %>"
@@ -118,6 +119,7 @@
                                                                         <% } %>
                                                                 </div>
 
+                                                                <% if (isMerch) { %>
                                                                 <form class="add-to-cart" action="<%=ctx%>/cart/add"
                                                                     method="post">
                                                                     <% if (csrf !=null) { %><input type="hidden"
@@ -138,11 +140,29 @@
                                                                             <input type="hidden" name="productType"
                                                                                 value="<%= p.getProductType().name() %>">
 
-                                                                            <button type="submit" <%=(isMerch &&
-                                                                                outOfStock) ? "disabled" : "" %>>
+                                                                            <% if (hasVariants) { %>
+                                                                              <label class="size-label">Taglia</label>
+                                                                              <select name="size" required>
+                                                                                <% boolean anyAvailable=false; for (model.ProductVariant v : p.getVariants()) { boolean available = v.getStockQuantity()==null || v.getStockQuantity()>0; anyAvailable = anyAvailable || available; %>
+                                                                                  <option value="<%= esc(v.getSize()) %>" <%= available? "" : "disabled" %>>
+                                                                                    <%= esc(v.getSize()) %> <%= available? "" : "(esaurito)" %>
+                                                                                  </option>
+                                                                                <% } %>
+                                                                              </select>
+                                                                            <% } else { %>
+                                                                              <input type="hidden" name="size" value="">
+                                                                            <% } %>
+
+                                                                            <button type="submit" <%=(hasVariants && p.getVariants().stream().noneMatch(v -> v.getStockQuantity()==null || v.getStockQuantity()>0)) || (!hasVariants && outOfStock) ? "disabled" : "" %>>
                                                                                 Aggiungi al carrello
                                                                             </button>
-                                                                </form>
+                                                                 </form>
+                                                                <% } else { %>
+                                                                  <!-- EXPERIENCE: link al booking -->
+                                                                  <a class="btn-book" href="<%=ctx%>/booking?productId=<%= p.getProductId() %>">
+                                                                    Prenota Esperienza
+                                                                  </a>
+                                                                <% } %>
                                                             </div>
                                                         </div>
                                                         <% } } %>

@@ -41,6 +41,7 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
                         userId,
                         it.getProductId(),
                         it.getSlotId(),
+                        it.getSize(),
                         it.getQuantity(),
                         it.getDriverName(),
                         it.getDriverNumber(),

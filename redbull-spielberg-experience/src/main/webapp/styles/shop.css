@@ -127,7 +127,13 @@
 }
 
 /* ===== INFO ===== */
-.product-info { padding: 16px; }
+.product-info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
 .product-info h3 { margin: 0 0 6px; font-size: 1.25rem; color: var(--rb-white); }
 .product-info .desc { margin: 0 0 12px; font-size: .95rem; color: #d4d4d4; min-height: 44px; }
 
@@ -136,27 +142,70 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 .price { font-weight: 700; color: var(--rb-yellow); }
 .stock.in { color: #48e09d; }
 .stock.out { color: #ff6b6b; }
 
-/* ===== BUTTON ===== */
-.add-to-cart button {
+/* ===== SIZE SELECTOR ===== */
+.size-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #ccc;
+  margin-bottom: 4px;
+}
+.add-to-cart select {
   width: 100%;
-  background: var(--rb-red);
+  background: var(--rb-blue);
   color: var(--rb-white);
-  border: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  outline: none;
+}
+.add-to-cart select:focus { border-color: var(--rb-red); box-shadow: 0 0 0 2px rgba(227,6,19,0.25); }
+
+/* ===== FORM AREA (push to bottom) ===== */
+.add-to-cart {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+}
+
+/* ===== BUTTONS (unified style, different colors) ===== */
+.add-to-cart button,
+.btn-book {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
   padding: 10px 14px;
   border-radius: 10px;
   font-weight: 700;
+  border: none;
   cursor: pointer;
   transition: filter .2s ease, transform .06s ease;
 }
-.add-to-cart button:hover { filter: brightness(1.05); }
-.add-to-cart button:active { transform: translateY(1px); }
+.add-to-cart button:hover,
+.btn-book:hover { filter: brightness(1.05); }
+.add-to-cart button:active,
+.btn-book:active { transform: translateY(1px); }
 .add-to-cart button:disabled { background: #5a5a5a; cursor: not-allowed; }
+
+/* Red for merchandise */
+.add-to-cart button {
+  background: var(--rb-red);
+  color: var(--rb-white);
+}
+
+/* Yellow for experience */
+.btn-book {
+  background: var(--rb-yellow);
+  color: #000;
+  margin-top: auto;
+}
 
 /* ===== EMPTY ===== */
 .empty { grid-column: 1/-1; text-align: center; opacity: .85; padding: 16px 0; }
