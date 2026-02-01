@@ -77,14 +77,16 @@
         <div class="purchase-options">
           <a href="${pageContext.request.contextPath}/booking?productId=1" class="card-link">
             <span class="purchase-card" style="display:block">
-              <h3>Standard</h3>
-              <p>Accesso circuito, kit benvenuto, ristoro</p>
+              <span class="h3-like"
+                style="display:block; font-weight:bold; font-size:1.17em; margin:1em 0;">Standard</span>
+              <span style="display:block">Accesso circuito, kit benvenuto, ristoro</span>
             </span>
           </a>
           <a href="${pageContext.request.contextPath}/booking?productId=2" class="card-link">
             <span class="purchase-card premium" style="display:block">
-              <h3>Premium</h3>
-              <p>Accesso circuito, giro in pista, box team, merchandising esclusivo</p>
+              <span class="h3-like"
+                style="display:block; font-weight:bold; font-size:1.17em; margin:1em 0;">Premium</span>
+              <span style="display:block">Accesso circuito, giro in pista, box team, merchandising esclusivo</span>
             </span>
           </a>
         </div>

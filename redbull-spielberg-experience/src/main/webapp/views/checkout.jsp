@@ -10,6 +10,7 @@
       }
 
       // ---- Helper per risolvere il path immagine (con fallback) ----
+      @SuppressWarnings("unused")
       private static String resolveImg(String ctx, String imageUrl, String vehicleCode, String productType) {
       if (imageUrl != null && !imageUrl.isBlank()) {
       String u = imageUrl.trim();
@@ -207,53 +208,48 @@
                                 <label for="bill_name">Nome e cognome</label>
                                 <input id="bill_name" type="text" autocomplete="name">
                                 <div class="error-msg"></div>
-                                </span>
-                                <div class="field">
-                                  <label for="bill_cf">Codice Fiscale / P.IVA (opz.)</label>
-                                  <input id="bill_cf" type="text" autocomplete="on">
-                                  <div class="error-msg"></div>
-                                  </span>
-                                </div>
-
-                                <div class="field">
-                                  <label for="bill_street">Via e numero</label>
-                                  <input id="bill_street" type="text" autocomplete="address-line1">
-                                  <div class="error-msg"></div>
-                                </div>
-
-                                <div class="grid-3">
-                                  <div class="field">
-                                    <label for="bill_city">Città</label>
-                                    <input id="bill_city" type="text" autocomplete="address-level2">
-                                    <div class="error-msg"></div>
-                                    </span>
-                                    <div class="field">
-                                      <label for="bill_prov">Provincia</label>
-                                      <input id="bill_prov" type="text" maxlength="2" placeholder="es. MI">
-                                      <div class="error-msg"></div>
-                                      </span>
-                                      <div class="field">
-                                        <label for="bill_zip">CAP</label>
-                                        <input id="bill_zip" type="text" inputmode="numeric" pattern="\\d{5}"
-                                          placeholder="00000">
-                                        <div class="error-msg"></div>
-                                        </span>
-                                      </div>
-
-                                      <div class="field">
-                                        <label for="bill_country">Paese</label>
-                                        <input id="bill_country" type="text" value="Italia">
-                                        <div class="error-msg"></div>
-                                      </div>
-                                    </div>
-
-                                    <div class="nav-row">
-                                      <button class="btn next" type="button" data-next>Continua</button>
-                                    </div>
-                                  </div>
-                                </div>
+                              </div>
+                              <div class="field">
+                                <label for="bill_cf">Codice Fiscale / P.IVA (opz.)</label>
+                                <input id="bill_cf" type="text" autocomplete="on">
+                                <div class="error-msg"></div>
                               </div>
                             </div>
+
+                            <div class="field">
+                              <label for="bill_street">Via e numero</label>
+                              <input id="bill_street" type="text" autocomplete="address-line1">
+                              <div class="error-msg"></div>
+                            </div>
+
+                            <div class="grid-3">
+                              <div class="field">
+                                <label for="bill_city">Città</label>
+                                <input id="bill_city" type="text" autocomplete="address-level2">
+                                <div class="error-msg"></div>
+                              </div>
+                              <div class="field">
+                                <label for="bill_prov">Provincia</label>
+                                <input id="bill_prov" type="text" maxlength="2" placeholder="es. MI">
+                                <div class="error-msg"></div>
+                              </div>
+                              <div class="field">
+                                <label for="bill_zip">CAP</label>
+                                <input id="bill_zip" type="text" inputmode="numeric" pattern="\\d{5}"
+                                  placeholder="00000">
+                                <div class="error-msg"></div>
+                              </div>
+                            </div>
+
+                            <div class="field">
+                              <label for="bill_country">Paese</label>
+                              <input id="bill_country" type="text" value="Italia">
+                              <div class="error-msg"></div>
+                            </div>
+                          </div>
+
+                          <div class="nav-row">
+                            <button class="btn next" type="button" data-next>Continua</button>
                           </div>
                         </section>
 
@@ -293,36 +289,35 @@
                               <div class="field">
                                 <label>Numero carta</label>
                                 <input type="text" inputmode="numeric" placeholder="•••• •••• •••• ••••">
-                                </span>
-                                <div class="field">
-                                  <label>Scadenza</label>
-                                  <input type="text" placeholder="MM/AA">
-                                  </span>
-                                  <div class="field">
-                                    <label>CVV</label>
-                                    <input type="password" inputmode="numeric" placeholder="•••">
-                                    </span>
-                                  </div>
-                                  <p class="hint">I dati carta non vengono memorizzati. Il pagamento è simulato per il
-                                    progetto.</p>
-                                </div>
-
-                                <div class="field">
-                                  <label for="notes">Note (opz.)</label>
-                                  <textarea name="notes" id="notes" rows="2"
-                                    placeholder="Richieste particolari..."></textarea>
-                                </div>
-
-                                <div class="form-error" id="form-error" aria-live="polite" style="visibility:hidden">
-                                </div>
-
-                                <div class="nav-row">
-                                  <button class="btn ghost" type="button" data-back>Torna indietro</button>
-                                  <button class="btn" type="submit">Conferma ordine</button>
-                                </div>
+                              </div>
+                              <div class="field">
+                                <label>Scadenza</label>
+                                <input type="text" placeholder="MM/AA">
+                              </div>
+                              <div class="field">
+                                <label>CVV</label>
+                                <input type="password" inputmode="numeric" placeholder="•••">
                               </div>
                             </div>
+                            <p class="hint">I dati carta non vengono memorizzati. Il pagamento è simulato per il
+                              progetto.</p>
                           </div>
+
+
+                          <div class="field">
+                            <label for="notes">Note (opz.)</label>
+                            <textarea name="notes" id="notes" rows="2"
+                              placeholder="Richieste particolari..."></textarea>
+                          </div>
+
+                          <div class="form-error" id="form-error" aria-live="polite" style="visibility:hidden">
+                          </div>
+
+                          <div class="nav-row">
+                            <button class="btn ghost" type="button" data-back>Torna indietro</button>
+                            <button class="btn" type="submit">Conferma ordine</button>
+                          </div>
+
                         </section>
                       </form>
                 </div>
@@ -348,8 +343,6 @@
                                   <% if (it.getSize() !=null && !it.getSize().isBlank()) { %> · Taglia: <%=
                                       esc(it.getSize()) %>
                                       <% } %>
-                                        </span>
-                                        </span>
                             </div>
                             <div><strong>€ <%= money.format(it.getTotal()) %></strong></div>
                           </div>
