@@ -10,18 +10,25 @@
             .replace("\"","&quot;").replace("'","&#39;");
   }
 
-  // ---- Helper per risolvere il path immagine (con fallback su vehicle_code) ----
-  private static String resolveImg(String ctx, String imageUrl, String vehicleCode) {
+  // ---- Helper per risolvere il path immagine (con fallback) ----
+  private static String resolveImg(String ctx, String imageUrl, String vehicleCode, String productType) {
     if (imageUrl != null && !imageUrl.isBlank()) {
       String u = imageUrl.trim();
       String l = u.toLowerCase(Locale.ROOT);
+      if (l.startsWith("data:")) return u;                             // già data URI
       if (l.startsWith("http://") || l.startsWith("https://")) return u; // URL esterno
-      if (u.startsWith("/")) return ctx + u;                              // assoluto in app
-      return ctx + "/" + u;                                               // relativo
+      // Heuristica: base64 pura dal DB
+      if (u.length() > 100 && u.matches("[A-Za-z0-9+/=\\r\\n]+")) {
+        return "data:image/jpeg;base64," + u.replaceAll("\\s+", "");
+      }
+      if (u.startsWith("/")) return ctx + u;                            // assoluto in app
+      return ctx + "/" + u;                                             // relativo
     }
     String v = (vehicleCode == null) ? "" : vehicleCode.trim().toLowerCase(Locale.ROOT);
-    if ("rb21".equals(v) || "f1".equals(v)) return ctx + "/images/vehicles/rb21.jpg";
-    if ("f2".equals(v))                      return ctx + "/images/vehicles/f2.jpg";
+    if ("EXPERIENCE".equalsIgnoreCase(productType)) {
+      if ("rb21".equals(v) || "f1".equals(v)) return ctx + "/images/vehicles/rb21.jpg";
+      if ("f2".equals(v))                      return ctx + "/images/vehicles/f2.jpg";
+    }
     return ctx + "/images/vehicles/placeholder-vehicle.jpg";
   }
 %>
@@ -32,6 +39,9 @@
   // Carrello dal session scope (come nel tuo file originale)
   @SuppressWarnings("unchecked")
   List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
+  model.User auth = (model.User) session.getAttribute("authUser");
+  String defaultShipName = (auth == null) ? "" : ( (auth.getFirstName()==null?"":auth.getFirstName()) + " " + (auth.getLastName()==null?"":auth.getLastName()) ).trim();
+  String defaultShipPhone = (auth == null || auth.getPhoneNumber()==null) ? "" : auth.getPhoneNumber();
 
   // Formattazione prezzi (IT)
   DecimalFormatSymbols sy = new DecimalFormatSymbols(Locale.ITALY);
@@ -111,12 +121,12 @@
           <div class="grid-2">
             <div class="field">
               <label for="ship_name">Nome e cognome</label>
-              <input id="ship_name" type="text" autocomplete="name" required>
+              <input id="ship_name" type="text" autocomplete="name" value="<%=esc(defaultShipName)%>" required>
               <div class="error-msg"></div>
             </div>
             <div class="field">
               <label for="ship_phone">Telefono</label>
-              <input id="ship_phone" type="tel" autocomplete="tel" placeholder="+39..." required>
+              <input id="ship_phone" type="tel" autocomplete="tel" placeholder="+39..." value="<%=esc(defaultShipPhone)%>" required>
               <div class="error-msg"></div>
             </div>
           </div>
@@ -281,18 +291,20 @@
       <div>
         <% if (items != null) {
              for (CartItem it : items) {
-               String img = resolveImg(ctx, it.getImageUrl(), it.getVehicleCode());
-               int shownQty = "EXPERIENCE".equalsIgnoreCase(it.getProductType()) ? 1 : it.getQuantity();
+               String img = resolveImg(ctx, it.getImageUrl(), it.getVehicleCode(), it.getProductType());
         %>
           <div class="summary-line">
-            <span class="sum-left">
-              <img class="sum-thumb"
-                   src="<%= img %>"
-                   alt="<%= esc(it.getProductName()) %>"
-                   onerror="this.onerror=null;this.src='<%= ctx %>/images/vehicles/placeholder-vehicle.jpg'">
-              <span class="sum-name"><strong><%= esc(it.getProductName()) %></strong> × <%= shownQty %></span>
-            </span>
-            <span>€ <%= money.format(it.getTotal()) %></span>
+            <div class="sum-left">
+              <img class="sum-thumb" src="<%= esc(resolveImg(ctx, it.getImageUrl(), it.getVehicleCode(), it.getProductType())) %>" alt="<%= esc(it.getProductName()) %>" onerror="this.onerror=null;this.src='<%=ctx%>/images/placeholder.jpg';">
+              <div>
+                <div class="sum-name"><%= esc(it.getProductName()) %></div>
+                <div class="muted" style="font-size:0.85rem;">
+                  Qty <%= it.getQuantity() %> × € <%= money.format(it.getUnitPrice()) %>
+                  <% if (it.getSize() != null && !it.getSize().isBlank()) { %> · Taglia: <%= esc(it.getSize()) %> <% } %>
+                </div>
+              </div>
+            </div>
+            <div><strong>€ <%= money.format(it.getTotal()) %></strong></div>
           </div>
         <% } } %>
         <hr class="sep">
@@ -308,3 +320,4 @@
 <script src="<%=ctx%>/scripts/checkout.js?v=2"></script>
 </body>
 </html>
+
