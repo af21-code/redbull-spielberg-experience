@@ -56,7 +56,16 @@ public class CartSyncFilter implements Filter {
                         CartDAO dao = new CartDAOImpl();
                         if (sessionCart != null && !sessionCart.isEmpty()) {
                             for (CartItem it : sessionCart) {
-                                dao.upsertItem(userId, it.getProductId(), it.getSlotId(), it.getQuantity());
+                                dao.upsertItem(userId,
+                                        it.getProductId(),
+                                        it.getSlotId(),
+                                        it.getSize(),
+                                        it.getQuantity(),
+                                        it.getDriverName(),
+                                        it.getDriverNumber(),
+                                        it.getCompanionName(),
+                                        it.getVehicleCode(),
+                                        it.getEventDate());
                             }
                         }
                         List<CartItem> dbCart = dao.findByUser(userId);

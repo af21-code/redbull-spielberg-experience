@@ -74,89 +74,152 @@
                                 <jsp:include page="header.jsp" />
 
                                 <div class="cart-wrap" aria-live="polite">
-                                    <% if (items.isEmpty()) { %>
-                                        <p class="empty">Il tuo carrello è vuoto.
-                                            <a class="btn" href="<%=ctx%>/shop" style="margin-left:8px;">Vai allo
-                                                shop</a>
-                                        </p>
-                                        <% } else { BigDecimal total=BigDecimal.ZERO; %>
-                                            <table class="cart-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col">Prodotto</th>
-                                                        <th scope="col">Tipo</th>
-                                                        <th scope="col">Prezzo</th>
-                                                        <th scope="col">Qty</th>
-                                                        <th scope="col">Subtotale</th>
-                                                        <th scope="col">Azioni</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <% for (CartItem it : items) { total=total.add(it.getTotal());
-                                                        String img=resolveImg(it.getImageUrl(), it.getVehicleCode(),
-                                                        it.getProductType(), ctx); %>
-                                                        <tr>
-                                                            <td data-label="Prodotto">
-                                                                <img class="cart-img" src="<%= img %>"
-                                                                    alt="<%= esc(it.getProductName()) %>"
-                                                                    onerror="this.onerror=null;this.src='<%=ctx%>/images/vehicles/placeholder-vehicle.jpg';">
-                                                                &nbsp; <strong>
-                                                                    <%= esc(it.getProductName()) %>
-                                                                </strong>
+                                    <% String cartError=(String) session.getAttribute("cartError"); if (cartError
+                                        !=null) { session.removeAttribute("cartError"); // mostra una sola volta %>
+                                        <div class="alert alert-error"
+                                            style="background:#fee; border:1px solid #c00; color:#c00; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-weight:500;">
+                                            ⚠️ <%= cartError %>
+                                        </div>
+                                        <% } %>
+                                            <% if (items.isEmpty()) { %>
+                                                <p class="empty">Il tuo carrello è vuoto.
+                                                    <a class="btn" href="<%=ctx%>/shop" style="margin-left:8px;">Vai
+                                                        allo
+                                                        shop</a>
+                                                </p>
+                                                <% } else { BigDecimal total=BigDecimal.ZERO; %>
+                                                    <table class="cart-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col">Prodotto</th>
+                                                                <th scope="col">Tipo</th>
+                                                                <th scope="col">Prezzo</th>
+                                                                <th scope="col">Qty</th>
+                                                                <th scope="col">Subtotale</th>
+                                                                <th scope="col">Azioni</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <% for (CartItem it : items) {
+                                                                total=total.add(it.getTotal()); String
+                                                                img=resolveImg(it.getImageUrl(), it.getVehicleCode(),
+                                                                it.getProductType(), ctx); %>
+                                                                <tr>
+                                                                    <td data-label="Prodotto">
+                                                                        <img class="cart-img" src="<%= img %>"
+                                                                            alt="<%= esc(it.getProductName()) %>"
+                                                                            onerror="this.onerror=null;this.src='<%=ctx%>/images/vehicles/placeholder-vehicle.jpg';">
+                                                                        &nbsp; <strong>
+                                                                            <%= esc(it.getProductName()) %>
+                                                                        </strong>
 
-                                                                <% if (it.getSlotId() !=null) { %>
-                                                                    <br /><small>Slot: <%= it.getSlotId() %>
-                                                                    </small>
-                                                                    <% } %>
-                                                                        <% if (it.getDriverName() !=null &&
-                                                                            !it.getDriverName().isBlank()) { %>
-                                                                            <br /><small>Pilota: <%=
-                                                                                    esc(it.getDriverName()) %>
+                                                                        <% if (it.getSlotId() !=null) { %>
+                                                                            <br /><small>Slot: <%= it.getSlotId() %>
                                                                             </small>
                                                                             <% } %>
-                                                                                <% if (it.getCompanionName() !=null &&
-                                                                                    !it.getCompanionName().isBlank()) {
-                                                                                    %>
-                                                                                    <br /><small>Accompagnatore: <%=
-                                                                                            esc(it.getCompanionName())
-                                                                                            %>
+                                                                                <% if (it.getDriverName() !=null &&
+                                                                                    !it.getDriverName().isBlank()) { %>
+                                                                                    <br /><small>Pilota: <%=
+                                                                                            esc(it.getDriverName()) %>
                                                                                     </small>
                                                                                     <% } %>
-                                                                                        <% if (it.getVehicleCode()
+                                                                                        <% if (it.getCompanionName()
                                                                                             !=null &&
-                                                                                            !it.getVehicleCode().isBlank())
+                                                                                            !it.getCompanionName().isBlank())
                                                                                             { %>
-                                                                                            <br /><small>Veicolo: <%=
-                                                                                                    esc(it.getVehicleCode())
+                                                                                            <br /><small>Accompagnatore:
+                                                                                                <%= esc(it.getCompanionName())
                                                                                                     %>
                                                                                             </small>
                                                                                             <% } %>
-                                                                                                <% if (it.getEventDate()
-                                                                                                    !=null) { %>
-                                                                                                    <br /><small>Data:
-                                                                                                        <%= it.getEventDate().format(dateFmt)
+                                                                                                <% if
+                                                                                                    (it.getVehicleCode()
+                                                                                                    !=null &&
+                                                                                                    !it.getVehicleCode().isBlank())
+                                                                                                    { %>
+                                                                                                    <br /><small>Veicolo:
+                                                                                                        <%= esc(it.getVehicleCode())
                                                                                                             %>
                                                                                                     </small>
                                                                                                     <% } %>
-                                                            </td>
+                                                                                                        <% if
+                                                                                                            (it.getEventDate()
+                                                                                                            !=null) { %>
+                                                                                                            <br /><small>Data:
+                                                                                                                <%= it.getEventDate().format(dateFmt)
+                                                                                                                    %>
+                                                                                                            </small>
+                                                                                                            <% } %>
+                                                                                                                <% if
+                                                                                                                    (it.getSize()
+                                                                                                                    !=null
+                                                                                                                    &&
+                                                                                                                    !it.getSize().isBlank())
+                                                                                                                    { %>
+                                                                                                                    <br /><small>Taglia:
+                                                                                                                        <%= esc(it.getSize())
+                                                                                                                            %>
+                                                                                                                            </small>
+                                                                                                                    <% }
+                                                                                                                        %>
+                                                                    </td>
 
-                                                            <td data-label="Tipo">
-                                                                <%= esc(it.getProductType()) %>
-                                                            </td>
-                                                            <td data-label="Prezzo">€ <%=
-                                                                    money.format(it.getUnitPrice()) %>
-                                                            </td>
+                                                                    <td data-label="Tipo">
+                                                                        <%= esc(it.getProductType()) %>
+                                                                    </td>
+                                                                    <td data-label="Prezzo">€ <%=
+                                                                            money.format(it.getUnitPrice()) %>
+                                                                    </td>
 
-                                                            <td data-label="Quantità">
-                                                                <% if
-                                                                    ("EXPERIENCE".equalsIgnoreCase(it.getProductType()))
-                                                                    { %>
-                                                                    <span class="qty-fixed">1</span>
-                                                                    <% } else { %>
-                                                                        <!-- Quantità con +/- buttons e auto-submit -->
-                                                                        <form action="<%= ctx %>/cart/update"
-                                                                            method="post" class="qty-form"
-                                                                            id="qty-form-<%= it.getProductId() %>">
+                                                                    <td data-label="Quantità">
+                                                                        <% if
+                                                                            ("EXPERIENCE".equalsIgnoreCase(it.getProductType()))
+                                                                            { %>
+                                                                            <span class="qty-fixed">1</span>
+                                                                            <% } else { %>
+                                                                                <!-- Quantità con +/- buttons e auto-submit -->
+                                                                                <form action="<%= ctx %>/cart/update"
+                                                                                    method="post" class="qty-form"
+                                                                                    id="qty-form-<%= it.getProductId() %>-<%= esc(it.getSize()) %>">
+                                                                                    <% if (csrf !=null) { %><input
+                                                                                            type="hidden" name="csrf"
+                                                                                            value="<%= csrf %>">
+                                                                                        <% } %>
+                                                                                            <input type="hidden"
+                                                                                                name="productId"
+                                                                                                value="<%= it.getProductId() %>">
+                                                                                            <input type="hidden"
+                                                                                                name="slotId"
+                                                                                                value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
+                                                                                            <input type="hidden"
+                                                                                                name="size"
+                                                                                                value="<%= esc(it.getSize()) %>">
+                                                                                            <button type="button"
+                                                                                                class="qty-btn"
+                                                                                                onclick="updateQty('<%= it.getProductId() %>-<%= esc(it.getSize()) %>', -1)">−
+                                                                                            </button>
+                                                                                            <input class="qty-input"
+                                                                                                type="number"
+                                                                                                name="quantity" min="1"
+                                                                                                value="<%= it.getQuantity() %>"
+                                                                                                id="qty-<%= it.getProductId() %>-<%= esc(it.getSize()) %>"
+                                                                                                onchange="this.form.submit()">
+                                                                                            <button type="button"
+                                                                                                class="qty-btn"
+                                                                                                onclick="updateQty('<%= it.getProductId() %>-<%= esc(it.getSize()) %>', 1)">+
+                                                                                            </button>
+                                                                                </form>
+                                                                                <% } %>
+                                                                    </td>
+
+                                                                    <td data-label="Subtotale">€ <%=
+                                                                            money.format(it.getTotal()) %>
+                                                                    </td>
+
+                                                                    <td data-label="Azioni">
+                                                                        <!-- Rimuovi -->
+                                                                        <form action="<%= ctx %>/cart/remove"
+                                                                            method="post" class="inline-form">
                                                                             <% if (csrf !=null) { %><input type="hidden"
                                                                                     name="csrf" value="<%= csrf %>">
                                                                                 <% } %>
@@ -165,69 +228,48 @@
                                                                                         value="<%= it.getProductId() %>">
                                                                                     <input type="hidden" name="slotId"
                                                                                         value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
-                                                                                    <button type="button"
-                                                                                        class="qty-btn"
-                                                                                        onclick="updateQty(<%= it.getProductId() %>, -1)">−
-                                                                                    </button>
-                                                                                    <input class="qty-input"
-                                                                                        type="number" name="quantity"
-                                                                                        min="1"
-                                                                                        value="<%= it.getQuantity() %>"
-                                                                                        id="qty-<%= it.getProductId() %>"
-                                                                                        onchange="this.form.submit()">
-                                                                                    <button type="button"
-                                                                                        class="qty-btn"
-                                                                                        onclick="updateQty(<%= it.getProductId() %>, 1)">+
+                                                                                    <input type="hidden" name="size"
+                                                                                        value="<%= esc(it.getSize()) %>">
+                                                                                    <button class="btn secondary"
+                                                                                        type="submit">Rimuovi
                                                                                     </button>
                                                                         </form>
-                                                                        <% } %>
-                                                            </td>
+                                                                    </td>
+                                                                </tr>
+                                                                <% } // end for %>
+                                                        </tbody>
+                                                    </table>
 
-                                                            <td data-label="Subtotale">€ <%= money.format(it.getTotal())
-                                                                    %>
-                                                            </td>
+                                                    <div class="summary">
+                                                        <span class="total">Totale: € <%= money.format(total) %></span>
 
-                                                            <td data-label="Azioni">
-                                                                <!-- Rimuovi -->
-                                                                <form action="<%= ctx %>/cart/remove" method="post"
-                                                                    class="inline-form">
-                                                                    <% if (csrf !=null) { %><input type="hidden"
-                                                                            name="csrf" value="<%= csrf %>">
-                                                                        <% } %>
-                                                                            <input type="hidden" name="productId"
-                                                                                value="<%= it.getProductId() %>">
-                                                                            <input type="hidden" name="slotId"
-                                                                                value="<%= it.getSlotId() == null ? "" : it.getSlotId() %>">
-                                                                            <button class="btn secondary"
-                                                                                type="submit">Rimuovi
-                                                                            </button>
-                                                                </form>
-                                                            </td>
-                                                        </tr>
-                                                        <% } // end for %>
-                                                </tbody>
-                                            </table>
+                                                        <!-- Svuota -->
+                                                        <form action="<%= ctx %>/cart/clear" method="post">
+                                                            <% if (csrf !=null) { %><input type="hidden" name="csrf"
+                                                                    value="<%= csrf %>">
+                                                                <% } %>
+                                                                    <button class="btn secondary"
+                                                                        type="submit">Svuota</button>
+                                                        </form>
 
-                                            <div class="summary">
-                                                <span class="total">Totale: € <%= money.format(total) %></span>
-
-                                                <!-- Svuota -->
-                                                <form action="<%= ctx %>/cart/clear" method="post">
-                                                    <% if (csrf !=null) { %><input type="hidden" name="csrf"
-                                                            value="<%= csrf %>">
-                                                        <% } %>
-                                                            <button class="btn secondary" type="submit">Svuota</button>
-                                                </form>
-
-                                                <form action="<%= ctx %>/checkout" method="get">
-                                                    <button class="btn" type="submit">Checkout</button>
-                                                </form>
-                                            </div>
-                                            <% } // end else %>
+                                                        <form action="<%= ctx %>/checkout" method="get">
+                                                            <button class="btn" type="submit">Checkout</button>
+                                                        </form>
+                                                    </div>
+                                                    <% } // end else %>
                                 </div>
 
                                 <jsp:include page="footer.jsp" />
                                 <script src="<%=ctx%>/scripts/cart.js"></script>
+                                <script>
+                                    function updateQty(key, delta) {
+                                        const input = document.getElementById('qty-' + key);
+                                        if (!input) return;
+                                        const val = Math.max(1, parseInt(input.value || '1') + delta);
+                                        input.value = val;
+                                        document.getElementById('qty-form-' + key).submit();
+                                    }
+                                </script>
                             </body>
 
                             </html>

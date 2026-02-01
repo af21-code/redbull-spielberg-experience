@@ -11,6 +11,7 @@ public class CartItem {
     private BigDecimal unitPrice;
     private int quantity;
     private String productType; // "EXPERIENCE" | "MERCHANDISE"
+    private String size;        // variante/taglia
 
     // CAMPI PRENOTAZIONE
     private String driverName;
@@ -39,6 +40,7 @@ public class CartItem {
     public BigDecimal getUnitPrice() { return unitPrice; }
     public int getQuantity() { return quantity; }
     public String getProductType() { return productType; }
+    public String getSize() { return size; }
 
     public void setProductId(int productId) { this.productId = productId; }
     public void setSlotId(Integer slotId) { this.slotId = slotId; }
@@ -47,6 +49,7 @@ public class CartItem {
     public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public void setProductType(String productType) { this.productType = productType; }
+    public void setSize(String size) { this.size = size; }
 
     public String getDriverName() { return driverName; }
     public void setDriverName(String driverName) { this.driverName = driverName; }

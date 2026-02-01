@@ -26,18 +26,18 @@ public class CartDAOImpl implements CartDAO {
 
     // Compatibilità: delega all’overload con dettagli null
     @Override
-    public void upsertItem(int userId, int productId, Integer slotId, int quantity) throws Exception {
-        upsertItem(userId, productId, slotId, quantity, null, null, null, null, null);
+    public void upsertItem(int userId, int productId, Integer slotId, String size, int quantity) throws Exception {
+        upsertItem(userId, productId, slotId, size, quantity, null, null, null, null, null);
     }
 
     @Override
-    public void upsertItem(int userId, int productId, Integer slotId, int quantity,
+    public void upsertItem(int userId, int productId, Integer slotId, String size, int quantity,
                            String driverName, String driverNumber, String companionName,
                            String vehicleCode, LocalDate eventDate) throws Exception {
         final String sql = """
-            INSERT INTO cart (user_id, product_id, slot_id, quantity,
+            INSERT INTO cart (user_id, product_id, slot_id, size, quantity,
                               driver_name, driver_number, companion_name, vehicle_code, event_date)
-            VALUES (?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
             ON DUPLICATE KEY UPDATE
                 quantity        = quantity + VALUES(quantity),
                 driver_name     = IFNULL(VALUES(driver_name), driver_name),
@@ -53,6 +53,7 @@ public class CartDAOImpl implements CartDAO {
                 ps.setInt(i++, userId);
                 ps.setInt(i++, productId);
                 if (slotId == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, slotId);
+                ps.setString(i++, size == null ? "" : size);
                 ps.setInt(i++, Math.max(1, quantity));
 
                 if (driverName == null || driverName.isBlank()) ps.setNull(i++, Types.VARCHAR); else ps.setString(i++, driverName);
@@ -68,14 +69,15 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void removeItem(int userId, int productId, Integer slotId) throws Exception {
-        final String sql = "DELETE FROM cart WHERE user_id=? AND product_id=? AND " +
+    public void removeItem(int userId, int productId, Integer slotId, String size) throws Exception {
+        final String sql = "DELETE FROM cart WHERE user_id=? AND product_id=? AND size=? AND " +
                 (slotId == null ? "slot_id IS NULL" : "slot_id=?");
         withCon(c -> {
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 int i = 1;
                 ps.setInt(i++, userId);
                 ps.setInt(i++, productId);
+                ps.setString(i++, size == null ? "" : size);
                 if (slotId != null) ps.setInt(i++, slotId);
                 ps.executeUpdate();
             }
@@ -97,7 +99,7 @@ public class CartDAOImpl implements CartDAO {
     @Override
     public List<CartItem> findByUser(int userId) throws Exception {
         final String sql = """
-            SELECT c.product_id, c.slot_id, c.quantity,
+            SELECT c.product_id, c.slot_id, c.size, c.quantity,
                    c.driver_name, c.driver_number, c.companion_name, c.vehicle_code, c.event_date,
                    p.name, p.image_url, p.price, p.product_type
             FROM cart c
@@ -120,6 +122,7 @@ public class CartDAOImpl implements CartDAO {
                             rs.getInt("quantity"),
                             rs.getString("product_type")
                         );
+                        it.setSize(rs.getString("size"));
                         it.setDriverName(rs.getString("driver_name"));
                         it.setDriverNumber(rs.getString("driver_number"));
                         it.setCompanionName(rs.getString("companion_name"));
@@ -135,13 +138,13 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void updateQuantity(int userId, int productId, Integer slotId, int quantity) throws Exception {
+    public void updateQuantity(int userId, int productId, Integer slotId, String size, int quantity) throws Exception {
         if (quantity <= 0) {
-            removeItem(userId, productId, slotId);
+            removeItem(userId, productId, slotId, size);
             return;
         }
         final String sql = "UPDATE cart SET quantity=?, updated_at=CURRENT_TIMESTAMP " +
-                "WHERE user_id=? AND product_id=? AND " +
+                "WHERE user_id=? AND product_id=? AND size=? AND " +
                 (slotId == null ? "slot_id IS NULL" : "slot_id=?");
         withCon(c -> {
             try (PreparedStatement ps = c.prepareStatement(sql)) {
@@ -149,6 +152,7 @@ public class CartDAOImpl implements CartDAO {
                 ps.setInt(i++, Math.max(1, quantity));
                 ps.setInt(i++, userId);
                 ps.setInt(i++, productId);
+                ps.setString(i++, size == null ? "" : size);
                 if (slotId != null) ps.setInt(i++, slotId);
                 ps.executeUpdate();
             }
@@ -156,3 +160,4 @@ public class CartDAOImpl implements CartDAO {
         });
     }
 }
+
