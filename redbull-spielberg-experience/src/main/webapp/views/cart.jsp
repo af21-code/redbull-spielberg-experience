@@ -64,6 +64,7 @@
                                 <meta charset="UTF-8">
                                 <title>Carrello - RedBull Spielberg Experience</title>
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
+                                <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
                                 <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
                                 <link rel="stylesheet" href="<%=ctx%>/styles/userLogo.css">
                                 <link rel="stylesheet" href="<%=ctx%>/styles/shop.css">

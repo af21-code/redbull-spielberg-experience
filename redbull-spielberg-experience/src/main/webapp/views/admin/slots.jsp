@@ -14,7 +14,7 @@
     }
 %>
 <!DOCTYPE html>
-<html lang=" it">
+<html lang="it">
 
       <head>
         <meta charset="UTF-8">
@@ -23,6 +23,7 @@
         <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
         <link rel="stylesheet" href="<%=ctx%>/styles/admin.css">
         <link rel="stylesheet" href="<%=ctx%>/styles/order-details.css">
+        <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
       </head>
 
       <body>
@@ -51,7 +52,7 @@
               <div id="toast-container"></div>
 
               <div class="card" style="padding: 32px; max-width: 900px;">
-                <form id="slotForm" method="post" action="<%= response.encodeURL(ctx + " /admin/slots/generate") %>">
+                <form id="slotForm" method="post" action="<%= response.encodeURL(ctx + "/admin/slots/generate") %>">
                   <input type="hidden" name="csrf" value="<%= (csrfToken!=null? csrfToken : "") %>">
 
                   <!-- Info -->

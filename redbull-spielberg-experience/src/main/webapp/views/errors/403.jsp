@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Errore del server</title>
+  <title>403 - Accesso negato</title>
   <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/indexStyle.css" />
   <style>
@@ -18,28 +18,18 @@
     .btn { display: inline-block; padding: 12px 16px; border-radius: 10px; font-weight: 700; text-decoration: none; }
     .btn.primary { background: #E30613; color: #fff; }
     .btn.ghost { border: 1px solid rgba(255,255,255,0.35); color: #fff; }
-    details { margin-top: 16px; text-align: left; }
-    summary { cursor: pointer; color: #F5A600; font-weight: 700; }
-    pre { background: #011024; padding: 12px; border-radius: 8px; overflow: auto; color: #fff; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="code">500</div>
-      <h1>Errore del server</h1>
-      <p>Qualcosa è andato storto. Riprova più tardi.</p>
+      <div class="code">403</div>
+      <h1>Accesso negato</h1>
+      <p>Non hai i permessi per visualizzare questa pagina.</p>
       <div class="actions">
         <a class="btn primary" href="${pageContext.request.contextPath}/index.jsp">Torna alla Home</a>
         <a class="btn ghost" href="${pageContext.request.contextPath}/shop">Vai allo Shop</a>
       </div>
-
-      <% if (exception != null) { %>
-        <details>
-          <summary>Dettagli tecnici (dev)</summary>
-          <pre><%= exception %></pre>
-        </details>
-      <% } %>
     </div>
   </div>
 </body>

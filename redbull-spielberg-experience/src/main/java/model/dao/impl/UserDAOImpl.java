@@ -73,4 +73,38 @@ public class UserDAOImpl implements UserDAO {
             return user;
         }
     }
+
+    @Override
+    public boolean updatePassword(int userId, String hashedPassword) throws Exception {
+        final String sql = "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, hashedPassword);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    @Override
+    public boolean deactivateById(int userId) throws Exception {
+        final String sql = "UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    @Override
+    public boolean updateProfile(int userId, String firstName, String lastName, String phoneNumber) throws Exception {
+        final String sql = "UPDATE users SET first_name = ?, last_name = ?, phone_number = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?";
+        try (Connection con = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, firstName);
+            ps.setString(2, lastName);
+            ps.setString(3, phoneNumber);
+            ps.setInt(4, userId);
+            return ps.executeUpdate() == 1;
+        }
+    }
 }

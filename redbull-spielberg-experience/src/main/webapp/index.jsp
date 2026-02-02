@@ -13,8 +13,7 @@
     <!-- (facoltativo) il logout CSS è già incluso in header.jsp -->
     <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/logoutbtn.css?v=2" /> -->
 
-    <link rel="icon" type="image/jpeg"
-      href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
+    <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
   </head>
 

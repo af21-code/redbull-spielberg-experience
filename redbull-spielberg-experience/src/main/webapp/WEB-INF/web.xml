@@ -88,6 +88,14 @@
     <filter-name>AuthFilter</filter-name>
     <url-pattern>/admin/*</url-pattern>
   </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/profile</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/profile/*</url-pattern>
+  </filter-mapping>
 
   <!-- 6) Consente accesso a /admin solo ad ADMIN -->
   <filter>
@@ -180,11 +188,15 @@
   </error-page>
   <error-page>
     <error-code>500</error-code>
-    <location>/views/errors/500.jsp</location>
+    <location>/views/errors/505.jsp</location>
   </error-page>
   <error-page>
     <exception-type>java.lang.Throwable</exception-type>
-    <location>/views/errors/500.jsp</location>
+    <location>/views/errors/505.jsp</location>
+  </error-page>
+  <error-page>
+    <error-code>403</error-code>
+    <location>/views/errors/403.jsp</location>
   </error-page>
 
   <jsp-config>

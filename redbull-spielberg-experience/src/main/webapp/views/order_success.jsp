@@ -20,6 +20,7 @@
   <meta charset="UTF-8">
   <title>Ordine confermato</title>
   <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
+  <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
   <style>
     .ok-wrap{padding:60px 24px 120px;background:linear-gradient(135deg,#001e36 0%,#000b2b 100%);color:#fff;min-height:60vh}
     .ok-card{max-width:760px;margin:0 auto;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;text-align:center}

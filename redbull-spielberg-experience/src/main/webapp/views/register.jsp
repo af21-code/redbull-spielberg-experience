@@ -11,6 +11,7 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
       <title>Register - RedBull Spielberg Experience</title>
       <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/register.css" />
     </head>

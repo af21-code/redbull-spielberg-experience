@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/rb21.css?v=3">
 
   <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
 </head>
 <body>
 

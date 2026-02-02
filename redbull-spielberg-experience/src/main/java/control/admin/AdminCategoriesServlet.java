@@ -1,6 +1,7 @@
 package control.admin;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Category;
 import model.dao.CategoryDAO;

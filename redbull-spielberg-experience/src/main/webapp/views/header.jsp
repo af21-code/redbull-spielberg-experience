@@ -171,6 +171,7 @@
 
             <ul class="menu-right">
                 <% if (authUser != null) { %>
+                <li><a href="<%=ctx%>/profile" class="btn-cart">Profilo</a></li>
                 <li><a href="<%=ctx%>/orders" class="btn-cart <%= ordersActive ? "active" : "" %>">Ordini</a></li>
                 <% } %>
 

@@ -123,6 +123,7 @@
                         </title>
                         <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
                         <link rel="stylesheet" href="<%=ctx%>/styles/order-details.css">
+                        <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
                         <style>
                           .modal {
                             position: fixed;

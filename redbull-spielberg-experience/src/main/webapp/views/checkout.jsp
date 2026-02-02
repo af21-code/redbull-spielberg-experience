@@ -59,6 +59,7 @@
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
             <title>Checkout</title>
             <link rel="stylesheet" href="<%=ctx%>/styles/indexStyle.css">
             <link rel="stylesheet" href="<%=ctx%>/styles/checkout.css?v=2">
