@@ -25,7 +25,6 @@ import java.util.List;
 public class AdminProductSaveServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Set<String> ALLOWED_CT = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
 
     // ===== helpers =====
     // ===== helpers =====
@@ -67,24 +66,6 @@ public class AdminProductSaveServlet extends HttpServlet {
 
     private static String nz(String s) {
         return s == null ? "" : s.trim();
-    }
-
-    /** Estrae il filename dal Part (compat con diversi UA). */
-    private static String getSubmittedFileName(Part part) {
-        if (part == null)
-            return null;
-        String cd = part.getHeader("content-disposition");
-        if (cd == null)
-            return null;
-        for (String seg : cd.split(";")) {
-            String s = seg.trim();
-            if (s.startsWith("filename=")) {
-                String f = s.substring(s.indexOf('=') + 1).trim().replace("\"", "");
-                f = f.replace("\\", "/");
-                return f.substring(f.lastIndexOf('/') + 1);
-            }
-        }
-        return null;
     }
 
     private void backWithError(HttpServletRequest req, HttpServletResponse resp, String msg)
