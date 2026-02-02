@@ -7,9 +7,11 @@ import model.Product;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
 
-// import model.Category;
-// import model.dao.CategoryDAO;
-// import model.dao.impl.CategoryDAOImpl;
+import model.Category;
+import model.dao.CategoryDAO;
+import model.dao.impl.CategoryDAOImpl;
+
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,20 +19,6 @@ import java.util.List;
 @WebServlet(urlPatterns = "/admin/products")
 public class AdminProductsServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    private boolean isAdmin(HttpSession session) {
-        if (session == null)
-            return false;
-        Object authUser = session.getAttribute("authUser");
-        if (authUser == null)
-            return false;
-        try {
-            Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
-            return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
 
     private Integer parseIntNullable(String s) {
         try {
@@ -58,7 +46,7 @@ public class AdminProductsServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession s = req.getSession(false);
-        if (!isAdmin(s)) {
+        if (!SecurityUtils.isAdmin(s)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -91,14 +79,14 @@ public class AdminProductsServlet extends HttpServlet {
             List<Product> products = pdao.adminFindAllPaged(categoryId, q, onlyInactive, sort, dir, pageSize, offset);
 
             // 🔹 Carica le categorie per il filtro dinamico
-            // CategoryDAO cdao = new CategoryDAOImpl();
+            CategoryDAO cdao = new CategoryDAOImpl();
             // Firma attesa: adminFindAllPaged(String q, Boolean onlyInactive, String sort,
             // String dir, int limit, int offset)
-            // List<Category> allCategories = cdao.adminFindAllPaged(null, null, "name",
-            // "asc", 1000, 0);
+            List<Category> allCategories = cdao.adminFindAllPaged(null, null, "name",
+                    "asc", 1000, 0);
 
             req.setAttribute("products", products);
-            // req.setAttribute("allCategories", allCategories);
+            req.setAttribute("allCategories", allCategories);
 
             req.setAttribute("q", q == null ? "" : q);
             req.setAttribute("categoryId", categoryId);

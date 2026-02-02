@@ -29,7 +29,6 @@ public class CartSyncFilter implements Filter {
         return "/booking/availability".equals(path) || "/booking/slots".equals(path);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
@@ -45,7 +44,7 @@ public class CartSyncFilter implements Filter {
         HttpSession session = r.getSession(false);
         if (session != null) {
             Object auth = session.getAttribute("authUser");
-            List<CartItem> sessionCart = (List<CartItem>) session.getAttribute("cartItems");
+            List<CartItem> sessionCart = safeCart(session.getAttribute("cartItems"));
 
             boolean merged = Boolean.TRUE.equals(session.getAttribute("cartMerged"));
             if (auth != null && !merged) {
@@ -56,7 +55,16 @@ public class CartSyncFilter implements Filter {
                         CartDAO dao = new CartDAOImpl();
                         if (sessionCart != null && !sessionCart.isEmpty()) {
                             for (CartItem it : sessionCart) {
-                                dao.upsertItem(userId, it.getProductId(), it.getSlotId(), it.getQuantity());
+                                dao.upsertItem(userId,
+                                        it.getProductId(),
+                                        it.getSlotId(),
+                                        it.getSize(),
+                                        it.getQuantity(),
+                                        it.getDriverName(),
+                                        it.getDriverNumber(),
+                                        it.getCompanionName(),
+                                        it.getVehicleCode(),
+                                        it.getEventDate());
                             }
                         }
                         List<CartItem> dbCart = dao.findByUser(userId);
@@ -70,5 +78,13 @@ public class CartSyncFilter implements Filter {
         }
 
         chain.doFilter(req, res);
+    }
+
+    private static List<CartItem> safeCart(Object obj) {
+        List<CartItem> out = new java.util.ArrayList<>();
+        if (obj instanceof List<?> list) {
+            for (Object x : list) if (x instanceof CartItem) out.add((CartItem) x);
+        }
+        return out;
     }
 }

@@ -10,11 +10,12 @@
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/indexStyle.css">
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/userLogo.css">
   <!-- Stile bottone logout (in caso non venga incluso da header o caricato tardi) -->
-  <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/logoutbtn.css?v=2">
+  <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/logoutBtn.css?v=2">
   <!-- Stile della pagina RB21 -->
   <link rel="stylesheet" href="<%=request.getContextPath()%>/styles/rb21.css?v=3">
 
   <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" />
 </head>
 <body>
 
@@ -34,19 +35,6 @@
       <div class="rb21-scroll">SCORRI</div>
     </div>
   </section>
-
-  <!-- Nav in-page -->
-  <nav class="rb21-sticky">
-    <div class="rb21-sticky__wrap">
-      <span class="logo">RB21</span>
-      <ul>
-        <li><a href="#aero">Aerodinamica</a></li>
-        <li><a href="#powertrain">Powertrain</a></li>
-        <li><a href="#tech">Tecnologia</a></li>
-        <li><a href="#perf">Prestazioni</a></li>
-      </ul>
-    </div>
-  </nav>
 
   <!-- AERODINAMICA -->
   <section id="aero" class="rb21-section">

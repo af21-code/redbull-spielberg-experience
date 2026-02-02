@@ -48,12 +48,27 @@ CREATE TABLE products (
     product_type ENUM('EXPERIENCE', 'MERCHANDISE') NOT NULL,
     experience_type ENUM('BASE', 'PREMIUM', 'ELITE') NULL,
     stock_quantity INT DEFAULT 0,
-    image_url VARCHAR(500),
+    image_url MEDIUMTEXT,
     is_featured BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(category_id)
+);
+
+-- Varianti prodotto (taglie) per MERCHANDISE
+CREATE TABLE product_variants (
+    variant_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    size VARCHAR(50) NOT NULL,
+    sku VARCHAR(80) NULL,
+    price_override DECIMAL(10,2) NULL,
+    stock_quantity INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    UNIQUE KEY uq_product_size (product_id, size)
 );
 
 -- =============================================
@@ -103,6 +118,7 @@ CREATE TABLE order_items (
     unit_price DECIMAL(10,2) NOT NULL,
     total_price DECIMAL(10,2) NOT NULL,
     product_name VARCHAR(255) NOT NULL,
+    size VARCHAR(50) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
@@ -118,12 +134,13 @@ CREATE TABLE cart (
     product_id INT NOT NULL,
     slot_id INT NULL,
     quantity INT NOT NULL DEFAULT 1,
+    size VARCHAR(50) NOT NULL DEFAULT '',
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (slot_id) REFERENCES time_slots(slot_id),
-    UNIQUE KEY unique_cart_item (user_id, product_id, slot_id)
+    UNIQUE KEY unique_cart_item (user_id, product_id, size, slot_id)
 );
 
 -- =============================================
@@ -164,6 +181,15 @@ INSERT INTO products (category_id, name, description, short_description, price, 
 (2, 'Red Bull Racing Team Cap', 'Official Red Bull Racing team cap worn by drivers and crew', 'Official team cap with Red Bull Racing logo', 39.99, 'MERCHANDISE', 100, 'images/cap.jpg'),
 (2, 'Red Bull Racing Hoodie', 'Premium quality hoodie with Red Bull Racing branding', 'Comfortable hoodie with team branding', 89.99, 'MERCHANDISE', 50, 'images/hoodie.jpg'),
 (3, 'RB19 Die-Cast Model 1:18', 'Detailed 1:18 scale model of the championship-winning RB19', 'Highly detailed die-cast model of RB19', 129.99, 'MERCHANDISE', 25, 'images/model-rb19.jpg');
+
+-- Varianti taglie per merchandising
+INSERT INTO product_variants (product_id, size, sku, price_override, stock_quantity) VALUES
+((SELECT product_id FROM products WHERE name='Red Bull Racing Team Cap' LIMIT 1), 'UNICA', 'CAP-RB-ONE', NULL, 100),
+((SELECT product_id FROM products WHERE name='Red Bull Racing Hoodie' LIMIT 1), 'S', 'HOOD-RB-S', NULL, 12),
+((SELECT product_id FROM products WHERE name='Red Bull Racing Hoodie' LIMIT 1), 'M', 'HOOD-RB-M', NULL, 15),
+((SELECT product_id FROM products WHERE name='Red Bull Racing Hoodie' LIMIT 1), 'L', 'HOOD-RB-L', NULL, 13),
+((SELECT product_id FROM products WHERE name='Red Bull Racing Hoodie' LIMIT 1), 'XL', 'HOOD-RB-XL', NULL, 10),
+((SELECT product_id FROM products WHERE name='RB19 Die-Cast Model 1:18' LIMIT 1), 'UNICA', 'RB19-118-ONE', NULL, 25);
 
 -- Inserisci alcuni slot temporali per le esperienze
 INSERT INTO time_slots (product_id, slot_date, slot_time, max_capacity) VALUES
@@ -343,6 +369,5 @@ ALTER TABLE cart
 -- 3) Indici utili (opzionali)
 CREATE INDEX idx_cart_user ON cart(user_id);
 CREATE INDEX idx_time_slots_product_date ON time_slots(product_id, slot_date);
-
 
 

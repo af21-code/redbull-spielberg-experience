@@ -106,20 +106,29 @@ public class OrderDAOImpl implements OrderDAO {
             }
 
             // Aggiorna stock per MERCHANDISE
-            String updStock = """
-               UPDATE products
-               SET stock_quantity = GREATEST(0, stock_quantity - ?)
-               WHERE product_id = ? AND product_type = 'MERCHANDISE'
-            """;
-            try (PreparedStatement ps = con.prepareStatement(updStock)) {
+            String updVariant = "UPDATE product_variants SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE product_id = ? AND size = ?";
+            String updProduct = "UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE product_id = ? AND product_type = 'MERCHANDISE'";
+            String syncProduct = "UPDATE products p SET p.stock_quantity = (SELECT COALESCE(SUM(v.stock_quantity),0) FROM product_variants v WHERE v.product_id = p.product_id) WHERE p.product_id = ?";
+            try (PreparedStatement psVar = con.prepareStatement(updVariant);
+                 PreparedStatement psProd = con.prepareStatement(updProduct);
+                 PreparedStatement psSync = con.prepareStatement(syncProduct)) {
                 for (CartItem it : cart) {
                     if ("MERCHANDISE".equalsIgnoreCase(it.getProductType())) {
-                        ps.setInt(1, Math.max(1, it.getQuantity()));
-                        ps.setInt(2, it.getProductId());
-                        ps.addBatch();
+                        String sizeKey = it.getSize() == null ? "" : it.getSize();
+                        psVar.setInt(1, Math.max(1, it.getQuantity()));
+                        psVar.setInt(2, it.getProductId());
+                        psVar.setString(3, sizeKey);
+                        int updated = psVar.executeUpdate();
+                        if (updated == 0) {
+                            psProd.setInt(1, Math.max(1, it.getQuantity()));
+                            psProd.setInt(2, it.getProductId());
+                            psProd.executeUpdate();
+                        } else {
+                            psSync.setInt(1, it.getProductId());
+                            psSync.executeUpdate();
+                        }
                     }
                 }
-                ps.executeBatch();
             }
 
             con.commit();
@@ -436,8 +445,9 @@ public class OrderDAOImpl implements OrderDAO {
                SET status = 'COMPLETED',
                    delivered_at = COALESCE(delivered_at, NOW())
              WHERE order_id = ?
+               AND status <> 'CANCELLED'
         """;
-        String sqlWithoutDelivered = "UPDATE orders SET status='COMPLETED' WHERE order_id=?";
+        String sqlWithoutDelivered = "UPDATE orders SET status='COMPLETED' WHERE order_id=? AND status <> 'CANCELLED'";
 
         try (Connection con = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = con.prepareStatement(sqlWithDelivered)) {
@@ -480,14 +490,46 @@ public class OrderDAOImpl implements OrderDAO {
                 return false;
             }
 
-            // 2) Ripristina stock per MERCHANDISE
-            String restockSql = """
-                UPDATE products p
-                JOIN order_items oi ON oi.product_id = p.product_id
-                SET p.stock_quantity = p.stock_quantity + oi.quantity
+            // 2) Ripristina stock per MERCHANDISE (varianti prima, poi fallback su prodotto)
+            String restockVariantsSql = """
+                UPDATE product_variants v
+                JOIN order_items oi ON oi.product_id = v.product_id
+                                   AND v.size = COALESCE(oi.size, '')
+                JOIN products p ON p.product_id = oi.product_id
+                SET v.stock_quantity = COALESCE(v.stock_quantity, 0) + oi.quantity
                 WHERE oi.order_id = ? AND p.product_type = 'MERCHANDISE'
             """;
-            try (PreparedStatement ps = con.prepareStatement(restockSql)) {
+            try (PreparedStatement ps = con.prepareStatement(restockVariantsSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate();
+            }
+
+            String restockProductsSql = """
+                UPDATE products p
+                JOIN order_items oi ON oi.product_id = p.product_id
+                LEFT JOIN product_variants v ON v.product_id = oi.product_id
+                                           AND v.size = COALESCE(oi.size, '')
+                SET p.stock_quantity = COALESCE(p.stock_quantity, 0) + oi.quantity
+                WHERE oi.order_id = ? AND p.product_type = 'MERCHANDISE'
+                  AND v.variant_id IS NULL
+            """;
+            try (PreparedStatement ps = con.prepareStatement(restockProductsSql)) {
+                ps.setInt(1, orderId);
+                ps.executeUpdate();
+            }
+
+            String syncProductsSql = """
+                UPDATE products p
+                JOIN (
+                    SELECT v.product_id, SUM(COALESCE(v.stock_quantity, 0)) AS sum_stock
+                    FROM product_variants v
+                    JOIN order_items oi ON oi.product_id = v.product_id
+                    WHERE oi.order_id = ?
+                    GROUP BY v.product_id
+                ) s ON s.product_id = p.product_id
+                SET p.stock_quantity = s.sum_stock
+            """;
+            try (PreparedStatement ps = con.prepareStatement(syncProductsSql)) {
                 ps.setInt(1, orderId);
                 ps.executeUpdate();
             }
@@ -541,3 +583,4 @@ public class OrderDAOImpl implements OrderDAO {
         }
     }
 }
+

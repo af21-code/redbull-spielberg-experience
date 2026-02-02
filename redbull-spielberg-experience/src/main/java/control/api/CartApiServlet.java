@@ -38,6 +38,7 @@ public class CartApiServlet extends HttpServlet {
 
         int productId = parseInt(req.getParameter("productId"), -1);
         Integer slotId = parseNullableInt(req.getParameter("slotId"));
+        String size = nz(req.getParameter("size"));
         int qty = parseInt(req.getParameter("qty"), 1);
 
         boolean ok = true;
@@ -47,15 +48,15 @@ public class CartApiServlet extends HttpServlet {
             switch (path) {
                 case "/add":
                     if (productId <= 0) throw new IllegalArgumentException("productId mancante/errato");
-                    cart.add(productId, slotId, Math.max(1, qty));
+                    cart.add(productId, slotId, size, Math.max(1, qty));
                     break;
                 case "/update":
                     if (productId <= 0) throw new IllegalArgumentException("productId mancante/errato");
-                    cart.setQuantity(productId, slotId, qty);
+                    cart.setQuantity(productId, slotId, size, qty);
                     break;
                 case "/remove":
                     if (productId <= 0) throw new IllegalArgumentException("productId mancante/errato");
-                    cart.remove(productId, slotId);
+                    cart.remove(productId, slotId, size);
                     break;
                 default:
                     ok = false; msg = "endpoint non valido";
@@ -81,4 +82,5 @@ public class CartApiServlet extends HttpServlet {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
+    private String nz(String s) { return s == null ? "" : s.trim(); }
 }

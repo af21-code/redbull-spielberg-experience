@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.util.List;
 
 import model.Product;
+import model.Category;
 import model.dao.ProductDAO;
+import model.dao.CategoryDAO;
 import model.dao.impl.ProductDAOImpl;
+import model.dao.impl.CategoryDAOImpl;
 
 @WebServlet("/shop")
 public class ProductListServlet extends HttpServlet {
@@ -22,12 +25,20 @@ public class ProductListServlet extends HttpServlet {
         Integer categoryId = null;
         String categoryParam = req.getParameter("category");
         if (categoryParam != null && !categoryParam.isBlank()) {
-            try { categoryId = Integer.parseInt(categoryParam); } catch (NumberFormatException ignored) {}
+            try {
+                categoryId = Integer.parseInt(categoryParam);
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         try {
-            // SOLO MERCHANDISE attivi, con categoria opzionale
-            List<Product> products = productDAO.findActiveMerchandise(categoryId);
+            // Load categories for the dropdown
+            CategoryDAO categoryDAO = new CategoryDAOImpl();
+            List<Category> categories = categoryDAO.findAllActive();
+            req.setAttribute("categories", categories);
+
+            // TUTTI i prodotti attivi (MERCHANDISE + EXPERIENCE), con categoria opzionale
+            List<Product> products = productDAO.findAll(categoryId);
             req.setAttribute("products", products);
             req.setAttribute("selectedCategory", categoryId);
 

@@ -8,6 +8,7 @@ import model.dao.impl.CartDAOImpl;
 import utils.DatabaseConnection;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebListener
@@ -28,9 +29,12 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
         catch (Exception ignored) {}
         if (userId == null) return;
 
-        @SuppressWarnings("unchecked")
-        List<CartItem> items = (List<CartItem>) session.getAttribute("cartItems");
-        if (items == null || items.isEmpty()) return;
+        List<CartItem> items = new ArrayList<>();
+        Object obj = session.getAttribute("cartItems");
+        if (obj instanceof List<?> list) {
+            for (Object x : list) if (x instanceof CartItem) items.add((CartItem) x);
+        }
+        if (items.isEmpty()) return;
 
         try (Connection con = DatabaseConnection.getInstance().getConnection()) {
             con.setAutoCommit(false);
@@ -41,6 +45,7 @@ public class SessionCartMergeListener implements HttpSessionAttributeListener {
                         userId,
                         it.getProductId(),
                         it.getSlotId(),
+                        it.getSize(),
                         it.getQuantity(),
                         it.getDriverName(),
                         it.getDriverNumber(),

@@ -35,9 +35,7 @@ public class OrdersServlet extends HttpServlet {
         } catch (Exception ignored) {}
 
         try {
-            List<Order> orders = isAdmin
-                    ? orderQueryDAO.findRecentAll(50)
-                    : orderQueryDAO.findRecentByUser(authUser.getUserId(), 50);
+            List<Order> orders = orderQueryDAO.findRecentByUser(authUser.getUserId(), 50);
 
             for (Order o : orders) {
                 List<OrderItem> items = orderQueryDAO.findItemsByOrder(o.getOrderId());

@@ -4,9 +4,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
-import model.User;
 import model.dao.OrderDAO;
 import model.dao.impl.OrderDAOImpl;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,11 +14,12 @@ import java.util.Map;
 
 /**
  * Dettaglio ordine per ADMIN (solo GET).
- * Le azioni (tracking / complete / cancel) sono gestite da AdminOrderServlet su /admin/order-action (POST).
+ * Le azioni (tracking / complete / cancel) sono gestite da AdminOrderServlet su
+ * /admin/order-action (POST).
  *
  * Nota: mapping su /admin/order-view per evitare collisioni con altre servlet.
  */
-@WebServlet(name = "OrderDetailsAdminServlet", urlPatterns = {"/admin/order-view"})
+@WebServlet(name = "OrderDetailsAdminServlet", urlPatterns = { "/admin/order-view" })
 public class OrderDetailsAdminServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -29,8 +30,7 @@ public class OrderDetailsAdminServlet extends HttpServlet {
 
         // --- Accesso solo ADMIN ---
         HttpSession session = req.getSession(false);
-        User auth = (session == null) ? null : (User) session.getAttribute("authUser");
-        if (auth == null || auth.getUserType() == null || !"ADMIN".equalsIgnoreCase(String.valueOf(auth.getUserType()))) {
+        if (!SecurityUtils.isAdmin(session)) {
             resp.sendRedirect(req.getContextPath() + "/views/login.jsp");
             return;
         }
@@ -46,14 +46,14 @@ public class OrderDetailsAdminServlet extends HttpServlet {
 
         try {
             // Header
-            Map<String,Object> order = orderDAO.findOrderHeader(orderId);
+            Map<String, Object> order = orderDAO.findOrderHeader(orderId);
             if (order == null) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Ordine non trovato.");
                 return;
             }
 
             // Righe
-            List<Map<String,Object>> items = orderDAO.findOrderItems(orderId);
+            List<Map<String, Object>> items = orderDAO.findOrderItems(orderId);
 
             // Attributi per la JSP unica
             req.setAttribute("order", order);

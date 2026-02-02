@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,19 +18,10 @@ public class AdminProductToggleServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private boolean isAdmin(HttpSession session) {
-        if (session == null) return false;
-        Object u = session.getAttribute("authUser");
-        if (u == null) return false;
-        try {
-            Object t = u.getClass().getMethod("getUserType").invoke(u);
-            return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) { return false; }
-    }
-
     private boolean checkCsrf(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
-        if (s == null) return false;
+        if (s == null)
+            return false;
         String token = (String) s.getAttribute("csrfToken");
         String provided = req.getParameter("csrf");
         return token != null && token.equals(provided);
@@ -39,7 +31,7 @@ public class AdminProductToggleServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        if (!isAdmin(req.getSession(false))) {
+        if (!SecurityUtils.isAdmin(req.getSession(false))) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -49,11 +41,12 @@ public class AdminProductToggleServlet extends HttpServlet {
         }
 
         String idStr = req.getParameter("id");
-        String what  = req.getParameter("what");      // "active" | "featured"
-        String value = req.getParameter("value");     // "true"/"false" oppure "1"/"0"
+        String what = req.getParameter("what"); // "active" | "featured"
+        String value = req.getParameter("value"); // "true"/"false" oppure "1"/"0"
 
         String back = req.getHeader("Referer");
-        if (back == null || back.isBlank()) back = req.getContextPath() + "/admin/products";
+        if (back == null || back.isBlank())
+            back = req.getContextPath() + "/admin/products";
 
         try {
             int id = Integer.parseInt(idStr);

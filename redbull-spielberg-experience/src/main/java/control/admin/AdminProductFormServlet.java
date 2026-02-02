@@ -4,11 +4,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Product;
-// import model.Category;
+import model.Category;
 import model.dao.ProductDAO;
-// import model.dao.CategoryDAO;
+import model.dao.CategoryDAO;
 import model.dao.impl.ProductDAOImpl;
-// import model.dao.impl.CategoryDAOImpl;
+import model.dao.impl.CategoryDAOImpl;
+
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,26 +19,12 @@ import java.util.List;
 public class AdminProductFormServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private boolean isAdmin(HttpSession session) {
-        if (session == null)
-            return false;
-        Object authUser = session.getAttribute("authUser");
-        if (authUser == null)
-            return false;
-        try {
-            Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
-            return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         HttpSession s = req.getSession(false);
-        if (!isAdmin(s)) {
+        if (!SecurityUtils.isAdmin(s)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -70,13 +58,12 @@ public class AdminProductFormServlet extends HttpServlet {
 
         // Carica categorie per la tendina (ordiniamo per nome asc)
         try {
-            // CategoryDAO cdao = new CategoryDAOImpl();
+            CategoryDAO cdao = new CategoryDAOImpl();
             // riuso del metodo paginato: q=null, onlyInactive=false, sort=name, dir=asc,
             // limit=1000, offset=0
-            // List<Category> categories = cdao.adminFindAllPaged(null, false, "name",
-            // "asc", 1000, 0);
-            // req.setAttribute("categories", categories);
-            req.setAttribute("categories", java.util.Collections.emptyList());
+            List<Category> categories = cdao.adminFindAllPaged(null, false, "name",
+                    "asc", 1000, 0);
+            req.setAttribute("categories", categories);
         } catch (Exception e) {
             // non blocchiamo il form: in casi estremi la tendina sarà vuota
             e.printStackTrace();

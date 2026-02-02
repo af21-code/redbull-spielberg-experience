@@ -5,13 +5,16 @@ import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Product;
+import model.ProductVariant;
 import model.dao.ProductDAO;
 import model.dao.impl.ProductDAOImpl;
-// import utils.FileStorage;
+import utils.FileStorage;
+import utils.SecurityUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet(urlPatterns = "/admin/products/save")
 @MultipartConfig(fileSizeThreshold = 1_000_000, // 1MB
@@ -21,22 +24,9 @@ import java.util.Set;
 public class AdminProductSaveServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Set<String> ALLOWED_CT = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
 
     // ===== helpers =====
-    private boolean isAdmin(HttpSession session) {
-        if (session == null)
-            return false;
-        Object authUser = session.getAttribute("authUser");
-        if (authUser == null)
-            return false;
-        try {
-            Object t = authUser.getClass().getMethod("getUserType").invoke(authUser);
-            return t != null && "ADMIN".equalsIgnoreCase(String.valueOf(t));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
+    // ===== helpers =====
 
     /** Se usi SecurityCsrfFilter è ridondante ma innocuo. */
     private boolean checkCsrf(HttpServletRequest req) {
@@ -75,24 +65,6 @@ public class AdminProductSaveServlet extends HttpServlet {
 
     private static String nz(String s) {
         return s == null ? "" : s.trim();
-    }
-
-    /** Estrae il filename dal Part (compat con diversi UA). */
-    private static String getSubmittedFileName(Part part) {
-        if (part == null)
-            return null;
-        String cd = part.getHeader("content-disposition");
-        if (cd == null)
-            return null;
-        for (String seg : cd.split(";")) {
-            String s = seg.trim();
-            if (s.startsWith("filename=")) {
-                String f = s.substring(s.indexOf('=') + 1).trim().replace("\"", "");
-                f = f.replace("\\", "/");
-                return f.substring(f.lastIndexOf('/') + 1);
-            }
-        }
-        return null;
     }
 
     private void backWithError(HttpServletRequest req, HttpServletResponse resp, String msg)
@@ -135,7 +107,7 @@ public class AdminProductSaveServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = req.getSession(false);
-        if (!isAdmin(session)) {
+        if (!SecurityUtils.isAdmin(session)) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -208,16 +180,10 @@ public class AdminProductSaveServlet extends HttpServlet {
             } catch (IllegalStateException ignored) {
             }
             if (file != null && file.getSize() > 0) {
-                String ct = nz(file.getContentType()).toLowerCase();
-                if (!ALLOWED_CT.contains(ct)) {
-                    backWithError(req, resp, "Formato immagine non supportato (usa JPG/PNG/WEBP).");
-                    return;
-                }
-                // String publicUrl = FileStorage.saveProductImage(
-                // getServletContext(), file.getInputStream(),
-                // getSubmittedFileName(file), file.getContentType()
-                // );
-                // imageUrl = publicUrl; // priorità al file caricato
+                String contentType = file.getContentType();
+                // Convert to Base64
+                // Note: user MUST update DB schema to LONGTEXT for image_url
+                imageUrl = FileStorage.convertToBase64(file.getInputStream(), contentType);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -246,6 +212,46 @@ public class AdminProductSaveServlet extends HttpServlet {
         p.setImageUrl(imageUrl);
         p.setFeatured(featured);
         p.setActive(active);
+
+        // Varianti taglie (solo per MERCHANDISE)
+        if (pType == Product.ProductType.MERCHANDISE) {
+            String[] sizes  = req.getParameterValues("variantSize");
+            String[] skus   = req.getParameterValues("variantSku");
+            String[] stocks = req.getParameterValues("variantStock");
+            String[] actives= req.getParameterValues("variantActive");
+            List<ProductVariant> variants = new ArrayList<>();
+            if (sizes != null) {
+                for (int i = 0; i < sizes.length; i++) {
+                    String sz = nz(sizes[i]);
+                    if (sz.isEmpty()) continue;
+                    ProductVariant v = new ProductVariant();
+                    v.setSize(sz);
+                    if (skus != null && i < skus.length && !nz(skus[i]).isEmpty()) v.setSku(nz(skus[i]));
+                    // Nessun price override: si usa il prezzo prodotto
+                    if (stocks != null && i < stocks.length && !nz(stocks[i]).isEmpty()) {
+                        try { v.setStockQuantity(Integer.parseInt(nz(stocks[i]))); } catch (Exception ignored) {}
+                    }
+                    boolean vActive = actives != null && i < actives.length && "on".equalsIgnoreCase(nz(actives[i]));
+                    v.setActive(vActive);
+                    variants.add(v);
+                }
+            }
+            p.setVariants(variants);
+            if (!variants.isEmpty()) {
+                int sum = 0;
+                for (ProductVariant v : variants) {
+                    if (v.getStockQuantity() != null) {
+                        sum += Math.max(0, v.getStockQuantity());
+                    }
+                }
+                stockQty = sum;
+            }
+        } else {
+            p.setVariants(null);
+        }
+
+        // riallinea lo stock generale dopo eventuali varianti
+        p.setStockQuantity(stockQty);
 
         // ---- persistenza ----
         try {

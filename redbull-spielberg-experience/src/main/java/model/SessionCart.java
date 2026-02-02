@@ -8,8 +8,8 @@ public class SessionCart {
 
     private final Map<String, SessionCartItem> items = new LinkedHashMap<>();
 
-    private String keyOf(int productId, Integer slotId) {
-        return productId + "|" + (slotId == null ? "null" : slotId);
+    private String keyOf(int productId, Integer slotId, String size) {
+        return productId + "|" + (slotId == null ? "null" : slotId) + "|" + (size == null ? "" : size);
     }
 
     public Collection<SessionCartItem> getItems() {
@@ -24,28 +24,28 @@ public class SessionCart {
         items.clear();
     }
 
-    public void add(int productId, Integer slotId, int qty) {
-        String k = keyOf(productId, slotId);
+    public void add(int productId, Integer slotId, String size, int qty) {
+        String k = keyOf(productId, slotId, size);
         SessionCartItem it = items.get(k);
         if (it == null) {
-            items.put(k, new SessionCartItem(productId, slotId, Math.max(1, qty)));
+            items.put(k, new SessionCartItem(productId, slotId, size, Math.max(1, qty)));
         } else {
             it.inc(qty);
         }
     }
 
-    public void setQuantity(int productId, Integer slotId, int qty) {
-        String k = keyOf(productId, slotId);
+    public void setQuantity(int productId, Integer slotId, String size, int qty) {
+        String k = keyOf(productId, slotId, size);
         if (qty <= 0) {
             items.remove(k);
         } else {
             SessionCartItem it = items.get(k);
-            if (it == null) items.put(k, new SessionCartItem(productId, slotId, qty));
+            if (it == null) items.put(k, new SessionCartItem(productId, slotId, size, qty));
             else it.setQuantity(qty);
         }
     }
 
-    public void remove(int productId, Integer slotId) {
-        items.remove(keyOf(productId, slotId));
+    public void remove(int productId, Integer slotId, String size) {
+        items.remove(keyOf(productId, slotId, size));
     }
 }

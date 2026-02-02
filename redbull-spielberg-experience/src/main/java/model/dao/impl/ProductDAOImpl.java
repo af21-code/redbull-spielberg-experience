@@ -1,6 +1,7 @@
 package model.dao.impl;
 
 import model.Product;
+import model.ProductVariant;
 import model.dao.ProductDAO;
 import utils.DatabaseConnection;
 
@@ -13,24 +14,23 @@ import java.util.Map;
 public class ProductDAOImpl implements ProductDAO {
 
     private static final String BASE_SELECT = """
-        SELECT product_id, category_id, name, description, short_description,
-               price, product_type, experience_type, stock_quantity, image_url,
-               is_featured, is_active, created_at, updated_at
-        FROM products
-    """;
+                SELECT product_id, category_id, name, description, short_description,
+                       price, product_type, experience_type, stock_quantity, image_url,
+                       is_featured, is_active, created_at, updated_at
+                FROM products
+            """;
 
     // whitelist colonne ordinabili
     private static final Map<String, String> SORT_MAP = Map.ofEntries(
-        Map.entry("name", "name"),
-        Map.entry("price", "price"),
-        Map.entry("stock", "stock_quantity"),
-        Map.entry("active", "is_active"),
-        Map.entry("featured", "is_featured"),
-        Map.entry("created", "created_at"),
-        Map.entry("updated", "updated_at"),
-        Map.entry("ptype", "product_type"),
-        Map.entry("etype", "experience_type")
-    );
+            Map.entry("name", "name"),
+            Map.entry("price", "price"),
+            Map.entry("stock", "stock_quantity"),
+            Map.entry("active", "is_active"),
+            Map.entry("featured", "is_featured"),
+            Map.entry("created", "created_at"),
+            Map.entry("updated", "updated_at"),
+            Map.entry("ptype", "product_type"),
+            Map.entry("etype", "experience_type"));
 
     private Connection getConnection() throws Exception {
         return DatabaseConnection.getInstance().getConnection();
@@ -46,10 +46,15 @@ public class ProductDAOImpl implements ProductDAO {
 
         List<Product> results = new ArrayList<>();
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            if (categoryId != null) ps.setInt(1, categoryId);
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            if (categoryId != null)
+                ps.setInt(1, categoryId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -59,10 +64,14 @@ public class ProductDAOImpl implements ProductDAO {
     public Product findById(int productId) throws Exception {
         String sql = BASE_SELECT + " WHERE product_id = ? AND is_active = 1";
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    return p;
+                }
             }
         }
         return null;
@@ -77,10 +86,15 @@ public class ProductDAOImpl implements ProductDAO {
 
         List<Product> results = new ArrayList<>();
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            if (categoryId != null) ps.setInt(1, categoryId);
+                PreparedStatement ps = con.prepareStatement(sql)) {
+            if (categoryId != null)
+                ps.setInt(1, categoryId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), true));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -98,10 +112,14 @@ public class ProductDAOImpl implements ProductDAO {
 
         List<Product> results = new ArrayList<>();
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+                PreparedStatement ps = con.prepareStatement(sb.toString())) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -110,7 +128,7 @@ public class ProductDAOImpl implements ProductDAO {
     // ========= Admin - con paginazione e ordinamento =========
     @Override
     public List<Product> adminFindAllPaged(Integer categoryId, String q, Boolean onlyInactive,
-                                           String sort, String dir, int limit, int offset) throws Exception {
+            String sort, String dir, int limit, int offset) throws Exception {
         StringBuilder sb = new StringBuilder(BASE_SELECT).append(" WHERE 1=1 ");
         List<Object> params = new ArrayList<>();
         appendFilters(sb, params, categoryId, q, onlyInactive);
@@ -119,7 +137,7 @@ public class ProductDAOImpl implements ProductDAO {
         String sortDir = "asc".equalsIgnoreCase(dir) ? "ASC" : "DESC";
 
         sb.append(" ORDER BY ").append(sortCol).append(' ').append(sortDir)
-          .append(", created_at DESC ");
+                .append(", created_at DESC ");
 
         sb.append(" LIMIT ? OFFSET ? ");
         params.add(limit);
@@ -127,10 +145,14 @@ public class ProductDAOImpl implements ProductDAO {
 
         List<Product> results = new ArrayList<>();
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+                PreparedStatement ps = con.prepareStatement(sb.toString())) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) results.add(mapRow(rs));
+                while (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    results.add(p);
+                }
             }
         }
         return results;
@@ -143,10 +165,11 @@ public class ProductDAOImpl implements ProductDAO {
         appendFilters(sb, params, categoryId, q, onlyInactive);
 
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sb.toString())) {
+                PreparedStatement ps = con.prepareStatement(sb.toString())) {
             bindParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next())
+                    return rs.getInt(1);
             }
         }
         return 0;
@@ -156,10 +179,14 @@ public class ProductDAOImpl implements ProductDAO {
     public Product adminFindById(int productId) throws Exception {
         String sql = BASE_SELECT + " WHERE product_id = ?";
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    Product p = mapRow(rs);
+                    p.setVariants(loadVariants(con, p.getProductId(), false));
+                    return p;
+                }
             }
         }
         return null;
@@ -168,37 +195,42 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public int insert(Product p) throws Exception {
         String sql = """
-            INSERT INTO products
-              (category_id, name, description, short_description, price,
-               product_type, experience_type, stock_quantity, image_url,
-               is_featured, is_active, created_at, updated_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?, NOW(), NOW())
-        """;
+                    INSERT INTO products
+                      (category_id, name, description, short_description, price,
+                       product_type, experience_type, stock_quantity, image_url,
+                       is_featured, is_active, created_at, updated_at)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?, NOW(), NOW())
+                """;
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bindUpsert(ps, p);
             ps.executeUpdate();
+            Integer newId = null;
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) newId = rs.getInt(1);
             }
+            if (newId == null) throw new SQLException("Insert product failed: no ID obtained.");
+            p.setProductId(newId);
+            saveVariants(con, p, true);
+            return newId;
         }
-        throw new SQLException("Insert product failed: no ID obtained.");
     }
 
     @Override
     public void update(Product p) throws Exception {
         String sql = """
-            UPDATE products SET
-              category_id=?, name=?, description=?, short_description=?, price=?,
-              product_type=?, experience_type=?, stock_quantity=?, image_url=?,
-              is_featured=?, is_active=?, updated_at=NOW()
-            WHERE product_id=?
-        """;
+                    UPDATE products SET
+                      category_id=?, name=?, description=?, short_description=?, price=?,
+                      product_type=?, experience_type=?, stock_quantity=?, image_url=?,
+                      is_featured=?, is_active=?, updated_at=NOW()
+                    WHERE product_id=?
+                """;
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+                PreparedStatement ps = con.prepareStatement(sql)) {
             int idx = bindUpsert(ps, p);
             ps.setInt(idx, p.getProductId());
             ps.executeUpdate();
+            saveVariants(con, p, false);
         }
     }
 
@@ -210,8 +242,8 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public void setActive(int productId, boolean active) throws Exception {
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "UPDATE products SET is_active=?, updated_at=NOW() WHERE product_id=?")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "UPDATE products SET is_active=?, updated_at=NOW() WHERE product_id=?")) {
             ps.setBoolean(1, active);
             ps.setInt(2, productId);
             ps.executeUpdate();
@@ -221,8 +253,8 @@ public class ProductDAOImpl implements ProductDAO {
     @Override
     public void setFeatured(int productId, boolean featured) throws Exception {
         try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "UPDATE products SET is_featured=?, updated_at=NOW() WHERE product_id=?")) {
+                PreparedStatement ps = con.prepareStatement(
+                        "UPDATE products SET is_featured=?, updated_at=NOW() WHERE product_id=?")) {
             ps.setBoolean(1, featured);
             ps.setInt(2, productId);
             ps.executeUpdate();
@@ -232,7 +264,7 @@ public class ProductDAOImpl implements ProductDAO {
     // ========= Helpers =========
 
     private static void appendFilters(StringBuilder sb, List<Object> params,
-                                      Integer categoryId, String q, Boolean onlyInactive) {
+            Integer categoryId, String q, Boolean onlyInactive) {
         if (categoryId != null) {
             sb.append(" AND category_id = ? ");
             params.add(categoryId);
@@ -270,7 +302,10 @@ public class ProductDAOImpl implements ProductDAO {
     private int bindUpsert(PreparedStatement ps, Product p) throws SQLException {
         int i = 1;
         // category_id
-        if (p.getCategoryId() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, p.getCategoryId());
+        if (p.getCategoryId() == null)
+            ps.setNull(i++, Types.INTEGER);
+        else
+            ps.setInt(i++, p.getCategoryId());
         ps.setString(i++, p.getName());
         ps.setString(i++, p.getDescription());
         ps.setString(i++, p.getShortDescription());
@@ -285,7 +320,10 @@ public class ProductDAOImpl implements ProductDAO {
         }
 
         // stock_quantity
-        if (p.getStockQuantity() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, p.getStockQuantity());
+        if (p.getStockQuantity() == null)
+            ps.setNull(i++, Types.INTEGER);
+        else
+            ps.setInt(i++, p.getStockQuantity());
 
         ps.setString(i++, p.getImageUrl());
 
@@ -317,20 +355,83 @@ public class ProductDAOImpl implements ProductDAO {
 
         Timestamp cAt = rs.getTimestamp("created_at");
         Timestamp uAt = rs.getTimestamp("updated_at");
-        if (cAt != null) p.setCreatedAt(cAt.toLocalDateTime());
-        if (uAt != null) p.setUpdatedAt(uAt.toLocalDateTime());
+        if (cAt != null)
+            p.setCreatedAt(cAt.toLocalDateTime());
+        if (uAt != null)
+            p.setUpdatedAt(uAt.toLocalDateTime());
         return p;
     }
 
+    private List<ProductVariant> loadVariants(Connection con, int productId, boolean onlyActive) throws SQLException {
+        final String sql = "SELECT variant_id, size, sku, price_override, stock_quantity, is_active, created_at, updated_at " +
+                "FROM product_variants WHERE product_id=?" + (onlyActive ? " AND is_active=1" : "") + " ORDER BY variant_id";
+        List<ProductVariant> variants = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ProductVariant v = new ProductVariant();
+                    v.setVariantId(rs.getInt("variant_id"));
+                    v.setProductId(productId);
+                    v.setSize(rs.getString("size"));
+                    v.setSku(rs.getString("sku"));
+                    v.setPriceOverride(rs.getBigDecimal("price_override"));
+                    v.setStockQuantity((Integer) rs.getObject("stock_quantity"));
+                    v.setActive(rs.getBoolean("is_active"));
+                    Timestamp cAt = rs.getTimestamp("created_at");
+                    Timestamp uAt = rs.getTimestamp("updated_at");
+                    if (cAt != null) v.setCreatedAt(cAt.toLocalDateTime());
+                    if (uAt != null) v.setUpdatedAt(uAt.toLocalDateTime());
+                    variants.add(v);
+                }
+            }
+        }
+        return variants;
+    }
+
+    private void saveVariants(Connection con, Product p, boolean isInsert) throws SQLException {
+        if (p.getVariants() == null) return;
+        // simple approach: delete old (if update) then insert all
+        if (!isInsert) {
+            try (PreparedStatement del = con.prepareStatement("DELETE FROM product_variants WHERE product_id=?")) {
+                del.setInt(1, p.getProductId());
+                del.executeUpdate();
+            }
+        }
+        final String ins = "INSERT INTO product_variants (product_id, size, sku, price_override, stock_quantity, is_active, created_at, updated_at) " +
+                "VALUES (?,?,?,?,?,?, NOW(), NOW())";
+        try (PreparedStatement ps = con.prepareStatement(ins)) {
+            for (ProductVariant v : p.getVariants()) {
+                int i = 1;
+                ps.setInt(i++, p.getProductId());
+                ps.setString(i++, v.getSize());
+                if (v.getSku() == null || v.getSku().isBlank()) ps.setNull(i++, Types.VARCHAR); else ps.setString(i++, v.getSku());
+                if (v.getPriceOverride() == null) ps.setNull(i++, Types.DECIMAL); else ps.setBigDecimal(i++, v.getPriceOverride());
+                if (v.getStockQuantity() == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, v.getStockQuantity());
+                ps.setBoolean(i++, Boolean.TRUE.equals(v.getActive()));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
     private static Product.ProductType safeProductType(String s) {
-        if (s == null) return null;
-        try { return Product.ProductType.valueOf(s); }
-        catch (IllegalArgumentException e) { return null; }
+        if (s == null)
+            return null;
+        try {
+            return Product.ProductType.valueOf(s);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static Product.ExperienceType safeExperienceType(String s) {
-        if (s == null) return null;
-        try { return Product.ExperienceType.valueOf(s); }
-        catch (IllegalArgumentException e) { return null; }
+        if (s == null)
+            return null;
+        try {
+            return Product.ExperienceType.valueOf(s);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

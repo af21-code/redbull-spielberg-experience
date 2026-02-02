@@ -88,6 +88,14 @@
     <filter-name>AuthFilter</filter-name>
     <url-pattern>/admin/*</url-pattern>
   </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/profile</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>AuthFilter</filter-name>
+    <url-pattern>/profile/*</url-pattern>
+  </filter-mapping>
 
   <!-- 6) Consente accesso a /admin solo ad ADMIN -->
   <filter>
@@ -152,6 +160,24 @@
     <url-pattern>/admin/slots/generate</url-pattern>
   </servlet-mapping>
 
+  <servlet>
+    <servlet-name>AdminCategoriesServlet</servlet-name>
+    <servlet-class>control.admin.AdminCategoriesServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminCategoriesServlet</servlet-name>
+    <url-pattern>/admin/categories</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>AdminCategoryFormServlet</servlet-name>
+    <servlet-class>control.admin.AdminCategoryFormServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminCategoryFormServlet</servlet-name>
+    <url-pattern>/admin/categories/edit</url-pattern>
+  </servlet-mapping>
+
   <!-- NB: i servlet dei prodotti/categorie sono già annotati con @WebServlet.
        Non duplichiamo qui per evitare conflitti di mapping. -->
 
@@ -162,11 +188,15 @@
   </error-page>
   <error-page>
     <error-code>500</error-code>
-    <location>/views/errors/500.jsp</location>
+    <location>/views/errors/505.jsp</location>
   </error-page>
   <error-page>
     <exception-type>java.lang.Throwable</exception-type>
-    <location>/views/errors/500.jsp</location>
+    <location>/views/errors/505.jsp</location>
+  </error-page>
+  <error-page>
+    <error-code>403</error-code>
+    <location>/views/errors/403.jsp</location>
   </error-page>
 
   <jsp-config>
