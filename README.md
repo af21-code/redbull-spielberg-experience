@@ -1,6 +1,4 @@
 <div align="center">
-  <img src="https://cdn-3.motorsport.com/images/mgl/Y99JQRbY/s8/red-bull-racing-logo-1.jpg" alt="RedBull Racing Logo" width="250" />
-  
   <h1>🏎️ RedBull Spielberg Experience</h1>
   <h3>Piattaforma E-Commerce per Esperienze di Guida al Red Bull Ring</h3>
   
@@ -22,6 +20,8 @@
     <img src="https://img.shields.io/badge/Tomcat-10+-F8DC75?style=for-the-badge&logo=apache-tomcat&logoColor=black" alt="Tomcat" />
   </p>
 </div>
+
+> **Nota:** progetto universitario a scopo didattico, non affiliato né approvato da Red Bull GmbH o dal Red Bull Ring. Marchi e nomi appartengono ai rispettivi proprietari.
 
 ---
 
